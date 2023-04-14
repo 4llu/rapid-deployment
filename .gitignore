@@ -1,0 +1,16 @@
+# Automatic artifacts
+.DS_Store
+__pycache__
+.ipynb_checkpoints
+.vscode/
+
+# Repo specific
+data/RAW/*
+data/processed/*
+torch_downloads/*
+reports/raw/logs/*
+reports/raw/logs_tb/*
+reports/raw/optuna_studies/*
+
+# Exceptions
+!/**/.gitkeep
