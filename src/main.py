@@ -24,7 +24,6 @@ def run_training(
     device=None,
     trial=None,
 ):
-    # * Trial loop
     # * Use this to run a single trial
 
     # INITIALIZE MODEL
@@ -263,13 +262,7 @@ def run_training(
     return best_accuracy
 
 
-def run(config, study_props=None):
-    # * Data-level loop
-    # * Use this to group multiple runs with the same data (splits)
-
-    # INITIALIZATION
-    ################
-
+def setup_device():
     # Enable cuDNN autotuner (speed optimization)
     torch.backends.cudnn.benchmark = True
 
@@ -292,41 +285,44 @@ def run(config, study_props=None):
     if device.type == "cuda":
         print(torch.cuda.get_device_name(0))
 
+    return device
+
+
+def run(config):
+    # * Data-level loop
+    # * Use this to group multiple runs with the same data (splits)
+    # * Mostly used as a base for the hyperparameter optimization
+
+    # INITIALIZATION
+    ################
+
+    device = setup_device()
+
     # DATA
     ######
 
-    # TODO Implement K-fold somehow
-    # TODO Implement hyperparameter optimization
-
     # Initialize data
-    train_dataloader, validation_dataloader, test_dataloader = setup_data(config)
+    train_loader, validation_loader, test_loader = setup_data(config, device)
+
+    # To check batches
+    # for i, batch in enumerate(train_loader):
+    #     print("----")
+    #     print(batch[0].shape)
+    #     for x in batch[1]:
+    #         print(x)
+    #     if i > 3:
+    #         break
 
     # TRAIN
     #######
 
-    # TODO Implement repetitions
-
-    if study_props is None:
-        # Run a single training
-        run_training(
-            train_dataloader,
-            validation_dataloader,
-            test_dataloader,
-            config,
-            device=device,
-        )
-    else:
-        run_training_partial = partial(
-            run_training,
-            train_dataloader,
-            validation_dataloader,
-            test_dataloader,
-            device=device,
-        )
-        study_props["study"].optimize(
-            lambda trial: study_props["objective"](trial, config, study_props["n_repetitions"], run_training_partial),
-            n_trials=study_props["n_trials"],
-        )
+    run_training(
+        train_loader,
+        validation_loader,
+        test_loader,
+        config,
+        device=device,
+    )
 
 
 if __name__ == "__main__":
@@ -339,9 +335,6 @@ if __name__ == "__main__":
 
     # Read config
     config = setup_config(args.config)
-
-    # print(config)
-    # print(config["signals"])
 
     # Run setup
     run(config)
