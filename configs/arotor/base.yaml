@@ -5,7 +5,6 @@ save: false
 
 #? Fewshot setup
 
-fs_type: prototypical # TODO subspace
 k_shot: 2
 n_way: 10
 n_query: 40
@@ -35,14 +34,16 @@ preprocessing_batch: []
 
 #? Augmentation
 
-augmentation: [] # TODO Nothing implemented currently
+augmentation: []
 
 #? Model
 
-model: micnn
-embedding_len: 256
-embedding_unit_len: true
-kaiming_init: true # TODO
+model: prototypical
+backbone: MiCNN
+embedding_len: 128
+embedding_normalization: L2
+embedding_multiplier: 1000
+kaiming_init: true
 
 #? Training
 
@@ -55,7 +56,8 @@ sch_gamma: 0.9998
 momentum: 0.965
 # Regularization
 weight_decay: 0.001
-dropout: 0.0
+cl_dropout: 0.0
+fc_dropout: 0.0
 
 # ? Other
 

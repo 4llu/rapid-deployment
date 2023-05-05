@@ -17,9 +17,9 @@ from utils.logging import log_metrics, setup_logging
 
 
 def run_training(
-    train_dataloader,
-    validation_dataloader,
-    test_dataloader,
+    train_loader,
+    validation_loader,
+    test_loader,
     config,
     device=None,
     trial=None,
@@ -30,6 +30,13 @@ def run_training(
     ##################
 
     model = setup_model(config, device)
+
+    samples, _ = next(iter(train_loader))
+    samples = samples.to(device)
+
+    out = model(samples)
+    print(out.shape)
+    quit()
 
     # TRAINING PREPARATION
     ######################
@@ -56,7 +63,14 @@ def run_training(
     # Scheduler
     scheduler = None
 
-    if config["lr_scheduler"] == "one_cycle_lr":
+    if config["lr_scheduler"] == "exponential_lr":
+        scheduler = torch.optim.lr_scheduler.ExponentialLR(
+            optimizer,
+            config["sch_gamma"],
+            verbose=False,
+        )
+
+    elif config["lr_scheduler"] == "one_cycle_lr":
         scheduler = torch.optim.lr_scheduler.OneCycleLR(
             optimizer,
             epochs=config["max_epochs"],
@@ -70,13 +84,6 @@ def run_training(
             cycle_momentum=config["cycle_momentum"],
             base_momentum=config["base_momentum"],
             max_momentum=config["max_momentum"],
-            verbose=False,
-        )
-
-    elif config["lr_scheduler"] == "exponential_lr":
-        scheduler = torch.optim.lr_scheduler.ExponentialLR(
-            optimizer,
-            config["sch_gamma"],
             verbose=False,
         )
 
@@ -151,7 +158,7 @@ def run_training(
         )
 
         # Log validation evaluator result
-        # * A separate evalutor is created each time validation is run, thus EVENTS.COMPLETED
+        # * A separate evaluator is created each time validation is run, thus EVENTS.COMPLETED
         tb_logger.attach_output_handler(
             evaluator,
             event_name=Events.COMPLETED,
@@ -196,7 +203,7 @@ def run_training(
     @trainer.on(Events.EPOCH_COMPLETED(every=2))
     def _():
         # Run validation evaluation
-        evaluator.run(validation_dataloader)
+        evaluator.run(validation_loader)
         # Print validation results
         log_metrics(evaluator, "eval")
 
@@ -218,7 +225,7 @@ def run_training(
 
             # Run test evaluation only if validation accuracy has improved and not an Optuna trial
             if not trial:
-                evaluator_test.run(test_dataloader)
+                evaluator_test.run(test_loader)
                 log_metrics(evaluator_test, "test")
                 best_test_accuracy = evaluator_test.state.metrics["test_accuracy"]
         # If not best
@@ -235,7 +242,7 @@ def run_training(
     def _():
         # * Skip for trials because the test metrics aren't used for anything there
         if not trial:
-            evaluator_test.run(test_dataloader)
+            evaluator_test.run(test_loader)
             # Print results
             log_metrics(evaluator_test, "test")
 
@@ -255,7 +262,7 @@ def run_training(
     # TODO Optuna pruning (This hasn't been working)
 
     # Start training
-    trainer.run(train_dataloader, max_epochs=config["max_epochs"])
+    trainer.run(train_loader, max_epochs=config["max_epochs"])
 
     # Only used by Optuna for hyperparameter optimization
     # Specifically, validation accuracy
