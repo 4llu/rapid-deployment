@@ -5,9 +5,9 @@ save: false
 
 #? Fewshot setup
 
-k_shot: 2
-n_way: 10
-n_query: 40
+k_shot: 1
+n_way: 40
+n_query: 12
 mix_rpms: False
 mix_sensors: False
 separate_query_and_support: false
@@ -39,11 +39,16 @@ augmentation: []
 #? Model
 
 model: prototypical
-backbone: MiCNN
-embedding_len: 128
-embedding_normalization: L2
-embedding_multiplier: 1000
+backbone: WDCNN
 kaiming_init: true
+embedding_len: 256
+# Lp-norm
+embedding_normalization_type: lp
+lp_norm: 2
+# Mahalanobis
+# embedding_normalization_type: mahalanobis # TODO
+
+embedding_multiplier: 1000
 
 #? Training
 

@@ -15,7 +15,8 @@ from torch.utils.data import DataLoader, Dataset, Sampler
 def fewshot_data_selection(data, sensors, rpm, classes):
     selected_data = data.loc[:, sensors + ["rpm", "class"]]
     selected_data = selected_data[
-        (selected_data["rpm"].isin(rpm)) & (selected_data["class"].isin(classes))
+        (selected_data["rpm"].isin(rpm)) & (
+            selected_data["class"].isin(classes))
     ]
 
     return selected_data
@@ -93,19 +94,19 @@ class FewShotDataset(Dataset):
             support_query_set.append(
                 measurement[
                     self.support_offset
-                    + i : self.support_offset
+                    + i: self.support_offset
                     + i
                     + self.config["window_width"]
                 ]
             )
         # Query samples
-        for i in sample_idxs[self.config["k_shot"] :]:
+        for i in sample_idxs[self.config["k_shot"]:]:
             # i corresponds to window index, not measurement samples, so it need to be multiplied by the stride
             j = i * self.config["window_overlap"]
             support_query_set.append(
                 measurement[
                     self.query_offset
-                    + i : self.query_offset
+                    + i: self.query_offset
                     + j
                     + self.config["window_width"]
                 ]
@@ -168,7 +169,8 @@ class FewShotMixedDataset(Dataset):
 
         # * Calculate the number of windows per measurement
         self.max_measurement_index = math.ceil(
-            (min_measurement_length - config["window_width"]) / self.window_stride
+            (min_measurement_length -
+             config["window_width"]) / self.window_stride
         )
 
         # Used for separating support and query sets
@@ -228,7 +230,7 @@ class FewShotMixedDataset(Dataset):
             support_query_set.append(
                 self.data[idx][
                     self.support_offset
-                    + j : self.support_offset
+                    + j: self.support_offset
                     + j
                     + self.config["window_width"]
                 ]
@@ -238,19 +240,19 @@ class FewShotMixedDataset(Dataset):
         query_sampling = []
         if self.config["mix_rpms"]:
             query_sampling = zip(
-                sample_idxs[self.config["k_shot"] :],  # idx
+                sample_idxs[self.config["k_shot"]:],  # idx
                 self.rpm_sampling_pattern,  # rpm
                 np.repeat(idx[2], self.config["n_query"]),  # sensor
             )
         elif self.config["mix_sensors"]:
             query_sampling = zip(
-                sample_idxs[self.config["k_shot"] :],
+                sample_idxs[self.config["k_shot"]:],
                 np.repeat(idx[1], self.config["n_query"]),
                 self.sensor_sampling_pattern,
             )
         else:
             query_sampling = zip(
-                sample_idxs[self.config["k_shot"] :],
+                sample_idxs[self.config["k_shot"]:],
                 np.repeat(idx[1], self.config["n_query"]),
                 np.repeat(idx[2], self.config["n_query"]),
             )
@@ -262,7 +264,7 @@ class FewShotMixedDataset(Dataset):
             support_query_set.append(
                 self.data[idx][
                     self.query_offset
-                    + j : self.query_offset
+                    + j: self.query_offset
                     + j
                     + self.config["window_width"]
                 ]
@@ -303,19 +305,22 @@ class FewshotBatchSampler(Sampler):
             class_perm = self.classes
             # Only permutate the class order if it matters
             if math.floor(len(self.classes) / self.config["n_way"]) != 1:
-                class_perm = torch.randperm(len(self.classes), dtype=torch.long)
+                class_perm = torch.randperm(
+                    len(self.classes), dtype=torch.long)
 
             # Go through class permutation
             for j in range(math.floor(len(self.classes) / self.config["n_way"])):
                 class_batch = class_perm[
-                    j * self.config["n_way"] : (j + 1) * self.config["n_way"]
+                    j * self.config["n_way"]: (j + 1) * self.config["n_way"]
                 ]
 
                 batch = list(
                     zip(
                         class_batch,
-                        [self.rpms[rpm_seq[i]] for _ in range(len(class_batch))],
-                        [self.sensors[sensor_seq[i]] for _ in range(len(class_batch))],
+                        [self.rpms[rpm_seq[i]]
+                            for _ in range(len(class_batch))],
+                        [self.sensors[sensor_seq[i]]
+                            for _ in range(len(class_batch))],
                     )
                 )
 
@@ -373,7 +378,8 @@ def get_arotor_data(config, device):
     abs_path = os.path.dirname(__file__)
     data_folder = os.path.join(abs_path, os.pardir, os.pardir, "data")
 
-    data = pd.read_feather(os.path.join(data_folder, "processed", "arotor.feather"))
+    data = pd.read_feather(os.path.join(
+        data_folder, "processed", "arotor.feather"))
 
     # Data selection
     ################
