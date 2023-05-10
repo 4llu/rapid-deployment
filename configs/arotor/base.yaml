@@ -1,26 +1,28 @@
 #? Creation
 name: ARotor
 log: true
-save: false
+save: false # TODO
+eval_freq: 10 # * Decrease for hyper opt and final testing
+eval_episodes: 10 # * Increase for hyper opt and final testing
 
 #? Fewshot setup
 
 k_shot: 1
-n_way: 40
-n_query: 12
+n_way: 10
+n_query: 40
 mix_rpms: False
 mix_sensors: False
-separate_query_and_support: false
+separate_query_and_support: False
 
 #? Data
 
 data: ARotor
-train_sensors: [acc4, acc3]
-validation_sensors: [acc1]
-test_sensors: [acc2]
-train_rpm: [750, 1000]
-validation_rpm: [1000]
-test_rpm: [250, 500, 1250, 1500]
+train_sensors: [acc1]
+validation_sensors: [acc2]
+test_sensors: [acc3]
+train_rpm: [250, 500, 750, 1000, 1250]
+validation_rpm: [250, 500, 750, 1000, 1250]
+test_rpm: [250, 500, 750, 1000, 1250]
 train_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 validation_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 test_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -39,12 +41,12 @@ augmentation: []
 #? Model
 
 model: prototypical
-backbone: WDCNN
+backbone: MiCNN
 kaiming_init: true
 embedding_len: 256
 # Lp-norm
 embedding_normalization_type: lp
-lp_norm: 2
+lp_norm: 1
 # Mahalanobis
 # embedding_normalization_type: mahalanobis # TODO
 
@@ -52,15 +54,15 @@ embedding_multiplier: 1000
 
 #? Training
 
-max_epochs: 400
-patience: 100
+max_epochs: 300
+patience: 50
 optimizer: AdamW
 lr: 0.003
 lr_scheduler: ExponentialLR
-sch_gamma: 0.9998
+sch_gamma: 0.9999999
 momentum: 0.965
 # Regularization
-weight_decay: 0.001
+weight_decay: 0.0001
 cl_dropout: 0.0
 fc_dropout: 0.0
 

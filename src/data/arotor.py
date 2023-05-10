@@ -289,48 +289,50 @@ class FewShotMixedDataset(Dataset):
 
 class FewshotBatchSampler(Sampler):
     def __init__(self, config, classes, rpms, sensors):
+        assert config["n_way"] <= len(classes), "n_way must be less than the total number of classes available!"
         self.config = config
         self.classes = classes
         self.rpms = rpms
         self.sensors = sensors
 
-    def __iter__(self):
         # Generate `seq_len` at a time for efficiency
-        seq_len = 200
-        rpm_seq = torch.randint(high=len(self.rpms), size=(seq_len,))
-        sensor_seq = torch.randint(high=len(self.sensors), size=(seq_len,))
+        self.seq_len = 200
+        self.i = 0
+        self.rpm_seq = torch.randint(high=len(self.rpms), size=(self.seq_len,))
+        self.sensor_seq = torch.randint(high=len(self.sensors), size=(self.seq_len,))
 
-        i = 0
-        while i < seq_len:
-            class_perm = self.classes
-            # Only permutate the class order if it matters
-            if math.floor(len(self.classes) / self.config["n_way"]) != 1:
-                class_perm = torch.randperm(
-                    len(self.classes), dtype=torch.long)
+    def __len__(self):
+        return math.floor(len(self.classes) / self.config["n_way"])
 
-            # Go through class permutation
-            for j in range(math.floor(len(self.classes) / self.config["n_way"])):
-                class_batch = class_perm[
-                    j * self.config["n_way"]: (j + 1) * self.config["n_way"]
-                ]
+    def __iter__(self):
 
-                batch = list(
-                    zip(
-                        class_batch,
-                        [self.rpms[rpm_seq[i]]
-                            for _ in range(len(class_batch))],
-                        [self.sensors[sensor_seq[i]]
-                            for _ in range(len(class_batch))],
-                    )
+        class_perm = self.classes
+        # Only permutate the class order if it matters
+        if math.floor(len(self.classes) / self.config["n_way"]) != 1:
+            class_perm = np.random.permutation(len(self.classes))
+
+        # Go through class permutation
+        for j in range(math.floor(len(self.classes) / self.config["n_way"])):
+            class_batch = class_perm[
+                j * self.config["n_way"]: (j + 1) * self.config["n_way"]
+            ]
+
+            batch = list(
+                zip(
+                    class_batch,
+                    [self.rpms[self.rpm_seq[self.i]] for _ in range(len(class_batch))],
+                    [self.sensors[self.sensor_seq[self.i]] for _ in range(len(class_batch))],
                 )
+            )
 
-                i += 1
+            yield batch
 
-                yield batch
-
-                # Advance in rpm and sensor seq
-                if i == seq_len:
-                    break
+            # Replenish rpm and sensor sews if necessary
+            self.i += 1
+            if self.i == self.seq_len:
+                self.i = 0
+                self.rpm_seq = torch.randint(high=len(self.rpms), size=(self.seq_len,))
+                self.sensor_seq = torch.randint(high=len(self.sensors), size=(self.seq_len,))
 
 
 def fewshot_collate(batch):

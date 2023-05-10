@@ -3,6 +3,12 @@ from functools import partial
 import torch
 from ignite.engine import Engine
 
+# Helpers
+#########
+
+def target_converter(targets, config):
+    return targets.repeat_interleave(config["n_query"])
+
 # TRAINER
 #########
 
@@ -12,18 +18,25 @@ def train_function_wrapper(engine, batch, config, model, optimizer, loss_fn, dev
     model.train()
     optimizer.zero_grad(set_to_none=True)
 
-    samples = batch[0].to(device)
-    targets = batch[1].to(device)
+    # Non-blocking probably has no effect here,
+    # because model(samples) is an immediate sync point
+    samples = batch[0].to(device, non_blocking=True)
+    # Conversion because the labels are returned as a (class, rpm, sensor) tuple
+    # and we only care about the class here
+    targets = torch.tensor(list(zip(*batch[1]))[0], dtype=torch.long, device=device)
+    # Original targets are for episode classes, not including that there are n_query queries
+    # per class
+    targets = target_converter(targets, config)
 
     # Forward pass and loss calculation
 
     # Automatic mixed precision (speed optimization)
     # https://pytorch.org/docs/stable/amp.html
     if config["use_amp"]:
-        if str(device) == "mps":
-            raise Exception("AMP disabled for mps!")
+        # if str(device) == "mps":
+        #     raise Exception("AMP disabled for mps!")
 
-        with torch.autocast(str(device), enabled=config["use_amp"]):
+        with torch.autocast(str(device)):
             outputs = model(samples)
             loss = loss_fn(outputs, targets)
     else:
@@ -90,21 +103,29 @@ def setup_trainer(
 def eval_function_wrapper(engine, batch, config, model, device):
     model.eval()
 
-    samples = batch[0].to(device, non_blocking=True)  # Non-blocking probably has no effect here,
-    targets = batch[1].to(device, non_blocking=True)  # because model(samples) is an immediate sync point
+    # Non-blocking probably has no effect here,
+    # because model(samples) is an immediate sync point
+    samples = batch[0].to(device, non_blocking=True)
+    # Conversion because the labels are returned as a (class, rpm, sensor) tuple
+    # and we only care about the class here
+    targets = torch.tensor(list(zip(*batch[1]))[0], dtype=torch.long, device=device)
+    # Original targets are for episode classes, not including that there are n_query queries
+    # per class
+    targets = target_converter(targets, config)
 
     # Forward pass and loss calculation
 
     # Automatic mixed precision (speed optimization)
     # https://pytorch.org/docs/stable/amp.html
-    if config["use_amp"]:
-        if str(device) == "mps":
-            raise Exception("AMP disabled for mps!")
+    # ! AMP disabled for validation because can't use scaler here, which might affect stuff
+    # if config["use_amp"]:
+    #     if str(device) == "mps":
+    #         raise Exception("AMP disabled for mps!")
 
-        with torch.autocast(str(device), enabled=config["use_amp"]):
-            outputs = model(samples)
-    else:
-        outputs = model(samples)
+    #     with torch.autocast(str(device), enabled=config["use_amp"]):
+    #         outputs = model(samples)
+    # else:
+    outputs = model(samples)
 
     return outputs, targets
 

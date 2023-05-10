@@ -8,6 +8,7 @@ import torch
 from ignite.contrib.handlers.tensorboard_logger import *
 from ignite.engine import Events
 from ignite.metrics import Accuracy, Loss
+from ignite.metrics.metric import MetricUsage
 
 from data.data import setup_data
 from models.models import setup_model
@@ -93,6 +94,11 @@ def run_training(
     evaluator = setup_evaluator(config, model, device)  # Validation
     evaluator_test = setup_evaluator(config, model, device)  # Testing
 
+    # Enable the use of multiple episodes for the final metrics of evaluation and testing
+    runWiseUsage = MetricUsage(
+        Events.STARTED, Events.COMPLETED, Events.ITERATION_COMPLETED
+    )
+
     # Setup metric tracking for validation and testing
     for ev, label in [(evaluator, "val"), (evaluator_test, "test")]:
         # Compute accuracy to be used in the metrics below
@@ -110,13 +116,13 @@ def run_training(
         }
         # Attach to trainers
         for name, metric in metrics.items():
-            metric.attach(ev, name)
+            metric.attach(ev, name, usage=runWiseUsage)
 
     # Global metrics
     best_accuracy = 0
     best_test_accuracy = 0
     best_epoch = 0
-    patience_counter = 0  # FIXME Is patience done manually?
+    patience_counter = 0  # FIXME Could patience be done with Ignite?
 
     # Setup logging
     train_logger = setup_logging(config, "trainer")
@@ -194,10 +200,10 @@ def run_training(
     )
 
     # Run validation evaluation every second epoch
-    @trainer.on(Events.EPOCH_COMPLETED(every=2))
+    @trainer.on(Events.EPOCH_COMPLETED(every=config["eval_freq"]))
     def _():
         # Run validation evaluation
-        evaluator.run(validation_loader)
+        evaluator.run(validation_loader, epoch_length=config["eval_episodes"])
         # Print validation results
         log_metrics(evaluator, "eval")
 
@@ -219,7 +225,7 @@ def run_training(
 
             # Run test evaluation only if validation accuracy has improved and not an Optuna trial
             if not trial:
-                evaluator_test.run(test_loader)
+                evaluator_test.run(test_loader, epoch_length=config["eval_episodes"])
                 log_metrics(evaluator_test, "test")
                 best_test_accuracy = evaluator_test.state.metrics["test_accuracy"]
         # If not best
@@ -236,7 +242,7 @@ def run_training(
     def _():
         # * Skip for trials because the test metrics aren't used for anything there
         if not trial:
-            evaluator_test.run(test_loader)
+            evaluator_test.run(test_loader, epoch_length=config["eval_episodes"])
             # Print results
             log_metrics(evaluator_test, "test")
 
@@ -255,7 +261,6 @@ def run_training(
 
     # TODO Checkpoint system
     # TODO Optuna pruning (This hasn't been working)
-
     # Start training
     trainer.run(train_loader, max_epochs=config["max_epochs"])
 
