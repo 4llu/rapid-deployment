@@ -89,8 +89,7 @@ def run_training(
     ##########
 
     # Setup trainers
-    trainer = setup_trainer(config, model, optimizer,
-                            loss_fn, device)  # Training
+    trainer = setup_trainer(config, model, optimizer, loss_fn, device)  # Training
     evaluator = setup_evaluator(config, model, device)  # Validation
     evaluator_test = setup_evaluator(config, model, device)  # Testing
 
@@ -252,8 +251,7 @@ def run_training(
         # Print global results
         print()
         print(
-            "Best validation accuracy: {} @ epoch {}".format(
-                best_accuracy, best_epoch)
+            "Best validation accuracy: {} @ epoch {}".format(best_accuracy, best_epoch)
         )
         print()
         print("Respective test accuracy: {}".format(best_test_accuracy))

@@ -6,6 +6,7 @@ class EmbeddingLpNormalizer(nn.Module):
     """
     Performs the Lp normalization on the input. Also scales the normalized embedding.
     """
+
     # Note that torch's own `normalize` only works for positive vectors
 
     def __init__(self, config):
@@ -17,8 +18,9 @@ class EmbeddingLpNormalizer(nn.Module):
 
         def lp_norm(x):
             # ||x||_p = (x_1^p + ... + x_n^p)^(1/p)
-            norm = x.abs().pow(self.config["lp_norm"]).sum(
-                dim=-1, keepdim=True) ** (1.0 / self.config["lp_norm"])
+            norm = x.abs().pow(self.config["lp_norm"]).sum(dim=-1, keepdim=True) ** (
+                1.0 / self.config["lp_norm"]
+            )
             return x / norm
 
         self.normalizer = lp_norm
@@ -42,10 +44,11 @@ class Prototypical(nn.Module):
         if self.config["embedding_normalization_type"] == "lp":
             self.embedding_normalizer = EmbeddingLpNormalizer(config)
         # elif self.config["embedding_normalization_type"] == "mahalanobis":
-            # self.embedding_normalizer = TODO
+        # self.embedding_normalizer = TODO
         elif self.config["embedding_normalization_type"]:  # If not false
             raise Exception(
-                f"No such embedding normalization as {self.config['embedding_normalize']}")
+                f"No such embedding normalization as {self.config['embedding_normalize']}"
+            )
 
     def forward(self, support_query):
         # Starts as [n_way, k_shot + n_query, window_length]
@@ -80,18 +83,52 @@ class Prototypical(nn.Module):
         self._prev_prototypes = torch.clone(prototypes).detach()
 
         # Query embeddings
-        query_embeddings = embeddings[:, self.config["k_shot"]:]
+        query_embeddings = embeddings[:, self.config["k_shot"] :]
         # Normalize query embeddings
         if self.embedding_normalizer:
             query_embeddings = self.embedding_normalizer(query_embeddings)
         # Save query embeddings
         self._prev_query_embeddings = query_embeddings.clone().detach()
         # Reshape to work with cdist
-        query_embeddings = query_embeddings.reshape(
-            -1, self.config["embedding_len"])
+        query_embeddings = query_embeddings.reshape(-1, self.config["embedding_len"])
 
         # Calculate distances from each query embedding to each prototype
         # -1 because we wan't shorter distance to be better (bigger prob. after softmax)
         out = -1 * torch.cdist(query_embeddings, prototypes, p=2.0)
+
+        return out  # , prototypes
+
+    def forward_old(self, support_query):
+        support_query = support_query.unsqueeze(2)
+
+        support_query = support_query.view(
+            (-1, support_query.shape[2], support_query.shape[3])
+        )
+        embeddings = self.backbone(support_query)
+        embeddings = embeddings.view(
+            (self.config["n_way"], self.config["k_shot"] + self.config["n_query"], -1)
+        )
+
+        support_embeddings = embeddings[:, : self.config["k_shot"]]
+        support_embeddings = support_embeddings.mean(dim=1)
+        prototypes = torch.clone(support_embeddings)
+        support_embeddings = support_embeddings.unsqueeze(0).repeat(
+            self.config["n_way"], 1, 1
+        )
+
+        query_embeddings = embeddings[:, self.config["k_shot"] :]
+        # self._prev_query_embeddings = query_embeddings.clone().detach()
+        # self._prev_prototypes = prototypes
+        # if self.dropout:
+        #     query_embeddings = self.dropout(query_embeddings)
+
+        # print("Last:", out.shape)
+        print("QE", query_embeddings.shape)
+        print("SE", support_embeddings.shape)
+        out = -1 * torch.cdist(query_embeddings, support_embeddings, p=2.0)
+        print("Out 1:", out.shape)
+        out = torch.flatten(out, start_dim=0, end_dim=1)
+        print("Out 2:", out.shape)
+        quit()
 
         return out  # , prototypes

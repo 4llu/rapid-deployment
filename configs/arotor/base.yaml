@@ -9,7 +9,7 @@ eval_episodes: 10 # * Increase for hyper opt and final testing
 
 k_shot: 1
 n_way: 10
-n_query: 40
+n_query: 20
 mix_rpms: False
 mix_sensors: False
 separate_query_and_support: False
@@ -17,9 +17,9 @@ separate_query_and_support: False
 #? Data
 
 data: ARotor
-train_sensors: [acc1]
+train_sensors: [acc3]
 validation_sensors: [acc2]
-test_sensors: [acc3]
+test_sensors: [acc1]
 train_rpm: [250, 500, 750, 1000, 1250]
 validation_rpm: [250, 500, 750, 1000, 1250]
 test_rpm: [250, 500, 750, 1000, 1250]
@@ -41,12 +41,13 @@ augmentation: []
 #? Model
 
 model: prototypical
-backbone: MiCNN
+backbone: WDCNN
 kaiming_init: true
 embedding_len: 256
+# embedding_normalization_type: False
 # Lp-norm
 embedding_normalization_type: lp
-lp_norm: 1
+lp_norm: 2
 # Mahalanobis
 # embedding_normalization_type: mahalanobis # TODO
 
@@ -54,8 +55,8 @@ embedding_multiplier: 1000
 
 #? Training
 
-max_epochs: 300
-patience: 50
+max_epochs: 500
+patience: 200
 optimizer: AdamW
 lr: 0.003
 lr_scheduler: ExponentialLR

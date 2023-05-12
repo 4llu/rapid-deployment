@@ -74,11 +74,9 @@ class WDCNN(nn.Module):
     # For Kaiming weight initialization
     def _init_weights(self, module):
         if isinstance(module, nn.Linear):
-            nn.init.kaiming_uniform_(
-                module.weight, mode="fan_in", nonlinearity="relu")
+            nn.init.kaiming_uniform_(module.weight, mode="fan_in", nonlinearity="relu")
             if module.bias is not None:
-                fan_in, _ = nn.init._calculate_fan_in_and_fan_out(
-                    module.weight)
+                fan_in, _ = nn.init._calculate_fan_in_and_fan_out(module.weight)
                 bound = 1 / math.sqrt(fan_in)
                 nn.init.uniform_(module.bias, -bound, bound)
 
@@ -117,8 +115,11 @@ class WDCNN(nn.Module):
 
         # Match to class num
         out = self.fc1(out)
+        # out = F.relu(out)  # XXX Old
         if verbose:
             print(out.shape)
+
+        # out = F.normalize(out, p=1.0, dim=1) * 1000  # XXX Old
 
         return out
 
@@ -139,12 +140,9 @@ class WDCNN_orig(nn.Module):
             bias=bias,
             dropout=config["cl_dropout"],
         )
-        self.cn_layer2 = ConvLayer(
-            16, 32, bias=bias, dropout=config["cl_dropout"])
-        self.cn_layer3 = ConvLayer(
-            32, 64, bias=bias, dropout=config["cl_dropout"])
-        self.cn_layer4 = ConvLayer(
-            64, 64, bias=bias, dropout=config["cl_dropout"])
+        self.cn_layer2 = ConvLayer(16, 32, bias=bias, dropout=config["cl_dropout"])
+        self.cn_layer3 = ConvLayer(32, 64, bias=bias, dropout=config["cl_dropout"])
+        self.cn_layer4 = ConvLayer(64, 64, bias=bias, dropout=config["cl_dropout"])
         self.cn_layer5 = ConvLayer(
             64, 64, padding=0, bias=bias, dropout=config["cl_dropout"]
         )

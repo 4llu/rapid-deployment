@@ -6,14 +6,18 @@ from ignite.engine import Engine
 # Helpers
 #########
 
+
 def target_converter(targets, config):
     return targets.repeat_interleave(config["n_query"])
+
 
 # TRAINER
 #########
 
 
-def train_function_wrapper(engine, batch, config, model, optimizer, loss_fn, device, scaler):
+def train_function_wrapper(
+    engine, batch, config, model, optimizer, loss_fn, device, scaler
+):
     # Reset
     model.train()
     optimizer.zero_grad(set_to_none=True)
