@@ -79,7 +79,7 @@ def main():
         for j in range(n_repetitions):
             print()
             print("############################")
-            print(f"REPETITION {i} OF TRIAL {j}")
+            print(f"REPETITION {j} OF TRIAL {i}")
             print("############################")
             print()
             val_accuracy = run_training(
