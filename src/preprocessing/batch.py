@@ -21,7 +21,7 @@ def individual_min_max(support_query_set, config):
     return support_query_set
 
 
-def FFT(train_data, validation_data, test_data, config):
+def FFT(support_query_set, config):
     #! FIXME Check that this is working correctly
     # * This changes the sample length!!!
     # * Specifically, halves it
@@ -51,11 +51,11 @@ def preprocess_batch(support_query_set, config):
     """
 
     # Individual min max
-    if "individual_min_max" in config["preprocessing_individual"]:
+    if "individual_min_max" in config["preprocessing_batch"]:
         support_query_set = individual_min_max(support_query_set, config)
 
     # FFT
-    if "FFT" in config["preprocessing_individual"]:
+    if "FFT" in config["preprocessing_batch"]:
         support_query_set = FFT(support_query_set, config)
 
     return support_query_set

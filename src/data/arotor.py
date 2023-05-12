@@ -274,7 +274,7 @@ class FewShotMixedDataset(Dataset):
 
         # Transformations
         if len(self.config["preprocessing_batch"]) > 0:
-            support_query_set = preprocess_batch(support_query_set)
+            support_query_set = preprocess_batch(support_query_set, self.config)
 
         # Swap support and query sets to mix samples between batches
         if not self.config["separate_query_and_support"]:

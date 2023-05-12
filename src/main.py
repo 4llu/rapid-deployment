@@ -260,7 +260,7 @@ def run_training(
     # TODO Checkpoint system
     # TODO Optuna pruning (This hasn't been working)
     # Start training
-    trainer.run(train_loader, max_epochs=config["max_epochs"])
+    trainer.run(train_loader, max_epochs=config["max_epochs"])  # , epoch_length=20)
 
     # Only used by Optuna for hyperparameter optimization
     # Specifically, validation accuracy

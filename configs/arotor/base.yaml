@@ -32,7 +32,7 @@ window_overlap: 0.95
 #? Preprocessing
 
 preprocessing_full: []
-preprocessing_batch: []
+preprocessing_batch: ["FFT"]
 
 #? Augmentation
 
@@ -61,6 +61,7 @@ optimizer: AdamW
 lr: 0.003
 lr_scheduler: ExponentialLR
 sch_gamma: 0.9999999
+# sch_gamma: 0.9998
 momentum: 0.965
 # Regularization
 weight_decay: 0.0001

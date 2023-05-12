@@ -25,14 +25,14 @@ class MiCNN(nn.Module):
         self.cn_layer2 = ConvLayer(16, 32, dropout=config["cl_dropout"])
         self.cn_layer3 = ConvLayer(32, 64, dropout=config["cl_dropout"])
         # * Note the fc_dropout here
-        self.cn_layer4 = ConvLayer(64, 64, dropout=config["fc_dropout"])
+        self.cn_layer4 = ConvLayer(64, 128, dropout=config["fc_dropout"])
 
         # Global average pooling
         self.globalAvgPool = nn.AvgPool1d(kernel_size=12)  # FIXME Kernel size
 
         # Classifier
         self.fc1 = nn.Linear(
-            64,  # FIXME to match channel size
+            128,
             config["embedding_len"],
         )
 
@@ -43,11 +43,9 @@ class MiCNN(nn.Module):
     # For Kaiming weight initialization
     def _init_weights(self, module):
         if isinstance(module, nn.Linear):
-            nn.init.kaiming_uniform_(
-                module.weight, mode="fan_in", nonlinearity="relu")
+            nn.init.kaiming_uniform_(module.weight, mode="fan_in", nonlinearity="relu")
             if module.bias is not None:
-                fan_in, _ = nn.init._calculate_fan_in_and_fan_out(
-                    module.weight)
+                fan_in, _ = nn.init._calculate_fan_in_and_fan_out(module.weight)
                 bound = 1 / math.sqrt(fan_in)
                 nn.init.uniform_(module.bias, -bound, bound)
 
