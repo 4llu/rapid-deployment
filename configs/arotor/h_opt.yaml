@@ -1,0 +1,72 @@
+#? Creation
+name: ARotor_h_opt
+log: false
+save: false # TODO
+eval_freq: 20 # * Decrease for hyper opt and final testing
+eval_episodes: 30 # * Increase for hyper opt and final testing
+
+#? Fewshot setup
+
+k_shot: 1
+n_way: 10
+n_query: 60
+mix_rpms: False
+mix_sensors: False
+separate_query_and_support: False
+
+#? Data
+
+data: ARotor
+train_sensors: [acc3]
+validation_sensors: [acc2]
+test_sensors: [acc1, acc4]
+train_rpm: [250, 500, 750, 1000, 1250]
+validation_rpm: [250, 500, 750, 1000, 1250]
+test_rpm: [250, 500, 750, 1000, 1250]
+train_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+validation_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+test_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+window_width: 6000
+window_overlap: 0.95
+
+#? Preprocessing
+
+preprocessing_full: []
+preprocessing_batch: []
+
+#? Augmentation
+
+augmentation: []
+
+#? Model
+
+model: prototypical
+backbone: WDCNN
+kaiming_init: true
+embedding_len: 256
+# embedding_normalization_type: False
+# Lp-norm
+embedding_normalization_type: lp
+lp_norm: 2
+# Mahalanobis
+# embedding_normalization_type: mahalanobis # TODO
+
+embedding_multiplier: 1000
+
+#? Training
+
+max_epochs: 300
+patience: 100
+optimizer: AdamW
+lr: 0.003
+lr_scheduler: ExponentialLR
+sch_gamma: 0.9999999
+momentum: 0.965
+# Regularization
+weight_decay: 0.0001
+cl_dropout: 0.0
+fc_dropout: 0.0
+
+# ? Other
+
+use_amp: false

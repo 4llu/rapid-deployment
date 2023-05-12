@@ -23,9 +23,9 @@ def run_training(
     test_loader,
     config,
     device=None,
-    trial=None,
+    trial=False,
 ):
-    # * Use this to run a single trial
+    # * Use this to run a single training
 
     # INITIALIZE MODEL
     ##################
@@ -132,8 +132,8 @@ def run_training(
 
     # Tensorboard logger
 
-    # Do not perform TB logging if performing hyperparameter optimization (Optuna trials)
-    if trial is None and config["log"]:
+    # Only if logging turned on (make extra sure turned of for Optuna trials)
+    if not trial and config["log"]:
         abs_path = os.path.dirname(__file__)
         time = datetime.now().strftime("%m-%d_%H-%M-%S")
 
