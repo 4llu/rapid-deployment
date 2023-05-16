@@ -33,6 +33,8 @@ window_overlap: 0.95
 
 preprocessing_full: []
 preprocessing_batch: []
+FFT: False # XXX Only for old ARotor
+normalize: False # XXX Only for old ARotor
 
 #? Augmentation
 
