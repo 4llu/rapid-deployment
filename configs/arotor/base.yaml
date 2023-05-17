@@ -16,7 +16,7 @@ separate_query_and_support: False
 
 #? Data
 
-data: ARotor_old
+data: ARotor
 train_sensors: [acc3]
 validation_sensors: [acc2]
 test_sensors: [acc1]
@@ -32,7 +32,7 @@ window_overlap: 0.95
 #? Preprocessing
 
 preprocessing_full: []
-preprocessing_batch: []
+preprocessing_batch: ["FFT"]
 
 #? Augmentation
 
@@ -44,10 +44,10 @@ model: prototypical
 backbone: WDCNN
 kaiming_init: true
 embedding_len: 256
-# embedding_normalization_type: False
+embedding_normalization_type: False
 # Lp-norm
-embedding_normalization_type: lp
-lp_norm: 2
+# embedding_normalization_type: lp
+# lp_norm: 2
 # Mahalanobis
 # embedding_normalization_type: mahalanobis # TODO
 
@@ -60,8 +60,8 @@ patience: 200
 optimizer: AdamW
 lr: 0.003
 lr_scheduler: ExponentialLR
-sch_gamma: 0.9999999
-# sch_gamma: 0.9998
+# sch_gamma: 0.9999999
+sch_gamma: 0.9998
 momentum: 0.965
 # Regularization
 weight_decay: 0.0001

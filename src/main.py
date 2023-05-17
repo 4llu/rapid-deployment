@@ -236,8 +236,8 @@ def run_training(
             if patience_counter >= config["patience"]:
                 trainer.terminate()
 
-    # Run test evaluation every once in a while
-    @trainer.on(Events.EPOCH_COMPLETED(every=10))
+    # Run test evaluation every once in a while in addition to when new best validation score is achieved
+    @trainer.on(Events.EPOCH_COMPLETED(every=12))
     def _():
         # * Skip for trials because the test metrics aren't used for anything there
         if not trial:
@@ -260,7 +260,7 @@ def run_training(
     # TODO Checkpoint system
     # TODO Optuna pruning (This hasn't been working)
     # Start training
-    trainer.run(train_loader, max_epochs=config["max_epochs"])  # , epoch_length=20)
+    trainer.run(train_loader, max_epochs=config["max_epochs"], epoch_length=20)
 
     # Only used by Optuna for hyperparameter optimization
     # Specifically, validation accuracy
@@ -289,6 +289,7 @@ def setup_device():
     # Additional info when using cuda
     if device.type == "cuda":
         print(torch.cuda.get_device_name(0))
+    print()
 
     return device
 

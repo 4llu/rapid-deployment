@@ -27,8 +27,15 @@ def FFT(support_query_set, config):
     # * Specifically, halves it
 
     # Keep only the magnitude of the positive complex conjugates
+    print(support_query_set.shape)
+    print(support_query_set.dtype)
+    print(support_query_set.device)
     support_query_set = torch.fft.rfft(support_query_set)
     support_query_set = torch.abs(support_query_set)
+    print(support_query_set.shape)
+    print(support_query_set.dtype)
+    print(support_query_set.device)
+    quit()
 
     return support_query_set
 

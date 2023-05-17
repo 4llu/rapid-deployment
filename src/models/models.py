@@ -13,6 +13,10 @@ def setup_model(config, device):
         from models.backbones.wdcnn import WDCNN
 
         backbone = WDCNN(config)
+    elif config["backbone"] == "WDCNN_old":
+        from models.backbones.wdcnn_old import WDCNN_old
+
+        backbone = WDCNN_old(config)
     elif config["backbone"] == "MiCNN":
         from models.backbones.micnn import MiCNN
 

@@ -13,6 +13,8 @@ n_query: 18
 mix_rpms: False
 mix_sensors: False
 separate_query_and_support: False
+rpm_status: batch # XXX Only old
+sensor_status: batch # XXX only old
 
 #? Data
 
@@ -33,7 +35,7 @@ window_overlap: 0.95
 
 preprocessing_full: []
 preprocessing_batch: []
-FFT: False # XXX Only for old ARotor
+FFT: True # XXX Only for old ARotor
 normalize: False # XXX Only for old ARotor
 
 #? Augmentation
@@ -43,13 +45,14 @@ augmentation: []
 #? Model
 
 model: prototypical
-backbone: WDCNN
+backbone: WDCNN_old
 kaiming_init: true
 embedding_len: 256
-# embedding_normalization_type: False
+embedding_unit_len: True # XXX Only for old
+embedding_normalization_type: False
 # Lp-norm
-embedding_normalization_type: lp
-lp_norm: 2
+# embedding_normalization_type: lp
+# lp_norm: 2
 # Mahalanobis
 # embedding_normalization_type: mahalanobis # TODO
 
@@ -62,8 +65,8 @@ patience: 200
 optimizer: AdamW
 lr: 0.003
 lr_scheduler: ExponentialLR
-sch_gamma: 0.9999999
-# sch_gamma: 0.9998
+# sch_gamma: 0.9999999
+sch_gamma: 0.9998
 momentum: 0.965
 # Regularization
 weight_decay: 0.0001
