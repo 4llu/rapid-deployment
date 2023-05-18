@@ -154,6 +154,11 @@ class FewShotDatasetMixed(Dataset):
             : self.config["k_shot"] + self.config["n_query"]
         ]
 
+        window_stride = math.floor(
+            (1 - self.config["window_overlap"]) * self.config["window_width"]
+        )
+        sample_idxs *= window_stride
+
         # Get samples
 
         support = []
@@ -161,6 +166,7 @@ class FewShotDatasetMixed(Dataset):
         sample_definitions = list(
             zip(sample_classes, sample_rpms, sample_sensors, sample_idxs)
         )
+
         for c, r, s, i in sample_definitions[: self.config["k_shot"]]:
             support.append(self.support[c, r, s, i : i + self.config["window_width"]])
         for c, r, s, i in sample_definitions[self.config["k_shot"] :]:
@@ -171,12 +177,8 @@ class FewShotDatasetMixed(Dataset):
         # Possible preprocessing
 
         if self.config["FFT"]:
-            print(support_query_set.shape)
-            print(support_query_set.dtype)
-            print(support_query_set.device)
             support_query_set = torch.fft.rfft(support_query_set)
             support_query_set = torch.abs(support_query_set)
-            quit()
 
         if self.config["normalize"]:
             mean = (
@@ -310,7 +312,7 @@ def format_fewshot_classes_mixed(data, config, device):
 
     # Convert to tensor
     formatted_data = torch.tensor(formatted_data, device=device)
-    formatted_support, formatted_support = torch.tensor_split(formatted_data, 2, dim=3)
+    formatted_support, formatted_query = torch.tensor_split(formatted_data, 2, dim=3)
 
     # Print info
     print("Data size:", formatted_data.shape)
@@ -318,7 +320,7 @@ def format_fewshot_classes_mixed(data, config, device):
     print("RPM map:", rpm_map)
     print("Sensor map:", sensor_map)
 
-    return formatted_support, formatted_support
+    return formatted_support, formatted_query
 
 
 def fewshot_data_selection(data, sensors, rpm, classes):

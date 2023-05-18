@@ -1,5 +1,6 @@
 import math
 import os
+from functools import partial
 
 import numpy as np
 import pandas as pd
@@ -21,107 +22,107 @@ def fewshot_data_selection(data, sensors, rpm, classes):
     return selected_data
 
 
-class FewShotDataset(Dataset):
-    """
-    Sample the support and query sets for one class of an episode. Combine with other sets from other classes to create
-    a full episode.
-    """
+# class FewShotDataset(Dataset):
+#     """
+#     Sample the support and query sets for one class of an episode. Combine with other sets from other classes to create
+#     a full episode.
+#     """
 
-    def __init__(self, df, config, device):
-        self.config = config
-        self.device = device
+#     def __init__(self, df, config, device):
+#         self.config = config
+#         self.device = device
 
-        self.length = len(df["class"].unique())
+#         self.length = len(df["class"].unique())
 
-        # * Format data for easier sampling
-        # Get the sensor columns
-        sensors = list(set(df.columns) - set(["rpm", "class"]))
-        # Convert to long format to include sensor in groupby
-        df_long = pd.melt(
-            df, id_vars=["rpm", "class"], value_vars=sensors, var_name="sensor"
-        )
-        # Group
-        self.data = df_long.groupby(["class", "rpm", "sensor"])
-        # Save the shortest measurement length here because it's the easiest place
-        # Divided by two to separate support and query parts
-        min_measurement_length = min(self.data.size()) / 2
-        # Convert grouped df to dict to make conversion to tensors possible
-        self.data = dict(iter(self.data))
-        # Convert pd Series to torch tensors
-        for k in self.data.keys():
-            self.data[k] = torch.tensor(self.data[k]["value"].values)
+#         # * Format data for easier sampling
+#         # Get the sensor columns
+#         sensors = list(set(df.columns) - set(["rpm", "class"]))
+#         # Convert to long format to include sensor in groupby
+#         df_long = pd.melt(
+#             df, id_vars=["rpm", "class"], value_vars=sensors, var_name="sensor"
+#         )
+#         # Group
+#         self.data = df_long.groupby(["class", "rpm", "sensor"])
+#         # Save the shortest measurement length here because it's the easiest place
+#         # Divided by two to separate support and query parts
+#         min_measurement_length = min(self.data.size()) / 2
+#         # Convert grouped df to dict to make conversion to tensors possible
+#         self.data = dict(iter(self.data))
+#         # Convert pd Series to torch tensors
+#         for k in self.data.keys():
+#             self.data[k] = torch.tensor(self.data[k]["value"].values)
 
-        # * Calculate the number of windows per measurement
-        self.max_measurement_index = math.ceil(
-            (min_measurement_length - config["window_width"])
-            / ((1 - self.config["window_overlap"]) * self.config["window_width"])
-        )
+#         # * Calculate the number of windows per measurement
+#         self.max_measurement_index = math.ceil(
+#             (min_measurement_length - config["window_width"])
+#             / ((1 - self.config["window_overlap"]) * self.config["window_width"])
+#         )
 
-        # Used for separating support and query sets
-        self.support_offset = 0
-        self.query_offset = min_measurement_length
+#         # Used for separating support and query sets
+#         self.support_offset = 0
+#         self.query_offset = min_measurement_length
 
-    def __len__(self):
-        return self.length
+#     def __len__(self):
+#         return self.length
 
-    def __getitem__(self, idx):
-        """
-        Sample support and query samples from the configured class setup.
+#     def __getitem__(self, idx):
+#         """
+#         Sample support and query samples from the configured class setup.
 
-        Parameters:
-            idx : tuple(int, int, string)
-                tuple of class, rpm, and sensor
+#         Parameters:
+#             idx : tuple(int, int, string)
+#                 tuple of class, rpm, and sensor
 
-        Returns:
-            support_query_set : tensor[support + query, 1, sample_len]
-                Stacked support and query samples
-        """
+#         Returns:
+#             support_query_set : tensor[support + query, 1, sample_len]
+#                 Stacked support and query samples
+#         """
 
-        # Get the correct measurement
-        measurement = self.data[idx]
-        # Select random measurement windows for the support and query set
-        sample_idxs = torch.randperm(self.max_measurement_index, dtype=torch.long)[
-            : self.config["k_shot"] + self.config["n_query"]
-        ]
+#         # Get the correct measurement
+#         measurement = self.data[idx]
+#         # Select random measurement windows for the support and query set
+#         sample_idxs = torch.randperm(self.max_measurement_index, dtype=torch.long)[
+#             : self.config["k_shot"] + self.config["n_query"]
+#         ]
 
-        support_query_set = []
+#         support_query_set = []
 
-        # Support samples
-        for i in sample_idxs[: self.config["k_shot"]]:
-            # i corresponds to window index, not measurement samples, so it need to be multiplied by the stride
-            j = i * self.config["window_overlap"]
-            support_query_set.append(
-                measurement[
-                    self.support_offset
-                    + i : self.support_offset
-                    + i
-                    + self.config["window_width"]
-                ]
-            )
-        # Query samples
-        for i in sample_idxs[self.config["k_shot"] :]:
-            # i corresponds to window index, not measurement samples, so it need to be multiplied by the stride
-            j = i * self.config["window_overlap"]
-            support_query_set.append(
-                measurement[
-                    self.query_offset
-                    + i : self.query_offset
-                    + j
-                    + self.config["window_width"]
-                ]
-            )
+#         # Support samples
+#         for i in sample_idxs[: self.config["k_shot"]]:
+#             # i corresponds to window index, not measurement samples, so it need to be multiplied by the stride
+#             j = i * self.config["window_overlap"]
+#             support_query_set.append(
+#                 measurement[
+#                     self.support_offset
+#                     + i : self.support_offset
+#                     + i
+#                     + self.config["window_width"]
+#                 ]
+#             )
+#         # Query samples
+#         for i in sample_idxs[self.config["k_shot"] :]:
+#             # i corresponds to window index, not measurement samples, so it need to be multiplied by the stride
+#             j = i * self.config["window_overlap"]
+#             support_query_set.append(
+#                 measurement[
+#                     self.query_offset
+#                     + i : self.query_offset
+#                     + j
+#                     + self.config["window_width"]
+#                 ]
+#             )
 
-        # Combine
-        support_query_set = torch.stack(support_query_set, dim=0)
+#         # Combine
+#         support_query_set = torch.stack(support_query_set, dim=0)
 
-        # Swap support and query sets to mix samples between batches
-        if not self.config["separate_query_and_support"]:
-            self.support_offset, self.query_offset = (
-                self.query_offset,
-                self.support_offset,
-            )
+#         # Swap support and query sets to mix samples between batches
+#         if not self.config["separate_query_and_support"]:
+#             self.support_offset, self.query_offset = (
+#                 self.query_offset,
+#                 self.support_offset,
+#             )
 
-        return support_query_set, idx
+#         return support_query_set, idx
 
 
 class FewShotMixedDataset(Dataset):
@@ -160,14 +161,15 @@ class FewShotMixedDataset(Dataset):
         # Save the shortest measurement length here because it's the easiest place
         # Divided by two to separate support and query parts
         min_measurement_length = math.floor(min(self.data.size()) / 2)
+
         # Convert grouped df to dict to make conversion to tensors possible
         self.data = dict(iter(self.data))
         # Convert pd Series to torch tensors
         for k in self.data.keys():
             self.data[k] = torch.tensor(self.data[k]["value"].values)
 
-        # * Calculate the number of windows per measurement
-        self.max_measurement_index = math.ceil(
+        # * Calculate the number of windows per measurement.
+        self.max_measurement_index = math.floor(
             (min_measurement_length - config["window_width"]) / self.window_stride
         )
 
@@ -214,7 +216,8 @@ class FewShotMixedDataset(Dataset):
 
         # Select random measurement windows for the support and query set
         # sample_idxs = torch.randperm(self.max_measurement_index, dtype=torch.long)[
-        sample_idxs = np.random.permutation(self.max_measurement_index)[
+        # * +1 because non-inclusive of upper bound
+        sample_idxs = np.random.permutation(self.max_measurement_index + 1)[
             : self.config["k_shot"] + self.config["n_query"]
         ]
 
@@ -273,8 +276,9 @@ class FewShotMixedDataset(Dataset):
         support_query_set = torch.stack(support_query_set, dim=0)
 
         # Transformations
-        if len(self.config["preprocessing_batch"]) > 0:
-            support_query_set = preprocess_batch(support_query_set, self.config)
+        # ! Moved to collate_fn
+        # if len(self.config["preprocessing_batch"]) > 0:
+        #     support_query_set = preprocess_batch(support_query_set, self.config)
 
         # Swap support and query sets to mix samples between batches
         if not self.config["separate_query_and_support"]:
@@ -331,7 +335,7 @@ class FewshotBatchSampler(Sampler):
 
             yield batch
 
-            # Replenish rpm and sensor sews if necessary
+            # Replenish rpm and sensor seqs if necessary
             self.i += 1
             if self.i == self.seq_len:
                 self.i = 0
@@ -341,7 +345,7 @@ class FewshotBatchSampler(Sampler):
                 )
 
 
-def fewshot_collate(batch):
+def fewshot_collate(batch, config=None, device=None):
     """
     Replacement for default collate_fn to deal with the labels being tuples.
 
@@ -353,9 +357,29 @@ def fewshot_collate(batch):
         labels: list(tuple(int, int, string) x len(classes))
             Each label is a tuple containing class, rpm, and sensor
     """
+    # Realign dataset `__getitem__` outputs
     samples, labels = list(zip(*batch))
+    samples = torch.stack(samples)
 
-    return torch.stack(samples), labels
+    # * For all other devices except mps, move to device here,
+    # * because most preprocessing operations are faster on GPU.
+    # * However, some operations (e.g. FFT) don't work on MPS yet,
+    # * so operate on cpu here
+    if str(device) != "mps":
+        # Non-blocking probably has no effect here,
+        # because model(samples) is an immediate sync point
+        samples = samples.to(device, non_blocking=True)
+
+    if len(config["preprocessing_batch"]) > 0:
+        samples = preprocess_batch(samples, config)
+
+    # Move samples to MPS
+    if str(device) == "mps":
+        # Non-blocking probably has no effect here,
+        # because model(samples) is an immediate sync point
+        samples = samples.to(device, non_blocking=True)
+
+    return samples, labels
 
 
 # DATA DIVISIONS
@@ -453,21 +477,21 @@ def get_arotor_data(config, device):
     train_loader = DataLoader(
         train_dataset,
         batch_sampler=train_sampler,
-        collate_fn=fewshot_collate,
+        collate_fn=partial(fewshot_collate, config=config, device=device),
         pin_memory=False,
         num_workers=0,
     )
     validation_loader = DataLoader(
         validation_dataset,
         batch_sampler=validation_sampler,
-        collate_fn=fewshot_collate,
+        collate_fn=partial(fewshot_collate, config=config, device=device),
         pin_memory=False,
         num_workers=0,
     )
     test_loader = DataLoader(
         test_dataset,
         batch_sampler=test_sampler,
-        collate_fn=fewshot_collate,
+        collate_fn=partial(fewshot_collate, config=config, device=device),
         pin_memory=False,
         num_workers=0,
     )

@@ -8,12 +8,7 @@ from ignite.engine import Engine
 
 
 def target_converter(targets, config, device):
-    # Int32 conversion required for MPS to not complain about int64
-    repeats = torch.tensor(config["n_query"], dtype=torch.int32, device=device)  # HACK
-
-    new_targets = targets.repeat_interleave(repeats)
-    return new_targets.long()  # HACK
-    # return targets.repeat_interleave(config["n_query"])
+    return targets.repeat_interleave(config["n_query"])
 
 
 # TRAINER
@@ -27,24 +22,21 @@ def train_function_wrapper(
     model.train()
     optimizer.zero_grad(set_to_none=True)
 
-    old = True
-    if old:
+    # Legacy
+    if config["data"] == "ARotor_old":
         samples = batch.to(device)
         targets = torch.arange(0, config["n_way"], dtype=torch.long, device=device)
-        repeats = torch.tensor(
-            config["n_query"], dtype=torch.int32, device=device
-        )  # HACK
-        targets = targets.repeat_interleave(repeats).long()  # HACK
+        targets = targets.repeat_interleave(config["n_query"])
+    # Currently important implementation
     else:
         # Non-blocking probably has no effect here,
         # because model(samples) is an immediate sync point
-        samples = batch[0].to(device, non_blocking=True)
+        # TODO Move preprocessing here?
+        samples = batch[0]  # * Already moved to device in collate_fn
         # Conversion because the labels are returned as a (class, rpm, sensor) tuple
         # and we only care about the class here
-        targets = torch.tensor(
-            list(zip(*batch[1]))[0], dtype=torch.int32, device=device
-        )
-        # Original targets are for episode classes, not including that there are n_query queries
+        targets = torch.tensor(list(zip(*batch[1]))[0], device=device)
+        # Original targets are episode classes, not including that there are n_query queries
         # per class
         targets = target_converter(targets, config, device)
 
@@ -123,21 +115,21 @@ def setup_trainer(
 def eval_function_wrapper(engine, batch, config, model, device):
     model.eval()
 
-    old = True
-    if old:
+    # Legacy
+    if config["data"] == "ARotor_old":
         samples = batch.to(device)
         targets = torch.arange(0, config["n_way"], dtype=torch.long, device=device)
         targets = targets.repeat_interleave(config["n_query"])
+    # Currently important implementation
     else:
         # Non-blocking probably has no effect here,
         # because model(samples) is an immediate sync point
-        samples = batch[0].to(device, non_blocking=True)
+        # TODO Move preprocessing here?
+        samples = batch[0]  # * Already moved to device in collate_fn
         # Conversion because the labels are returned as a (class, rpm, sensor) tuple
         # and we only care about the class here
-        targets = torch.tensor(
-            list(zip(*batch[1]))[0], dtype=torch.int32, device=device
-        )
-        # Original targets are for episode classes, not including that there are n_query queries
+        targets = torch.tensor(list(zip(*batch[1]))[0], device=device)
+        # Original targets are episode classes, not including that there are n_query queries
         # per class
         targets = target_converter(targets, config, device)
 

@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class EmbeddingLpNormalizer(nn.Module):
@@ -30,6 +31,20 @@ class EmbeddingLpNormalizer(nn.Module):
         return x * self.config["embedding_multiplier"]
 
 
+class EmbeddingOldNormalizer(nn.Module):
+    """
+    Legacy
+    """
+
+    def __init__(self, config):
+        super(EmbeddingOldNormalizer, self).__init__()
+
+        self.config = config
+
+    def forward(self, x):
+        return F.normalize(x, p=1.0, dim=1) * self.config["embedding_multiplier"]
+
+
 class Prototypical(nn.Module):
     def __init__(self, backbone, config):
         super(Prototypical, self).__init__()
@@ -43,8 +58,10 @@ class Prototypical(nn.Module):
         self.embedding_normalizer = None
         if self.config["embedding_normalization_type"] == "lp":
             self.embedding_normalizer = EmbeddingLpNormalizer(config)
+        elif self.config["embedding_normalization_type"] == "old":
+            self.embedding_normalizer = EmbeddingOldNormalizer(config)
         # elif self.config["embedding_normalization_type"] == "mahalanobis":
-        # self.embedding_normalizer = TODO
+        #   self.embedding_normalizer = TODO
         elif self.config["embedding_normalization_type"]:  # If not false
             raise Exception(
                 f"No such embedding normalization as {self.config['embedding_normalize']}"

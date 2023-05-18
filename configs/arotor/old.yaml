@@ -22,6 +22,9 @@ data: ARotor_old
 train_sensors: [acc3]
 validation_sensors: [acc2]
 test_sensors: [acc1]
+# train_rpm: [750]
+# validation_rpm: [1250]
+# test_rpm: [250, 500, 1000, 1500]
 train_rpm: [250, 500, 750, 1000, 1250, 1500]
 validation_rpm: [250, 500, 750, 1000, 1250, 1500]
 test_rpm: [250, 500, 750, 1000, 1250, 1500]
@@ -60,6 +63,7 @@ embedding_multiplier: 1000
 
 #? Training
 
+epoch_len: 10
 max_epochs: 500
 patience: 200
 optimizer: AdamW
