@@ -79,8 +79,8 @@ class MiCNN(nn.Module):
             print(out.shape)
 
         # Match channel num to embedding length
-        out = self.fc1(out)
-        if verbose:
-            print(out.shape)
+        # out = self.fc1(out)
+        # if verbose:
+        #     print(out.shape)
 
         return out

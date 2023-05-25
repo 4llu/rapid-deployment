@@ -144,7 +144,7 @@ def run_training(
                 "reports",
                 "RAW",
                 "logs_tb",
-                f"{config['name']}-{config['data']}-{time}",
+                f"{config['name']}-{config['data']}-{config['backbone']}-{time}",
             )
         )
 

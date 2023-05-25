@@ -21,6 +21,14 @@ def setup_model(config, device):
         from models.backbones.micnn import MiCNN
 
         backbone = MiCNN(config)
+    elif config["backbone"] == "mininet":
+        from models.backbones.mininet import mininet
+
+        backbone = mininet(config)
+    elif config["backbone"] == "InceptionTime":
+        from models.backbones.inception_time import InceptionTime
+
+        backbone = InceptionTime(config)
     else:
         raise Exception(f"No such backbone name as: {config['backbone']}!")
 

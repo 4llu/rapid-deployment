@@ -26,8 +26,14 @@ def FFT(support_query_set, config):
     # * Specifically, halves it
 
     # Keep only the magnitude of the positive complex conjugates
-    support_query_set = torch.fft.rfft(support_query_set)
+    support_query_set = torch.fft.rfft(support_query_set, norm="forward")
     support_query_set = torch.abs(support_query_set)
+
+    if "sync_FFT" in config["preprocessing_batch"]:
+        support_query_set = support_query_set[:, :, : config["max_fft_len"]]
+
+    if not config["include_FFT_DC"]:
+        support_query_set = support_query_set[:, :, 1:]
 
     return support_query_set
 
@@ -54,7 +60,11 @@ def preprocess_batch(support_query_set, config):
         support_query_set = individual_min_max(support_query_set, config)
 
     # FFT
-    if "FFT" in config["preprocessing_batch"]:
+    # ! Sync_FFT here works only if not mixing rpms
+    if (
+        "FFT" in config["preprocessing_batch"]
+        or "sync_FFT" in config["preprocessing_batch"]
+    ):
         support_query_set = FFT(support_query_set, config)
 
     return support_query_set

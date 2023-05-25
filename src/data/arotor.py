@@ -7,6 +7,7 @@ import pandas as pd
 import torch
 from preprocessing.full import preprocess_full
 from preprocessing.batch import preprocess_batch
+from preprocessing.sample import preprocess_sample
 from torch.utils.data import DataLoader, Dataset, Sampler
 
 # UTILS
@@ -143,10 +144,46 @@ class FewShotMixedDataset(Dataset):
 
         # Use number of unique classes as length
         self.length = len(df["class"].unique())
+
+        # Sync FFT stuff
+        self.rotation_len_map = {
+            250: 2169,
+            500: 1084,
+            750: 723,
+            1000: 542,
+            1250: 434,
+            1500: 361,
+        }
+        max_rpm = max(
+            [*config["train_rpm"], *config["validation_rpm"], *config["test_rpm"]]
+        )
+        min_window_len = self.rotation_len_map[max_rpm] * config["sync_FFT_rotations"]
+        #! Completely new value added to config!
+        self.config["max_fft_len"] = len(torch.fft.rfft(torch.arange(min_window_len)))
+
+        # Max window width to calculate stride and max index that can be sampled
+        # ! Remember to not use `self.config["window_width"]` after this point
+        self.max_window_width = self.config["window_width"]
+        # * If using rpm synced FFT, use the window width for the slowest rpm (longest window) as base
+        if (
+            "sync_FFT" in self.config["preprocessing_sample"]
+            or "sync_FFT" in self.config["preprocessing_batch"]
+        ):
+            min_rpm = min(
+                [
+                    *self.config["train_rpm"],
+                    *self.config["validation_rpm"],
+                    *self.config["test_rpm"],
+                ]
+            )
+            self.max_window_width = (
+                self.rotation_len_map[min_rpm] * self.config["sync_FFT_rotations"]
+            )
+
         # Convert overlap from % to number of time series samples
         # Done here to not calculate separately every time something is sampled
         self.window_stride = math.floor(
-            (1 - self.config["window_overlap"]) * self.config["window_width"]
+            (1 - self.config["window_overlap"]) * self.max_window_width
         )
 
         # * Format data for easier sampling
@@ -168,9 +205,9 @@ class FewShotMixedDataset(Dataset):
         for k in self.data.keys():
             self.data[k] = torch.tensor(self.data[k]["value"].values)
 
-        # * Calculate the number of windows per measurement.
+        # Calculate the number of windows per measurement
         self.max_measurement_index = math.floor(
-            (min_measurement_length - config["window_width"]) / self.window_stride
+            (min_measurement_length - self.max_window_width) / self.window_stride
         )
 
         # Used for separating support and query sets
@@ -214,6 +251,17 @@ class FewShotMixedDataset(Dataset):
                 Stacked support and query samples. dim 1 = 1 because there is currently no support for multi sensor inputs
         """
 
+        # ! Don't use self.config["window_width"] after this point
+        window_width = self.config["window_width"]
+        # * Use rotation length as window width instead if using rpm synced FFT
+        if (
+            "sync_FFT" in self.config["preprocessing_sample"]
+            or "sync_FFT" in self.config["preprocessing_batch"]
+        ):
+            window_width = (
+                self.rotation_len_map[idx[1]] * self.config["sync_FFT_rotations"]
+            )
+
         # Select random measurement windows for the support and query set
         # sample_idxs = torch.randperm(self.max_measurement_index, dtype=torch.long)[
         # * +1 because non-inclusive of upper bound
@@ -228,14 +276,10 @@ class FewShotMixedDataset(Dataset):
             # i corresponds to window index, not measurement samples, so it need to be multiplied by the stride
             j = i * self.window_stride
 
-            support_query_set.append(
-                self.data[idx][
-                    self.support_offset
-                    + j : self.support_offset
-                    + j
-                    + self.config["window_width"]
-                ]
-            )
+            sample = self.data[idx][
+                self.support_offset + j : self.support_offset + j + window_width
+            ]
+            support_query_set.append(sample)
 
         # Query samples
         # TODO Combination of the two. Requires changes to the sampling patterns defined in __init__.
@@ -263,14 +307,13 @@ class FewShotMixedDataset(Dataset):
             # i corresponds to window index, not measurement samples, so it need to be multiplied by the stride
             j = i[0] * self.window_stride
 
-            support_query_set.append(
-                self.data[idx][
-                    self.query_offset
-                    + j : self.query_offset
-                    + j
-                    + self.config["window_width"]
-                ]
-            )
+            sample = self.data[idx][
+                self.query_offset + j : self.query_offset + j + window_width
+            ]
+            support_query_set.append(sample)
+
+        # Preprocess as individual samples
+        support_query_set = preprocess_sample(support_query_set, self.config)
 
         # Combine
         support_query_set = torch.stack(support_query_set, dim=0)

@@ -1,5 +1,5 @@
 #? Creation
-name: Base
+name: S2S
 log: true
 save: false # TODO
 eval_freq: 10 # * Decrease for hyper opt and final testing
@@ -17,30 +17,18 @@ separate_query_and_support: false
 #? Data
 
 data: ARotor
-# train_sensors: [en5acc]
-# validation_sensors: [en1acc]
-# test_sensors: [en4acc]
-# train_rpm: [250, 500, 750, 1000, 1250, 1500]
-# validation_rpm: [250, 500, 750, 1000, 1250, 1500]
-# test_rpm: [250, 500, 750, 1000, 1250, 1500]
-
-# train_sensors: [en1acc]
-# validation_sensors: [en2acc]
-# test_sensors: [en3acc, en4acc, en5acc]
+train_sensors: [en5acc]
+validation_sensors: [en1acc]
+test_sensors: [en4acc]
+# train_sensors: [acc3]
+# validation_sensors: [acc2]
+# test_sensors: [acc1]
+train_rpm: [250, 500, 750, 1000, 1250, 1500]
+validation_rpm: [250, 500, 750, 1000, 1250, 1500]
+test_rpm: [250, 500, 750, 1000, 1250, 1500]
 # train_rpm: [750]
-# validation_rpm: [1000]
-# test_rpm: [250, 500, 1250, 1500]
-
-# train_sensors: [en1acc]
-# validation_sensors: [en2acc]
-# test_sensors: [en3acc, en4acc, en5acc]
-train_sensors: [en1acc_grad]
-validation_sensors: [en2acc_grad]
-test_sensors: [en3acc_grad, en4acc_grad, en5acc_grad]
-train_rpm: [750]
-validation_rpm: [1000]
-test_rpm: [250, 500, 1250, 1500]
-
+# validation_rpm: [1250]
+# test_rpm: [250, 500, 1000, 1500]
 train_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 validation_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 test_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -50,11 +38,10 @@ window_overlap: 0.95
 #? Preprocessing
 
 preprocessing_full: []
-preprocessing_sample: []
-# preprocessing_sample: [sync_FFT] # ! Slow, always prefer the other two if possible
+# preprocessing_sample: []
+preprocessing_sample: [sync_FFT] # ! Slow, always prefer the other two if possible
 sync_FFT_rotations: 4 # How many rotations to include for synced FFT. Only used if sync_FFT on.
-# preprocessing_batch: []
-preprocessing_batch: [sync_FFT]
+preprocessing_batch: []
 # preprocessing_batch: [FFT]
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 
@@ -73,7 +60,7 @@ augmentation: []
 model: prototypical
 backbone: InceptionTime
 kaiming_init: true
-embedding_len: 128
+embedding_len: 256
 # embedding_normalization_type: False
 # Legacy
 # embedding_normalization_type: old
@@ -83,23 +70,23 @@ lp_norm: 2
 # Mahalanobis
 # embedding_normalization_type: mahalanobis # TODO
 
-embedding_multiplier: 1000
+embedding_multiplier: 100
 
 #? Training
 
 epoch_len: 10
-max_epochs: 300
-patience: 100
+max_epochs: 500
+patience: 200
 optimizer: AdamW
-lr: 0.3
+lr: 0.002526
 lr_scheduler: ExponentialLR
 # sch_gamma: 0.9999999
-sch_gamma: 0.9998
-momentum: 0.965
+sch_gamma: 0.9647
+momentum: 0.9651
 # Regularization
-weight_decay: 0.001
+weight_decay: 0.0008331
 # weight_decay: 0.0001
-cl_dropout: 0.05
+cl_dropout: 0.0
 fc_dropout: 0.0
 
 # ? Other
