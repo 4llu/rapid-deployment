@@ -9,20 +9,23 @@ eval_episodes: 30 # * Increase for hyper opt and final testing
 
 k_shot: 1
 n_way: 10
-n_query: 60
-mix_rpms: False
-mix_sensors: False
-separate_query_and_support: False
+n_query: 20
+mix_rpms: false
+mix_sensors: false
+separate_query_and_support: false
 
 #? Data
 
 data: ARotor
-train_sensors: [acc3]
-validation_sensors: [acc2]
-test_sensors: [acc1, acc4]
-train_rpm: [250, 500, 750, 1000, 1250]
-validation_rpm: [250, 500, 750, 1000, 1250]
-test_rpm: [250, 500, 750, 1000, 1250]
+train_sensors: [en3acc]
+validation_sensors: [en2acc, en1acc, en4acc, en5acc]
+test_sensors: [en3acc]
+train_rpm: [750]
+validation_rpm: [250, 500, 1000, 1250, 1500]
+test_rpm: [250]
+# train_rpm: [250, 500, 750, 1000, 1250, 1500]
+# validation_rpm: [250, 500, 750, 1000, 1250, 1500]
+# test_rpm: [250, 500, 750, 1000, 1250, 1500]
 train_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 validation_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 test_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -32,7 +35,12 @@ window_overlap: 0.95
 #? Preprocessing
 
 preprocessing_full: []
+
+preprocessing_sample: [sync_FFT] # ! Slow, alway prefer the other two if possible
+sync_FFT_rotations: 4 # How many rotations to include for synced FFT. Only used if sync_FFT on.
+
 preprocessing_batch: []
+include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 
 #? Augmentation
 
@@ -41,9 +49,9 @@ augmentation: []
 #? Model
 
 model: prototypical
-backbone: WDCNN
+backbone: mininet
 kaiming_init: true
-embedding_len: 256
+embedding_len: 128
 # embedding_normalization_type: False
 # Lp-norm
 embedding_normalization_type: lp
@@ -55,6 +63,7 @@ embedding_multiplier: 1000
 
 #? Training
 
+epoch_len: 10
 max_epochs: 300
 patience: 100
 optimizer: AdamW

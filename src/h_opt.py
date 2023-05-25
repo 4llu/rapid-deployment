@@ -57,7 +57,7 @@ def main():
         # TEST HYPERPARAMETERS
         ######################
 
-        config["lr"] = trial.suggest_float("learning_rate", 1e-4, 1e-1, log=True)
+        config["lr"] = trial.suggest_float("learning_rate", 1e-4, 1e-0, log=True)
         config["momentum"] = trial.suggest_float(
             "momentum",
             0.9,
@@ -66,11 +66,13 @@ def main():
         config["weight_decay"] = trial.suggest_float(
             "weight_decay", 0.00001, 0.001, log=True
         )
-        config["sch_gamma"] = trial.suggest_float("sch_gamma", 0.95, 0.9998, log=True)
-        config["cl_dropout"] = trial.suggest_float("cl_dropout", 0.0, 0.6, step=0.1)
-        config["fc_dropout"] = trial.suggest_float("fc_dropout", 0.0, 0.6, step=0.1)
+        config["sch_gamma"] = trial.suggest_float("sch_gamma", 0.95, 0.99998, log=True)
+        # config["cl_dropout"] = trial.suggest_float("cl_dropout", 0.0, 0.6, step=0.1)
+        # config["fc_dropout"] = trial.suggest_float("fc_dropout", 0.0, 0.6, step=0.1)
         config["embedding_multiplier"] = trial.suggest_categorical(
-            "embedding_multiplier", [1, 10, 100, 1000, 10000]
+            "embedding_multiplier",
+            [100, 1000]
+            # "embedding_multiplier", [1, 10, 100, 1000, 10000]
         )
 
         # Repeat training with same set of hyperparameters for validity
