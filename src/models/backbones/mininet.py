@@ -10,8 +10,8 @@ class mininet(nn.Module):
 
         # Classifier
         self.fc1 = nn.Linear(
-            722,
-            # 3000,
+            # 722,
+            3000,
             config["embedding_len"],
             # 256,
         )

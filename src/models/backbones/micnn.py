@@ -28,7 +28,7 @@ class MiCNN(nn.Module):
         self.cn_layer4 = ConvLayer(64, 128, dropout=config["fc_dropout"])
 
         # Global average pooling
-        self.globalAvgPool = nn.AvgPool1d(kernel_size=12)  # FIXME Kernel size
+        self.globalAvgPool = nn.AvgPool1d(kernel_size=23)  # FIXME Kernel size
 
         # Classifier
         self.fc1 = nn.Linear(
@@ -53,30 +53,30 @@ class MiCNN(nn.Module):
         verbose = False
 
         if verbose:
-            print(x.shape)
+            print("Input:", x.shape)
 
         # Conv layers
 
         out = self.cn_layer1(x)
         if verbose:
-            print(out.shape)
+            print("CL 1:", out.shape)
 
         out = self.cn_layer2(out)
         if verbose:
-            print(out.shape)
+            print("CL 2:", out.shape)
 
         out = self.cn_layer3(out)
         if verbose:
-            print(out.shape)
+            print("CL 3:", out.shape)
 
         out = self.cn_layer4(out)
         if verbose:
-            print(out.shape)
+            print("CL 4:", out.shape)
 
         # Global average pool
         out = self.globalAvgPool(out).squeeze()
         if verbose:
-            print(out.shape)
+            print("GAP:", out.shape)
 
         # Match channel num to embedding length
         # out = self.fc1(out)

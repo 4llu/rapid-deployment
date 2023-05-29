@@ -155,9 +155,9 @@ class FewShotMixedDataset(Dataset):
             1500: 361,
         }
         max_rpm = max(
-            [*config["train_rpm"], *config["validation_rpm"], *config["test_rpm"]]
+            [*self.config["train_rpm"], *self.config["validation_rpm"], *self.config["test_rpm"]]
         )
-        min_window_len = self.rotation_len_map[max_rpm] * config["sync_FFT_rotations"]
+        min_window_len = self.rotation_len_map[max_rpm] * self.config["sync_FFT_rotations"]
         #! Completely new value added to config!
         self.config["max_fft_len"] = len(torch.fft.rfft(torch.arange(min_window_len)))
 
@@ -252,15 +252,15 @@ class FewShotMixedDataset(Dataset):
         """
 
         # ! Don't use self.config["window_width"] after this point
-        window_width = self.config["window_width"]
         # * Use rotation length as window width instead if using rpm synced FFT
+        window_width = self.config["window_width"]
+        # Use rpm specific window_width if using synced FFT
         if (
             "sync_FFT" in self.config["preprocessing_sample"]
             or "sync_FFT" in self.config["preprocessing_batch"]
         ):
-            window_width = (
-                self.rotation_len_map[idx[1]] * self.config["sync_FFT_rotations"]
-            )
+            # TODO Currently all support samples are from the same RPM
+            window_width = self.rotation_len_map[idx[1]] * self.config["sync_FFT_rotations"]
 
         # Select random measurement windows for the support and query set
         # sample_idxs = torch.randperm(self.max_measurement_index, dtype=torch.long)[
@@ -277,7 +277,7 @@ class FewShotMixedDataset(Dataset):
             j = i * self.window_stride
 
             sample = self.data[idx][
-                self.support_offset + j : self.support_offset + j + window_width
+                self.support_offset + j: self.support_offset + j + window_width
             ]
             support_query_set.append(sample)
 
@@ -286,19 +286,19 @@ class FewShotMixedDataset(Dataset):
         query_sampling = []
         if self.config["mix_rpms"]:
             query_sampling = zip(
-                sample_idxs[self.config["k_shot"] :],  # idx
+                sample_idxs[self.config["k_shot"]:],  # idx
                 self.rpm_sampling_pattern,  # rpm
                 np.repeat(idx[2], self.config["n_query"]),  # sensor
             )
         elif self.config["mix_sensors"]:
             query_sampling = zip(
-                sample_idxs[self.config["k_shot"] :],
+                sample_idxs[self.config["k_shot"]:],
                 np.repeat(idx[1], self.config["n_query"]),
                 self.sensor_sampling_pattern,
             )
         else:
             query_sampling = zip(
-                sample_idxs[self.config["k_shot"] :],
+                sample_idxs[self.config["k_shot"]:],
                 np.repeat(idx[1], self.config["n_query"]),
                 np.repeat(idx[2], self.config["n_query"]),
             )
@@ -307,8 +307,15 @@ class FewShotMixedDataset(Dataset):
             # i corresponds to window index, not measurement samples, so it need to be multiplied by the stride
             j = i[0] * self.window_stride
 
+            # Use rpm specific window_width for each sample if using synced FFT
+            if (
+                "sync_FFT" in self.config["preprocessing_sample"]
+                or "sync_FFT" in self.config["preprocessing_batch"]
+            ):
+                window_width = self.rotation_len_map[i[1]] * self.config["sync_FFT_rotations"]
+
             sample = self.data[idx][
-                self.query_offset + j : self.query_offset + j + window_width
+                self.query_offset + j: self.query_offset + j + window_width
             ]
             support_query_set.append(sample)
 
@@ -362,7 +369,7 @@ class FewshotBatchSampler(Sampler):
         # Go through class permutation
         for j in range(math.floor(len(self.classes) / self.config["n_way"])):
             class_batch = class_perm[
-                j * self.config["n_way"] : (j + 1) * self.config["n_way"]
+                j * self.config["n_way"]: (j + 1) * self.config["n_way"]
             ]
 
             batch = list(
