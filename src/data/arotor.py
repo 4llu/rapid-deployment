@@ -23,109 +23,6 @@ def fewshot_data_selection(data, sensors, rpm, classes):
     return selected_data
 
 
-# class FewShotDataset(Dataset):
-#     """
-#     Sample the support and query sets for one class of an episode. Combine with other sets from other classes to create
-#     a full episode.
-#     """
-
-#     def __init__(self, df, config, device):
-#         self.config = config
-#         self.device = device
-
-#         self.length = len(df["class"].unique())
-
-#         # * Format data for easier sampling
-#         # Get the sensor columns
-#         sensors = list(set(df.columns) - set(["rpm", "class"]))
-#         # Convert to long format to include sensor in groupby
-#         df_long = pd.melt(
-#             df, id_vars=["rpm", "class"], value_vars=sensors, var_name="sensor"
-#         )
-#         # Group
-#         self.data = df_long.groupby(["class", "rpm", "sensor"])
-#         # Save the shortest measurement length here because it's the easiest place
-#         # Divided by two to separate support and query parts
-#         min_measurement_length = min(self.data.size()) / 2
-#         # Convert grouped df to dict to make conversion to tensors possible
-#         self.data = dict(iter(self.data))
-#         # Convert pd Series to torch tensors
-#         for k in self.data.keys():
-#             self.data[k] = torch.tensor(self.data[k]["value"].values)
-
-#         # * Calculate the number of windows per measurement
-#         self.max_measurement_index = math.ceil(
-#             (min_measurement_length - config["window_width"])
-#             / ((1 - self.config["window_overlap"]) * self.config["window_width"])
-#         )
-
-#         # Used for separating support and query sets
-#         self.support_offset = 0
-#         self.query_offset = min_measurement_length
-
-#     def __len__(self):
-#         return self.length
-
-#     def __getitem__(self, idx):
-#         """
-#         Sample support and query samples from the configured class setup.
-
-#         Parameters:
-#             idx : tuple(int, int, string)
-#                 tuple of class, rpm, and sensor
-
-#         Returns:
-#             support_query_set : tensor[support + query, 1, sample_len]
-#                 Stacked support and query samples
-#         """
-
-#         # Get the correct measurement
-#         measurement = self.data[idx]
-#         # Select random measurement windows for the support and query set
-#         sample_idxs = torch.randperm(self.max_measurement_index, dtype=torch.long)[
-#             : self.config["k_shot"] + self.config["n_query"]
-#         ]
-
-#         support_query_set = []
-
-#         # Support samples
-#         for i in sample_idxs[: self.config["k_shot"]]:
-#             # i corresponds to window index, not measurement samples, so it need to be multiplied by the stride
-#             j = i * self.config["window_overlap"]
-#             support_query_set.append(
-#                 measurement[
-#                     self.support_offset
-#                     + i : self.support_offset
-#                     + i
-#                     + self.config["window_width"]
-#                 ]
-#             )
-#         # Query samples
-#         for i in sample_idxs[self.config["k_shot"] :]:
-#             # i corresponds to window index, not measurement samples, so it need to be multiplied by the stride
-#             j = i * self.config["window_overlap"]
-#             support_query_set.append(
-#                 measurement[
-#                     self.query_offset
-#                     + i : self.query_offset
-#                     + j
-#                     + self.config["window_width"]
-#                 ]
-#             )
-
-#         # Combine
-#         support_query_set = torch.stack(support_query_set, dim=0)
-
-#         # Swap support and query sets to mix samples between batches
-#         if not self.config["separate_query_and_support"]:
-#             self.support_offset, self.query_offset = (
-#                 self.query_offset,
-#                 self.support_offset,
-#             )
-
-#         return support_query_set, idx
-
-
 class FewShotMixedDataset(Dataset):
     """
     Sample the support and query sets for one class of an episode. Combine with other sets from other classes to create
@@ -134,13 +31,14 @@ class FewShotMixedDataset(Dataset):
     the options available in the split. For non-mixed situation, possibly slightly slower than the non-mixed solution?
     """
 
-    def __init__(self, df, config, device):
+    def __init__(self, df, config, device, masks=None):
         assert not (
             config["mix_rpms"] and config["mix_sensors"]
         ), "(TODO) Setting both mix_rpms and mix_sensors as true is currently badly defined!"
 
         self.config = config
         self.device = device  # * Here just in case, not currently used for anything
+        self.masks = masks  # * Healthy sample masks
 
         # Use number of unique classes as length
         self.length = len(df["class"].unique())
@@ -155,9 +53,15 @@ class FewShotMixedDataset(Dataset):
             1500: 361,
         }
         max_rpm = max(
-            [*self.config["train_rpm"], *self.config["validation_rpm"], *self.config["test_rpm"]]
+            [
+                *self.config["train_rpm"],
+                *self.config["validation_rpm"],
+                *self.config["test_rpm"],
+            ]
         )
-        min_window_len = self.rotation_len_map[max_rpm] * self.config["sync_FFT_rotations"]
+        min_window_len = (
+            self.rotation_len_map[max_rpm] * self.config["sync_FFT_rotations"]
+        )
         #! Completely new value added to config!
         self.config["max_fft_len"] = len(torch.fft.rfft(torch.arange(min_window_len)))
 
@@ -260,7 +164,9 @@ class FewShotMixedDataset(Dataset):
             or "sync_FFT" in self.config["preprocessing_batch"]
         ):
             # TODO Currently all support samples are from the same RPM
-            window_width = self.rotation_len_map[idx[1]] * self.config["sync_FFT_rotations"]
+            window_width = (
+                self.rotation_len_map[idx[1]] * self.config["sync_FFT_rotations"]
+            )
 
         # Select random measurement windows for the support and query set
         # sample_idxs = torch.randperm(self.max_measurement_index, dtype=torch.long)[
@@ -277,7 +183,7 @@ class FewShotMixedDataset(Dataset):
             j = i * self.window_stride
 
             sample = self.data[idx][
-                self.support_offset + j: self.support_offset + j + window_width
+                self.support_offset + j : self.support_offset + j + window_width
             ]
             support_query_set.append(sample)
 
@@ -286,19 +192,19 @@ class FewShotMixedDataset(Dataset):
         query_sampling = []
         if self.config["mix_rpms"]:
             query_sampling = zip(
-                sample_idxs[self.config["k_shot"]:],  # idx
+                sample_idxs[self.config["k_shot"] :],  # idx
                 self.rpm_sampling_pattern,  # rpm
                 np.repeat(idx[2], self.config["n_query"]),  # sensor
             )
         elif self.config["mix_sensors"]:
             query_sampling = zip(
-                sample_idxs[self.config["k_shot"]:],
+                sample_idxs[self.config["k_shot"] :],
                 np.repeat(idx[1], self.config["n_query"]),
                 self.sensor_sampling_pattern,
             )
         else:
             query_sampling = zip(
-                sample_idxs[self.config["k_shot"]:],
+                sample_idxs[self.config["k_shot"] :],
                 np.repeat(idx[1], self.config["n_query"]),
                 np.repeat(idx[2], self.config["n_query"]),
             )
@@ -312,10 +218,12 @@ class FewShotMixedDataset(Dataset):
                 "sync_FFT" in self.config["preprocessing_sample"]
                 or "sync_FFT" in self.config["preprocessing_batch"]
             ):
-                window_width = self.rotation_len_map[i[1]] * self.config["sync_FFT_rotations"]
+                window_width = (
+                    self.rotation_len_map[i[1]] * self.config["sync_FFT_rotations"]
+                )
 
             sample = self.data[idx][
-                self.query_offset + j: self.query_offset + j + window_width
+                self.query_offset + j : self.query_offset + j + window_width
             ]
             support_query_set.append(sample)
 
@@ -356,6 +264,9 @@ class FewshotBatchSampler(Sampler):
         self.rpm_seq = torch.randint(high=len(self.rpms), size=(self.seq_len,))
         self.sensor_seq = torch.randint(high=len(self.sensors), size=(self.seq_len,))
 
+        # Meant to be accessed from outside the class to find out what the last batch contained
+        self.prev_batch = None
+
     def __len__(self):
         return math.floor(len(self.classes) / self.config["n_way"])
 
@@ -369,7 +280,7 @@ class FewshotBatchSampler(Sampler):
         # Go through class permutation
         for j in range(math.floor(len(self.classes) / self.config["n_way"])):
             class_batch = class_perm[
-                j * self.config["n_way"]: (j + 1) * self.config["n_way"]
+                j * self.config["n_way"] : (j + 1) * self.config["n_way"]
             ]
 
             batch = list(
@@ -383,6 +294,7 @@ class FewshotBatchSampler(Sampler):
                 )
             )
 
+            self.prev_batch = batch
             yield batch
 
             # Replenish rpm and sensor seqs if necessary
@@ -490,14 +402,9 @@ def get_arotor_data(config, device):
     # Dataset creation
     ##################
 
-    # if config["mix_rpms"] or config["mix_sensors"]:
     train_dataset = FewShotMixedDataset(train_data, config, device)
     validation_dataset = FewShotMixedDataset(validation_data, config, device)
     test_dataset = FewShotMixedDataset(test_data, config, device)
-    # else:  # FIXME This might not even be faster than the above
-    # train_dataset = FewShotDataset(train_data, config, device)
-    # validation_dataset = FewShotDataset(validation_data, config, device)
-    # test_dataset = FewShotDataset(test_data, config, device)
 
     # Dataloaders
     #############
