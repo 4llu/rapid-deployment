@@ -15,11 +15,14 @@ class MiCNN(nn.Module):
         self.cn_layer1 = ConvLayer(
             1,  # * Multi sensor stuff is not part of the tests
             16,
-            kernel_size=64
-            if "FFT" not in self.config["preprocessing_batch"]
-            else 32,  # FIXME when better idea of specific FFT implementation
-            stride=16 if "FFT" not in self.config["preprocessing_batch"] else 8,
-            padding=24 if "FFT" not in self.config["preprocessing_batch"] else 16,
+            kernel_size=32,
+            stride=8,
+            padding=16,
+            # kernel_size=64
+            # if "FFT" not in self.config["preprocessing_batch"]
+            # else 32,  # FIXME when better idea of specific FFT implementation
+            # stride=16 if "FFT" not in self.config["preprocessing_batch"] else 8,
+            # padding=24 if "FFT" not in self.config["preprocessing_batch"] else 16,
             dropout=config["cl_dropout"],
         )
         self.cn_layer2 = ConvLayer(16, 32, dropout=config["cl_dropout"])
@@ -43,9 +46,11 @@ class MiCNN(nn.Module):
     # For Kaiming weight initialization
     def _init_weights(self, module):
         if isinstance(module, nn.Linear):
-            nn.init.kaiming_uniform_(module.weight, mode="fan_in", nonlinearity="relu")
+            nn.init.kaiming_uniform_(
+                module.weight, mode="fan_in", nonlinearity="relu")
             if module.bias is not None:
-                fan_in, _ = nn.init._calculate_fan_in_and_fan_out(module.weight)
+                fan_in, _ = nn.init._calculate_fan_in_and_fan_out(
+                    module.weight)
                 bound = 1 / math.sqrt(fan_in)
                 nn.init.uniform_(module.bias, -bound, bound)
 

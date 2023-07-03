@@ -1,6 +1,5 @@
 import torch
 
-
 # Methods
 #########
 
@@ -29,14 +28,17 @@ def FFT(support_query_set, config):
     support_query_set = torch.fft.rfft(support_query_set, norm="forward")
     support_query_set = torch.abs(support_query_set)
 
+    # FIXME The fuck does this do?
     if "sync_FFT" in config["preprocessing_batch"]:
         support_query_set = support_query_set[:, :, : config["max_fft_len"]]
 
     if not config["include_FFT_DC"]:
         support_query_set = support_query_set[:, :, 1:]
 
-    return support_query_set
+    if config["log_FFT"]:
+        support_query_set = torch.log(support_query_set)
 
+    return support_query_set
 
 # Setup
 #######
@@ -57,7 +59,8 @@ def preprocess_batch(support_query_set, config):
 
     # Individual min max
     if "individual_min_max" in config["preprocessing_batch"]:
-        support_query_set = individual_min_max(support_query_set, config)
+        support_query_set = individual_min_max(
+            support_query_set, config)
 
     # FFT
     # ! Sync_FFT here works only if not mixing rpms

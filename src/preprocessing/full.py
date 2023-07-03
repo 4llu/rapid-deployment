@@ -1,5 +1,5 @@
+import numpy as np
 import torch
-
 
 # Methods
 #########
@@ -38,43 +38,104 @@ import torch
 
 def mixed_query_normalization(train_data, validation_data, test_data, config):
     head_len = 3012 * 10
+    masks = {}
 
-    train_grouped = train_data.groupby(["class", "rpm"])
+    def mixed_query_normalization_helper(data, split):
+        classes = config[f"{split}_classes"]
+        sensors = config[f"{split}_sensors"]
+        rpms = config[f"{split}_rpm"]
 
-    # Separate head (to be used for scaling, etc.) from measurements to be used for training/validation/testing (tail)
-    # * Take the same amount away from fault measurements too, to keep class balance
-    train_head = train_grouped.head(head_len)
-    train_tail = train_grouped.tail(
-        int(
-            (
-                len(train_data)
-                / (len(config["train_classes"]) * len(config["train_rpms"]))
+        data_grouped = data.groupby(["class", "rpm"])
+
+        # Separate head (to be used for scaling, etc.) from measurements to be used for training/validation/testing (tail)
+        # * Take the same amount away from fault measurements too, to keep class balance
+        data_head = data_grouped.head(head_len)
+        # Scaling and masks are only computed from healthy samples, so other classes are useless here
+        data_head = data_head[data_head["class"] == 0]
+        # Tail needs all classes for scaling
+        data_tail = data_grouped.tail(
+            int(
+                (
+                    len(train_data)
+                    / (len(classes) * len(rpms))
+                )
+                - head_len
             )
-            - head_len
         )
-    )
 
-    # SCALING #
-    # Robust scaling with 25 and 75 percentiles
+        # SCALING #
+        ##
+        # Robust scaling with 25 and 75 percentiles
 
-    # Get scales
-    scale = {}
-    train_head_grouped = train_head.groupby(["class", "rpm"])
-    for n, g in train_head_grouped:
-        if n[0] == 0:
-            p25 = g[config["train_sensors"]].quantile(0.25)
-            p75 = g[config["train_sensors"]].quantile(0.75)
-            scale[n[1]] = p75 - p25
+        # Get scales
+        scale = {}
+        data_head_grouped = data_head.groupby(
+            ["class", "rpm"], group_keys=False)
+        for n, g in data_head_grouped:
+            # Scale for the healthy state of each rpm
+            p25 = g[sensors].quantile(0.25)
+            p75 = g[sensors].quantile(0.75)
+            scale[n[1]] = (p75 - p25).astype("float32")
 
-    # Scale head
-    for n, g in train_head_grouped:
-        g[config["train_sensors"]] = g[config["train_sensors"]] / scale[n[1]]
+        # Scaling helper
+        def scale_group(group_data):
+            group_data[sensors
+                       ] = group_data[sensors] / scale[group_data.name[1]]
 
-    # Scale tail
-    for n, g in train_tail.groupby(["class", "rpm"]):
-        g[config["train_sensors"]] = g[config["train_sensors"]] / scale[n[1]]
+            return group_data
 
-    # MASK CALCULATION #
+        # Scale head
+        data_head = data_head_grouped.apply(scale_group)
+
+        # Scale tail
+        data_tail = data_tail.groupby(
+            ["class", "rpm"], group_keys=False).apply(scale_group)
+
+        # MASK CALCULATION #
+        ##
+
+        def create_overlapping_windows(dataframe, window_size, overlap_pct):
+            num_rows = dataframe.shape[0]
+            stride = int(window_size * (1 - overlap_pct))
+            num_windows = (num_rows - window_size) // stride + 1
+
+            start_indices = np.arange(num_windows) * stride
+            end_indices = start_indices + window_size
+
+            windows = [dataframe.iloc[start:end]
+                       for start, end in zip(start_indices, end_indices)]
+
+            return windows
+
+        for n, g in data_head.groupby(["class", "rpm"]):
+            windows = create_overlapping_windows(
+                g, config["window_width"], config["window_overlap"])  # FIXME for synced FFT
+
+            for sensor in sensors:
+                sensor_windows = torch.tensor(
+                    np.array([window[sensor].to_numpy() for window in windows]))
+
+                fft_windows = torch.abs(torch.fft.rfft(sensor_windows))
+                # First log, then mean should be the correct order
+                if config["log_FFT"]:
+                    fft_windows = torch.log1p(fft_windows)
+                if not config["include_FFT_DC"]:
+                    fft_windows = fft_windows[:, 1:]
+
+                mask = fft_windows.mean(dim=0)
+
+                masks[(n[1], sensor)] = mask
+
+        return data_tail
+
+    new_train_data = mixed_query_normalization_helper(train_data, "train")
+    new_validation_data = mixed_query_normalization_helper(
+        validation_data, "validation")
+    new_test_data = mixed_query_normalization_helper(test_data, "test")
+
+    config["masks"] = masks
+
+    return new_train_data, new_validation_data, new_test_data
 
 
 # Setup
