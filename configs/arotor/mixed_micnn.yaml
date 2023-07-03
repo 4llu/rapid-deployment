@@ -1,9 +1,9 @@
 #? Creation
-name: SR2SR
+name: mixed
 log: true
 save: false # TODO
-eval_freq: 10 # * Decrease for hyper opt and final testing
-eval_episodes: 10 # * Increase for hyper opt and final testing
+eval_freq: 1 # * Decrease for hyper opt and final testing
+eval_episodes: 20 # * Increase for hyper opt and final testing
 
 #? Fewshot setup
 
@@ -34,18 +34,19 @@ window_overlap: 0.95
 
 #? Preprocessing
 
-preprocessing_full: []
-# preprocessing_full: [mixed_query_normalization]
+# preprocessing_full: []
+preprocessing_full: [mixed_query_normalization]
+mixed_query_normalization_scale: 0.1
 preprocessing_sample: []
 # preprocessing_sample: [FFT]
 # preprocessing_sample: [sync_FFT] # ! Slow, always prefer the other two if possible
 sync_FFT_rotations: 8 # How many rotations to include for synced FFT. Only used if sync_FFT on.
-preprocessing_class_batch: []
-# preprocessing_class_batch: [FFT]
-# preprocessing_batch: []
-preprocessing_batch: [FFT]
+# preprocessing_class_batch: []
+preprocessing_class_batch: [FFT, FFT_masking]
+preprocessing_batch: []
+# preprocessing_batch: [FFT]
 # preprocessing_batch: [sync_FFT]
-include_FFT_DC: true # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
+include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 log_FFT: false
 
 # FFT: true
@@ -77,7 +78,7 @@ embedding_multiplier: 100
 
 #? Training
 
-epoch_len: 10
+epoch_len: 1
 max_epochs: 150
 patience: 50
 optimizer: AdamW

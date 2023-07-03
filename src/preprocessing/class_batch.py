@@ -14,7 +14,7 @@ def FFT(support_query_set, config):
     support_query_set = torch.abs(support_query_set)
 
     if not config["include_FFT_DC"]:
-        support_query_set = support_query_set[:, :, 1:]
+        support_query_set = support_query_set[:, 1:]
 
     if config["log_FFT"]:
         support_query_set = torch.log1p(support_query_set)

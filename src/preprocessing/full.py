@@ -75,7 +75,8 @@ def mixed_query_normalization(train_data, validation_data, test_data, config):
             # Scale for the healthy state of each rpm
             p25 = g[sensors].quantile(0.25)
             p75 = g[sensors].quantile(0.75)
-            scale[n[1]] = (p75 - p25).astype("float32")
+            scale[n[1]] = (p75 - p25).astype("float32") * \
+                config["mixed_query_normalization_scale"]
 
         # Scaling helper
         def scale_group(group_data):
@@ -115,7 +116,8 @@ def mixed_query_normalization(train_data, validation_data, test_data, config):
                 sensor_windows = torch.tensor(
                     np.array([window[sensor].to_numpy() for window in windows]))
 
-                fft_windows = torch.abs(torch.fft.rfft(sensor_windows))
+                fft_windows = torch.abs(torch.fft.rfft(
+                    sensor_windows, norm="forward"))
                 # First log, then mean should be the correct order
                 if config["log_FFT"]:
                     fft_windows = torch.log1p(fft_windows)

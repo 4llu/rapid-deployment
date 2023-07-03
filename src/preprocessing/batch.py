@@ -1,4 +1,5 @@
 import torch
+# import matplotlib.pyplot as plt
 
 # Methods
 #########
@@ -36,7 +37,20 @@ def FFT(support_query_set, config):
         support_query_set = support_query_set[:, :, 1:]
 
     if config["log_FFT"]:
-        support_query_set = torch.log(support_query_set)
+        support_query_set = torch.log1p(support_query_set)
+
+    # fig, axs = plt.subplots(2, 3, figsize=(20, 12), sharey=True)
+    # axs = axs.flatten()
+    # axs[0].plot(support_query_set[0, 0])
+    # axs[1].plot(support_query_set[1, 0])
+    # axs[2].plot(support_query_set[9, 0])
+    # axs[3].plot(support_query_set[0, 5])
+    # axs[4].plot(support_query_set[1, 5])
+    # axs[5].plot(support_query_set[9, 5])
+
+    # plt.tight_layout()
+    # plt.show()
+    # quit()
 
     return support_query_set
 
