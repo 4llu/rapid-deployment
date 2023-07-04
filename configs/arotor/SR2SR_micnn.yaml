@@ -23,7 +23,7 @@ test_sensors: [torque2]
 # train_sensors: [en1acc_grad, en2acc_grad, en3acc_grad, en4acc_grad, en5acc_grad]
 # validation_sensors: [en1acc_grad, en2acc_grad, en3acc_grad, en4acc_grad, en5acc_grad]
 # test_sensors: [en1acc_grad, en2acc_grad, en3acc_grad, en4acc_grad, en5acc_grad]
-train_rpm: [750]
+train_rpm: [750, 1000]
 validation_rpm: [500, 1250]
 test_rpm: [250, 1500]
 train_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -44,7 +44,9 @@ sync_FFT_rotations: 8 # How many rotations to include for synced FFT. Only used 
 preprocessing_class_batch: []
 # preprocessing_class_batch: [FFT]
 # preprocessing_batch: []
-preprocessing_batch: [FFT]
+preprocessing_batch: [FFT, block_shuffle]
+# white_noise_std: 0.005
+block_size: 500
 # preprocessing_batch: [sync_FFT]
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 log_FFT: false

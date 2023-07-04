@@ -15,9 +15,14 @@ class MiCNN(nn.Module):
         self.cn_layer1 = ConvLayer(
             1,  # * Multi sensor stuff is not part of the tests
             16,
-            kernel_size=32,
-            stride=8,
-            padding=16,
+            # -
+            kernel_size=64,
+            stride=16,
+            padding=24,
+            # -
+            # kernel_size=32,
+            # stride=8,
+            # padding=16,
             # kernel_size=64
             # if "FFT" not in self.config["preprocessing_batch"]
             # else 32,  # FIXME when better idea of specific FFT implementation
@@ -31,7 +36,7 @@ class MiCNN(nn.Module):
         self.cn_layer4 = ConvLayer(64, 128, dropout=config["fc_dropout"])
 
         # Global average pooling
-        self.globalAvgPool = nn.AvgPool1d(kernel_size=23)  # FIXME Kernel size
+        self.globalAvgPool = nn.AvgPool1d(kernel_size=11)  # FIXME Kernel size
 
         # Classifier
         self.fc1 = nn.Linear(

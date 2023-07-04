@@ -54,6 +54,46 @@ def FFT(support_query_set, config):
 
     return support_query_set
 
+
+def additive_white_noise(support_query_set, config):
+
+    support_query_set += torch.normal(torch.zeros(support_query_set.shape), torch.ones(
+        support_query_set.shape) * config["white_noise_std"])
+
+    return support_query_set
+
+
+def mult_white_noise(support_query_set, config):
+
+    support_query_set *= 1 + torch.normal(torch.zeros(support_query_set.shape), torch.ones(
+        support_query_set.shape) * config["white_noise_std"])
+
+    return support_query_set
+
+
+def block_shuffle(support_query_set, config):
+    # print(support_query_set.size())
+    # print(support_query_set[0, 0, :200].mean())
+
+    original_size = support_query_set.size()
+    num_blocks = support_query_set.size(-1) // config["block_size"]
+
+    support_query_set = support_query_set.view(
+        *support_query_set.size()[:-1], num_blocks, config["block_size"])
+
+    # Shuffled indices
+    block_indices = torch.randperm(num_blocks)
+    # Shuffle
+    support_query_set = support_query_set[:, :, block_indices, :]
+
+    support_query_set = support_query_set.view(original_size)
+
+    # print(support_query_set[0, 0, :200].mean())
+    # print(support_query_set.size())
+    # quit()
+
+    return support_query_set
+
 # Setup
 #######
 
@@ -83,5 +123,14 @@ def preprocess_batch(support_query_set, config):
         or "sync_FFT" in config["preprocessing_batch"]
     ):
         support_query_set = FFT(support_query_set, config)
+
+    if "additive_white_noise" in config["preprocessing_batch"]:
+        support_query_set = additive_white_noise(support_query_set, config)
+
+    if "mult_white_noise" in config["preprocessing_batch"]:
+        support_query_set = mult_white_noise(support_query_set, config)
+
+    if "block_shuffle" in config["preprocessing_batch"]:
+        support_query_set = block_shuffle(support_query_set, config)
 
     return support_query_set
