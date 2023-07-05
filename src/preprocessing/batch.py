@@ -94,6 +94,62 @@ def block_shuffle(support_query_set, config):
 
     return support_query_set
 
+
+def low_freq_masking(support_query_set, config):
+    band_width = torch.randint(low=2, high=401, size=(1,))
+    support_query_set[:, :, :band_width] = 0
+
+    return support_query_set
+
+
+def high_freq_masking(support_query_set, config):
+    band_width = torch.randint(low=2, high=1001, size=(1,))
+    support_query_set[:, :, -band_width:] = 0
+
+    return support_query_set
+
+
+def random_freq_masking(support_query_set, config):
+
+    num_bands = torch.randint(low=0, high=4, size=(1,))
+    band_widths = torch.randint(low=2, high=401, size=(num_bands,))
+    band_locations = torch.randint(
+        low=0, high=support_query_set.shape[-1], size=(num_bands,))
+
+    for i in range(num_bands):
+        support_query_set[:, :, band_locations[i]:band_locations[i]+band_widths[i]] = 0
+
+    return support_query_set
+
+
+def combined_freq_masking(support_query_set, config):
+    assert sum(config["combined_freq_masking_probabilities"]
+               ) == 1, "Combined probabilites of frequency masking must sum to 1!"
+    assert len(config["combined_freq_masking_probabilities"]
+               ) == 4, "4 probabilities are required!"
+
+    r = torch.rand((1,))
+
+    # Do nothing
+    if r < config["combined_freq_masking_probabilities"][0]:
+        return support_query_set
+    # Low masking
+    if r < config["combined_freq_masking_probabilities"][0] + config["combined_freq_masking_probabilities"][1]:
+        return low_freq_masking(support_query_set, config)
+    # Low masking
+    if r < config["combined_freq_masking_probabilities"][0] + config["combined_freq_masking_probabilities"][1] + config["combined_freq_masking_probabilities"][2]:
+        return high_freq_masking(support_query_set, config)
+    else:
+        return random_freq_masking(support_query_set, config)
+
+
+def gain_changer(support_query_set, config):
+    support_query_set = support_query_set * \
+        (torch.tensor([1]) + torch.normal(mean=torch.zeros(1),
+         std=torch.tensor([config["gain_std"]])))
+
+    return support_query_set
+
 # Setup
 #######
 
@@ -129,6 +185,21 @@ def preprocess_batch(support_query_set, config):
 
     if "mult_white_noise" in config["preprocessing_batch"]:
         support_query_set = mult_white_noise(support_query_set, config)
+
+    if "gain_changer" in config["preprocessing_batch"]:
+        support_query_set = gain_changer(support_query_set, config)
+
+    if "low_freq_masking" in config["preprocessing_batch"]:
+        support_query_set = low_freq_masking(support_query_set, config)
+
+    if "high_freq_masking" in config["preprocessing_batch"]:
+        support_query_set = high_freq_masking(support_query_set, config)
+
+    if "random_freq_masking" in config["preprocessing_batch"]:
+        support_query_set = random_freq_masking(support_query_set, config)
+
+    if "combined_freq_masking" in config["preprocessing_batch"]:
+        support_query_set = combined_freq_masking(support_query_set, config)
 
     if "block_shuffle" in config["preprocessing_batch"]:
         support_query_set = block_shuffle(support_query_set, config)
