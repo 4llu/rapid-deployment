@@ -285,6 +285,10 @@ class FewshotBatchSampler(Sampler):
         if math.floor(len(self.classes) / self.config["n_way"]) != 1:
             class_perm = np.random.permutation(len(self.classes))
 
+        # class_perm = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        # class_perm = [7, 0, 1, 2, 3, 4, 5, 6, 8, 9]
+        # class_perm = [4, 0, 1, 2, 3, 5, 6, 7, 8, 9]
+
         # Go through class permutation
         for j in range(math.floor(len(self.classes) / self.config["n_way"])):
             class_batch = class_perm[

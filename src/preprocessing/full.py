@@ -5,40 +5,10 @@ import torch
 #########
 
 
-# def z_score(train_data, validation_data, test_data, config):
-#     # Statistics only from the training data
-#     mean = train_data.mean(dim=(0, 2))
-#     std = train_data.std(dim=(0, 2))
-
-#     # (x - mu) / sigma
-#     train_data = ((train_data.swapaxes(1, 2) - mean) / std).swapaxes(2, 1)
-#     validation_data = ((validation_data.swapaxes(1, 2) - mean) / std).swapaxes(2, 1)
-#     test_data = ((test_data.swapaxes(1, 2) - mean) / std).swapaxes(2, 1)
-
-#     return train_data, validation_data, test_data
-
-
-# def min_max(train_data, validation_data, test_data, config):
-#     # * This looks like a weird solution because torch min doesn't
-#     # * take two dimension inputs (e.g. ´(0, 2)´)
-
-#     # Statistics only from the training data
-#     min = torch.tensor(train_data.numpy().min(axis=(0, 2)))
-#     max = torch.tensor(train_data.numpy().max(axis=(0, 2)))
-
-#     # (x - min) / (max - min)
-#     train_data = ((train_data.swapaxes(1, 2) - min) / (max - min)).swapaxes(2, 1)
-#     validation_data = ((validation_data.swapaxes(1, 2) - min) / (max - min)).swapaxes(
-#         2, 1
-#     )
-#     test_data = ((test_data.swapaxes(1, 2) - min) / (max - min)).swapaxes(2, 1)
-
-#     return train_data, validation_data, test_data
-
-
 def mixed_query_normalization(train_data, validation_data, test_data, config):
     head_len = 3012 * 10
     masks = {}
+    distribution_stats = {}
 
     def mixed_query_normalization_helper(data, split):
         classes = config[f"{split}_classes"]
@@ -92,7 +62,7 @@ def mixed_query_normalization(train_data, validation_data, test_data, config):
         data_tail = data_tail.groupby(
             ["class", "rpm"], group_keys=False).apply(scale_group)
 
-        # MASK CALCULATION #
+        # (1) MASK & (2) DISTRIBUTION STAT CALCULATION #
         ##
 
         def create_overlapping_windows(dataframe, window_size, overlap_pct):
@@ -124,6 +94,13 @@ def mixed_query_normalization(train_data, validation_data, test_data, config):
                 if not config["include_FFT_DC"]:
                     fft_windows = fft_windows[:, 1:]
 
+                # (2) Calculate stats to be used for std normalization
+
+                distribution_stats[(n[1], sensor)] = {
+                    "means": fft_windows.mean(dim=0), "stds": fft_windows.std(dim=0, correction=1)}
+
+                # (1) Create masks
+
                 mask = fft_windows.mean(dim=0)
 
                 masks[(n[1], sensor)] = mask
@@ -136,6 +113,7 @@ def mixed_query_normalization(train_data, validation_data, test_data, config):
     new_test_data = mixed_query_normalization_helper(test_data, "test")
 
     config["masks"] = masks
+    config["distribution_stats"] = distribution_stats
 
     return new_train_data, new_validation_data, new_test_data
 
@@ -166,17 +144,5 @@ def preprocess_full(train_data, validation_data, test_data, config):
         train_data, validation_data, test_data = mixed_query_normalization(
             train_data, validation_data, test_data, config
         )
-
-    # # Z-score
-    # if "z-score" in config["preprocessing_full"]:
-    #     train_data, validation_data, test_data = z_score(
-    #         train_data, validation_data, test_data, config
-    #     )
-
-    # # Min max
-    # if "min_max" in config["preprocessing_full"]:
-    #     train_data, validation_data, test_data = min_max(
-    #         train_data, validation_data, test_data, config
-    #     )
 
     return train_data, validation_data, test_data
