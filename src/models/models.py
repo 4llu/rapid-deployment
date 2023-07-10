@@ -29,6 +29,10 @@ def setup_model(config, device):
         from models.backbones.inception_time import InceptionTime
 
         backbone = InceptionTime(config)
+    elif config["backbone"] == "RelationDefault":
+        from models.backbones.relation_default import RelationDefault
+
+        backbone = RelationDefault(config)
     else:
         raise Exception(f"No such backbone name as: {config['backbone']}!")
 
@@ -40,6 +44,10 @@ def setup_model(config, device):
         from models.prototypical import Prototypical
 
         model = Prototypical(backbone, config)
+    elif config["model"] == "relation":
+        from models.relation import Relation
+
+        model = Relation(backbone, config)
     else:
         raise Exception(f"No such model name as: {config['model']}!")
 

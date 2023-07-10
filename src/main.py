@@ -15,6 +15,7 @@ from models.models import setup_model
 from training.trainers import setup_evaluator, setup_trainer
 from utils.config import setup_config
 from utils.logging import log_metrics, setup_logging
+from utils.custom_metrics import RNFSAccuracy
 
 
 def run_training(
@@ -82,14 +83,22 @@ def run_training(
         )
 
     # Loss function
-    loss_fn = torch.nn.CrossEntropyLoss()
+    # ? Moved to trainer
+    if config["model"] == "prototypical":
+        loss_fn = torch.nn.CrossEntropyLoss()
+    elif config["model"] == "relation":
+        loss_fn = torch.nn.MSELoss()
+    else:
+        raise "WAT"
+
     loss_fn = loss_fn.to(device=device)
 
     # TRAINING
     ##########
 
     # Setup trainers
-    trainer = setup_trainer(config, model, optimizer, loss_fn, device)  # Training
+    trainer = setup_trainer(config, model, optimizer,
+                            loss_fn, device)  # Training
     evaluator = setup_evaluator(config, model, device)  # Validation
     evaluator_test = setup_evaluator(config, model, device)  # Testing
 
@@ -101,16 +110,24 @@ def run_training(
     # Setup metric tracking for validation and testing
     for ev, label in [(evaluator, "val"), (evaluator_test, "test")]:
         # Compute accuracy to be used in the metrics below
-        accuracy = Accuracy(
-            device=device,
-        )
+        if config["model"] == "prototypical":
+            accuracy = Accuracy(
+                device=device,
+            )
+        elif config["model"] == "relation":
+            accuracy = RNFSAccuracy(
+                device=device,
+            )
+        else:
+            raise "WAT"
+
         # Define tracked metrics
         metrics = {
             f"{label}_accuracy": accuracy,
-            f"{label}_loss": Loss(
-                loss_fn,
-                device=device,
-            ),
+            # f"{label}_loss": Loss(
+            #     loss_fn,
+            #     device=device,
+            # ),
             f"{label}_error": (1.0 - accuracy) * 100,
         }
         # Attach to trainers
@@ -224,7 +241,8 @@ def run_training(
 
             # Run test evaluation only if validation accuracy has improved and not an Optuna trial
             if not trial:
-                evaluator_test.run(test_loader, epoch_length=config["eval_episodes"])
+                evaluator_test.run(
+                    test_loader, epoch_length=config["eval_episodes"])
                 log_metrics(evaluator_test, "test")
                 best_test_accuracy = evaluator_test.state.metrics["test_accuracy"]
         # If not best
@@ -241,7 +259,8 @@ def run_training(
     def _():
         # * Skip for trials because the test metrics aren't used for anything there
         if not trial:
-            evaluator_test.run(test_loader, epoch_length=config["eval_episodes"])
+            evaluator_test.run(
+                test_loader, epoch_length=config["eval_episodes"])
             # Print results
             log_metrics(evaluator_test, "test")
 
@@ -251,7 +270,8 @@ def run_training(
         # Print global results
         print()
         print(
-            "Best validation accuracy: {} @ epoch {}".format(best_accuracy, best_epoch)
+            "Best validation accuracy: {} @ epoch {}".format(
+                best_accuracy, best_epoch)
         )
         print()
         print("Respective test accuracy: {}".format(best_test_accuracy))

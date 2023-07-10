@@ -14,6 +14,46 @@ def target_converter(targets, config, device):
 # TRAINER
 #########
 
+def relation_train_function_wrapper(
+    engine, batch, config, model, optimizer, loss_fn, device, scaler
+):
+    # Reset
+    model.train()
+    optimizer.zero_grad(set_to_none=True)
+
+    # Non-blocking probably has no effect here,
+    # because model(samples) is an immediate sync point
+    samples = batch[0]  # * Already moved to device in collate_fn
+    # Ignore actual class labels. Can be used to map episode labels to actual classes if necessary
+    # targets = torch.tensor(list(zip(*batch[1]))[0], device=device)
+    targets = torch.diag(torch.ones(10, device=device)
+                         ).repeat_interleave(config["n_query"], dim=0)
+    # targets = targets.flatten()
+    targets = targets.reshape(
+        config["n_way"], config["n_query"], config["n_way"])
+
+    # Forward pass and loss calculation
+    #! No AMP support
+    # Automatic mixed precision (speed optimization)
+    # https://pytorch.org/docs/stable/amp.html
+    if config["use_amp"]:
+        raise "No AMP support!"
+
+    outputs = model(samples)
+    loss = loss_fn(outputs, targets)
+
+    loss.backward()
+    optimizer.step()
+
+    # Pytorch Ignite integration
+    train_loss = loss.item()
+    engine.state.metrics = {
+        "epoch": engine.state.epoch,
+        "train_loss": train_loss,
+    }
+
+    return {"train_loss": train_loss}
+
 
 def train_function_wrapper(
     engine, batch, config, model, optimizer, loss_fn, device, scaler
@@ -25,7 +65,8 @@ def train_function_wrapper(
     # Legacy
     if config["data"] == "ARotor_old":
         samples = batch.to(device)
-        targets = torch.arange(0, config["n_way"], dtype=torch.long, device=device)
+        targets = torch.arange(
+            0, config["n_way"], dtype=torch.long, device=device)
         targets = targets.repeat_interleave(config["n_query"])
     # Currently important implementation
     else:
@@ -90,7 +131,13 @@ def setup_trainer(
     if str(device) == "cuda":
         scaler = torch.cuda.amp.GradScaler()
 
-    train_function_ = train_function_wrapper
+    if config["model"] == "prototypical":
+        train_function_ = train_function_wrapper
+
+    elif config["model"] == "relation":
+        train_function_ = relation_train_function_wrapper
+    else:
+        raise "WAT"
 
     train_function = partial(
         train_function_,
@@ -110,6 +157,31 @@ def setup_trainer(
 # EVALUATOR
 ###########
 
+@torch.no_grad()
+def relation_eval_function_wrapper(engine, batch, config, model, device):
+    model.eval()
+
+    # Non-blocking probably has no effect here,
+    # because model(samples) is an immediate sync point
+    samples = batch[0]  # * Already moved to device in collate_fn
+    #
+    targets = torch.diag(torch.ones(10, device=device)
+                         ).repeat_interleave(config["n_query"], dim=0)
+    # targets = targets.flatten()
+    targets = targets.reshape(
+        config["n_way"], config["n_query"], config["n_way"])
+
+    # Forward pass and loss calculation
+    #! No AMP support
+    # Automatic mixed precision (speed optimization)
+    # https://pytorch.org/docs/stable/amp.html
+    if config["use_amp"]:
+        raise "No AMP support!"
+
+    outputs = model(samples)
+
+    return outputs, targets
+
 
 @torch.no_grad()
 def eval_function_wrapper(engine, batch, config, model, device):
@@ -118,7 +190,8 @@ def eval_function_wrapper(engine, batch, config, model, device):
     # Legacy
     if config["data"] == "ARotor_old":
         samples = batch.to(device)
-        targets = torch.arange(0, config["n_way"], dtype=torch.long, device=device)
+        targets = torch.arange(
+            0, config["n_way"], dtype=torch.long, device=device)
         targets = targets.repeat_interleave(config["n_query"])
     # Currently important implementation
     else:
@@ -155,7 +228,12 @@ def setup_evaluator(
     model,
     device,
 ):
-    eval_function_ = eval_function_wrapper
+
+    if config["model"] == "prototypical":
+        eval_function_ = eval_function_wrapper
+
+    elif config["model"] == "relation":
+        eval_function_ = relation_eval_function_wrapper
 
     eval_function = partial(
         eval_function_,
