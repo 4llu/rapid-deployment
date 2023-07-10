@@ -25,6 +25,12 @@ def FFT(support_query_set, config):
     # * This changes the sample length!!!
     # * Specifically, halves it
 
+    if config["pad_FFT"] > 0:
+        padding = torch.zeros(
+            *support_query_set.shape[:-1], config["pad_FFT"] - support_query_set.shape[-1])
+
+        support_query_set = torch.cat((support_query_set, padding), dim=-1)
+
     # Keep only the magnitude of the positive complex conjugates
     support_query_set = torch.fft.rfft(support_query_set, norm="forward")
     support_query_set = torch.abs(support_query_set)
@@ -117,7 +123,8 @@ def random_freq_masking(support_query_set, config):
         low=0, high=support_query_set.shape[-1], size=(num_bands,))
 
     for i in range(num_bands):
-        support_query_set[:, :, band_locations[i]:band_locations[i]+band_widths[i]] = 0
+        support_query_set[:, :, band_locations[i]
+            :band_locations[i]+band_widths[i]] = 0
 
     return support_query_set
 
