@@ -25,12 +25,14 @@ def relation_train_function_wrapper(
     # because model(samples) is an immediate sync point
     samples = batch[0]  # * Already moved to device in collate_fn
     # Ignore actual class labels. Can be used to map episode labels to actual classes if necessary
-    # targets = torch.tensor(list(zip(*batch[1]))[0], device=device)
-    targets = torch.diag(torch.ones(10, device=device)
-                         ).repeat_interleave(config["n_query"], dim=0)
-    # targets = targets.flatten()
-    targets = targets.reshape(
-        config["n_way"], config["n_query"], config["n_way"])
+    # targets = torch.diag(torch.ones(10, device=device)
+    #                      ).repeat_interleave(config["n_query"], dim=0)
+    # targets = targets.reshape(
+    #     config["n_way"], config["n_query"], config["n_way"])
+    
+    targets = torch.tensor(list(zip(*batch[1]))[0], device=device)
+    targets = target_converter(targets, config, device)
+    
 
     # Forward pass and loss calculation
     #! No AMP support
@@ -40,6 +42,15 @@ def relation_train_function_wrapper(
         raise "No AMP support!"
 
     outputs = model(samples)
+
+    ######
+    print(outputs[0, 0, :])
+    # print(targets[0, 0, :])
+    print(targets[0])
+    ######
+
+    outputs = outputs.reshape(outputs.shape[0] * outputs.shape[1], -1) # XXX
+
     loss = loss_fn(outputs, targets)
 
     loss.backward()
@@ -165,11 +176,13 @@ def relation_eval_function_wrapper(engine, batch, config, model, device):
     # because model(samples) is an immediate sync point
     samples = batch[0]  # * Already moved to device in collate_fn
     #
-    targets = torch.diag(torch.ones(10, device=device)
-                         ).repeat_interleave(config["n_query"], dim=0)
-    # targets = targets.flatten()
-    targets = targets.reshape(
-        config["n_way"], config["n_query"], config["n_way"])
+    # targets = torch.diag(torch.ones(10, device=device)
+    #                      ).repeat_interleave(config["n_query"], dim=0)
+    # targets = targets.reshape(
+    #     config["n_way"], config["n_query"], config["n_way"])
+    
+    targets = torch.tensor(list(zip(*batch[1]))[0], device=device)
+    targets = target_converter(targets, config, device)
 
     # Forward pass and loss calculation
     #! No AMP support
@@ -179,6 +192,8 @@ def relation_eval_function_wrapper(engine, batch, config, model, device):
         raise "No AMP support!"
 
     outputs = model(samples)
+
+    outputs = outputs.reshape(outputs.shape[0] * outputs.shape[1], -1) # XXX
 
     return outputs, targets
 

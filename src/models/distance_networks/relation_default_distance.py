@@ -1,43 +1,32 @@
 import torch.nn as nn
+import torch.nn.functional as F
 
 from models.backbones.wdcnn import ConvLayer
 
-
-class RelationDefault(nn.Module):
+class DefaultDistanceNetwork(nn.Module):
     def __init__(self, config):
-        super(RelationDefault, self).__init__()
+        super(DefaultDistanceNetwork, self).__init__()
         self.config = config
 
-        # Convolutional layers
-        # FIXME Channel nums
         self.cn_layer1 = ConvLayer(
-            1, 16,
+            1, 1,
+            # 64, 64,
             kernel_size=3,
             stride=1,
             padding="same",
             dropout=config["cl_dropout"],
         )
         self.cn_layer2 = ConvLayer(
-            16, 32,
+            1, 1,
+            # 64, 8,
             kernel_size=3,
             stride=1,
             padding="same",
             dropout=config["cl_dropout"],
         )
-        self.cn_layer3 = ConvLayer(
-            32, 64,
-            kernel_size=3,
-            stride=1,
-            padding="same",
-            dropout=config["cl_dropout"],
-        )
-        self.cn_layer4 = ConvLayer(
-            64, 1,
-            kernel_size=3,
-            stride=1,
-            padding="same",
-            dropout=config["cl_dropout"],
-        )
+
+        self.fc1 = nn.Linear(128*1, 8)
+        self.fc2 = nn.Linear(8, 1)
 
     def forward(self, x):
         verbose = False
@@ -55,12 +44,19 @@ class RelationDefault(nn.Module):
         if verbose:
             print("CL 2:", out.shape)
 
-        out = self.cn_layer3(out)
+        # Flatten channels
+        out = out.view(out.shape[0], -1)
         if verbose:
-            print("CL 3:", out.shape)
+            print(out.shape)
 
-        out = self.cn_layer4(out)
+        out = self.fc1(out)
+        out = F.relu(out)
         if verbose:
-            print("CL 4:", out.shape)
+            print(out.shape)
+
+        out = self.fc2(out)
+        out = F.sigmoid(out)
+        if verbose:
+            print(out.shape)
 
         return out

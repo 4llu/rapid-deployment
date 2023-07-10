@@ -87,7 +87,8 @@ def run_training(
     if config["model"] == "prototypical":
         loss_fn = torch.nn.CrossEntropyLoss()
     elif config["model"] == "relation":
-        loss_fn = torch.nn.MSELoss()
+        # loss_fn = torch.nn.MSELoss()
+        loss_fn = torch.nn.CrossEntropyLoss()
     else:
         raise "WAT"
 
@@ -115,7 +116,10 @@ def run_training(
                 device=device,
             )
         elif config["model"] == "relation":
-            accuracy = RNFSAccuracy(
+            # accuracy = RNFSAccuracy(
+            #     device=device,
+            # )
+            accuracy = Accuracy(
                 device=device,
             )
         else:

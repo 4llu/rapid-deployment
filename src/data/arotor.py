@@ -347,7 +347,7 @@ def fewshot_collate(batch, config=None, device=None):
         samples = samples.to(device, non_blocking=True)
 
     if len(config["preprocessing_batch"]) > 0:
-        samples = preprocess_batch(samples, config)
+        samples = preprocess_batch(samples, config, device)
 
     # Move samples to MPS
     if str(device) == "mps":

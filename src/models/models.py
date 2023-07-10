@@ -47,7 +47,21 @@ def setup_model(config, device):
     elif config["model"] == "relation":
         from models.relation import Relation
 
-        model = Relation(backbone, config)
+        # Distance network selection
+        #################
+
+        distance_network = None
+        if config["distance_network"] == "default":
+            from models.distance_networks.relation_default_distance import DefaultDistanceNetwork
+
+            distance_network = DefaultDistanceNetwork(config)
+        elif config["distance_network"] == "simple":
+            from models.distance_networks.simple_distance import SimpleDistanceNetwork
+
+            distance_network = SimpleDistanceNetwork(config)
+
+        model = Relation(backbone, distance_network, config)
+
     else:
         raise Exception(f"No such model name as: {config['model']}!")
 
@@ -57,5 +71,21 @@ def setup_model(config, device):
     # * torch.compile doesn't work on windows currently
     if device.type == "cuda" and platform.system() != "Windows":
         model = torch.compile(model)
+
+    # Print model
+    # rows = []
+    # t_params = 0
+    # for name, parameter in model.named_parameters():
+    #     if not parameter.requires_grad:
+    #         continue
+
+    #     param = parameter.numel()
+    #     rows.append([name, param])
+    #     t_params += param
+
+    # for r in rows:
+    #     print("{:<35} {:<10}".format(r[0], r[1]))
+    # print("Total parameters:", t_params)
+    # quit()
 
     return model

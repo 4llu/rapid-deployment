@@ -1,88 +1,31 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
-from models.backbones.wdcnn import ConvLayer
-
+from models.distance_networks.relation_default_distance import DefaultDistanceNetwork
+from models.distance_networks.simple_distance import SimpleDistanceNetwork
 
 class L2DistanceNetwork(nn.Module):
     def __init__(self, config):
         super(L2DistanceNetwork, self).__init__()
 
     def forward(self, x):
-        x = torch.sqrt(torch.pow(x[:, :, :256] - x[:, :, 256:], 2))
-        x = torch.sum(x, dim=(1, 2))
+        x = torch.abs(x[:, 0, :] - x[:, 1, :])
+        # x = torch.abs(x[:, :, :128] - x[:, :, 128:])
+        # x = torch.sqrt(torch.pow(x[:, :, :128] - x[:, :, 128:], 2))
+        x = torch.sum(x, dim=-1)
+        # x = torch.sum(x, dim=(1, 2))
+        x = -x
 
         return x
 
-
-class DefaultDistanceNetwork(nn.Module):
-    def __init__(self, config):
-        super(DefaultDistanceNetwork, self).__init__()
-        self.config = config
-
-        self.cn_layer1 = ConvLayer(
-            64, 64,
-            kernel_size=3,
-            stride=1,
-            padding="same",
-            dropout=config["cl_dropout"],
-        )
-        self.cn_layer2 = ConvLayer(
-            64, 8,
-            kernel_size=3,
-            stride=1,
-            padding="same",
-            dropout=config["cl_dropout"],
-        )
-
-        self.fc1 = nn.Linear(128*8, 8)
-        self.fc2 = nn.Linear(8, 1)
-
-    def forward(self, x):
-        verbose = False
-
-        if verbose:
-            print("Input:", x.shape)
-
-        # Conv layers
-
-        out = self.cn_layer1(x)
-        if verbose:
-            print("CL 1:", out.shape)
-
-        out = self.cn_layer2(out)
-        if verbose:
-            print("CL 2:", out.shape)
-
-        # Flatten channels
-        out = out.view(out.shape[0], -1)
-        if verbose:
-            print(out.shape)
-
-        out = self.fc1(out)
-        out = F.relu(out)
-        if verbose:
-            print(out.shape)
-
-        out = self.fc2(out)
-        out = F.sigmoid(out)
-        if verbose:
-            print(out.shape)
-
-        return out
-
-
 class Relation(nn.Module):
-    def __init__(self, backbone, config):
+    def __init__(self, backbone, distance_network, config):
         super(Relation, self).__init__()
         self.config = config
         self.backbone = backbone
+        self.distance_network = distance_network
 
-        self.distance_network = L2DistanceNetwork(config)
-        # self.distance_network = None
-        # if config["distance_network"] == "default":
-        #     self.distance_network = DefaultDistanceNetwork(config)
+        # self.distance_network = L2DistanceNetwork(config)
 
     def forward(self, support_query):
         # Starts as [n_way, k_shot + n_query, window_length]
@@ -96,6 +39,7 @@ class Relation(nn.Module):
 
         # Compute embeddings
         embeddings = self.backbone(support_query)
+        embeddings = embeddings.unsqueeze(1) # XXX Remove (only for wdcnn)
 
         # Return to original shape (except feature length is now embedding length)
         # [n_way, k_shot + n_query, embedding_len]
@@ -142,7 +86,8 @@ class Relation(nn.Module):
         #         for k in range(10):
         #             c.append(
         #                 torch.cat(
-        #                     [prototypes[k, :, :], query_embeddings[j, i, :, :]], dim=-1)
+        #                     [prototypes[k, :, :], query_embeddings[j, i, :, :]], dim=-2)
+        #                     # [prototypes[k, :, :], query_embeddings[j, i, :, :]], dim=-1)
         #             )
 
         # c = torch.stack(c)
@@ -162,7 +107,8 @@ class Relation(nn.Module):
         query_embeddings = query_embeddings.repeat_interleave(10, dim=0)
         # print(query_embeddings.shape)
 
-        support_query = torch.cat([prototypes, query_embeddings], dim=-1)
+        support_query = torch.cat([prototypes, query_embeddings], dim=-2) # Depth-wise
+        # support_query = torch.cat([prototypes, query_embeddings], dim=-1) # Length-wise
         # [n_way * n_query * n_way, embedding_channels, embedding_len * 2]
 
         distances = self.distance_network(support_query)
@@ -173,4 +119,19 @@ class Relation(nn.Module):
                                       self.config["n_query"],
                                       self.config["n_way"]
                                       )
+        
+        # print("----------------")
+        # print()
+        # for i in range(4):
+        #     print(distances[0, i, :])
+        #     print()
+
+        # print(">>>>>>")
+
+        # for i in range(4):
+        #     print(distances[0, i, :])
+        #     print()
+
+        # quit()
+
         return distances

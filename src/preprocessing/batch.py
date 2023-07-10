@@ -21,13 +21,13 @@ def individual_min_max(support_query_set, config):
     return support_query_set
 
 
-def FFT(support_query_set, config):
+def FFT(support_query_set, config, device):
     # * This changes the sample length!!!
     # * Specifically, halves it
 
     if config["pad_FFT"] > 0:
         padding = torch.zeros(
-            *support_query_set.shape[:-1], config["pad_FFT"] - support_query_set.shape[-1])
+            *support_query_set.shape[:-1], config["pad_FFT"] - support_query_set.shape[-1], device=device)
 
         support_query_set = torch.cat((support_query_set, padding), dim=-1)
 
@@ -161,7 +161,7 @@ def gain_changer(support_query_set, config):
 #######
 
 
-def preprocess_batch(support_query_set, config):
+def preprocess_batch(support_query_set, config, device):
     # FIXME When should this be run?
     """
     Preprocess a batch during runtime. Note that this means two things:
@@ -185,7 +185,7 @@ def preprocess_batch(support_query_set, config):
         "FFT" in config["preprocessing_batch"]
         or "sync_FFT" in config["preprocessing_batch"]
     ):
-        support_query_set = FFT(support_query_set, config)
+        support_query_set = FFT(support_query_set, config, device)
 
     if "additive_white_noise" in config["preprocessing_batch"]:
         support_query_set = additive_white_noise(support_query_set, config)

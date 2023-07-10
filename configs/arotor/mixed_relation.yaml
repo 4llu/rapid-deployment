@@ -37,7 +37,6 @@ window_overlap: 0.98
 
 #? Preprocessing
 
-pad_FFT: 8192
 # preprocessing_full: []
 preprocessing_full: []
 mixed_query_normalization_scale: 0.1
@@ -59,6 +58,8 @@ block_size: 300
 # preprocessing_batch: [sync_FFT]
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 log_FFT: false
+# pad_FFT: -1
+pad_FFT: 8192
 
 # FFT: true
 # embedding_unit_len: true
@@ -73,8 +74,10 @@ augmentation: []
 #? Model
 
 model: relation
-backbone: RelationDefault
-distance_network: default
+backbone: MiCNN
+# backbone: RelationDefault
+distance_network: simple
+# distance_network: default
 kaiming_init: true
 embedding_len: 128
 # embedding_normalization_type: False
@@ -91,7 +94,7 @@ embedding_multiplier: 100
 #? Training
 
 epoch_len: 1
-max_epochs: 150
+max_epochs: 100
 patience: 50
 optimizer: AdamW
 # lr: 0.3
