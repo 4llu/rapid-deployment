@@ -4,19 +4,18 @@ import torch.nn as nn
 from models.distance_networks.relation_default_distance import DefaultDistanceNetwork
 from models.distance_networks.simple_distance import SimpleDistanceNetwork
 
-class L2DistanceNetwork(nn.Module):
-    def __init__(self, config):
-        super(L2DistanceNetwork, self).__init__()
 
-    def forward(self, x):
-        x = torch.abs(x[:, 0, :] - x[:, 1, :])
-        # x = torch.abs(x[:, :, :128] - x[:, :, 128:])
-        # x = torch.sqrt(torch.pow(x[:, :, :128] - x[:, :, 128:], 2))
-        x = torch.sum(x, dim=-1)
-        # x = torch.sum(x, dim=(1, 2))
-        x = -x
+# class L2DistanceNetwork(nn.Module):
+#     def __init__(self, config):
+#         super(L2DistanceNetwork, self).__init__()
 
-        return x
+#     def forward(self, x):
+#         x = torch.abs(x[:, 0, :] - x[:, 1, :])
+#         x = torch.sum(x, dim=-1)
+#         x = -x
+
+#         return x
+
 
 class Relation(nn.Module):
     def __init__(self, backbone, distance_network, config):
@@ -28,110 +27,66 @@ class Relation(nn.Module):
         # self.distance_network = L2DistanceNetwork(config)
 
     def forward(self, support_query):
-        # Starts as [n_way, k_shot + n_query, window_length]
+        # support_query: [n_way, k_shot + n_query, window_length]
 
-        # Add channel dim [n_way, k_shot + n_query, 1, window_length]
-        # * Only single sensors inputs supported currently
-        support_query = support_query.unsqueeze(2)
-        # Reshape to fit (batch, channel, features) shape
-        # [n_way * (k_shot + n_query), 1, window_length]
-        support_query = support_query.reshape(-1, 1, support_query.size(-1))
+        # Check dimensions
+        if len(support_query.shape) == 3:
+            support_query = support_query.unsqueeze(2)
 
-        # Compute embeddings
-        embeddings = self.backbone(support_query)
-        embeddings = embeddings.unsqueeze(1) # XXX Remove (only for wdcnn)
-
-        # Return to original shape (except feature length is now embedding length)
-        # [n_way, k_shot + n_query, embedding_len]
-        embeddings = embeddings.reshape(
-            self.config["n_way"],
-            self.config["k_shot"] + self.config["n_query"],
-            embeddings.shape[-2],  # Embedding channels
-            embeddings.shape[-1],  # Embedding feature length
+        assert len(support_query.shape) == 4, "Support_query set has the wrong number of dimensions: {}".format(
+            len(support_query.shape)
         )
 
         # Create prototypes
-        support_embeddings = embeddings[:, : self.config["k_shot"]]
-        # [n_way, k_shot, embedding_channels, embedding_len]
-        prototypes = support_embeddings.mean(dim=1)
-        # [n_way, embedding_channels, embedding_len]
-        prototypes = prototypes.repeat(400, 1, 1)
+        ##
 
-        # Query embeddings
-        query_embeddings = embeddings[:, self.config["k_shot"]:]
-        # [n_way, n_query, embedding_channels, embedding_len]
+        support_set = support_query[:, : self.config["k_shot"], :, :]
+        # Reshape required for nn.conv1d
+        support_set = support_set.reshape(support_set.shape[0] * support_set.shape[1], *support_set.shape[2:])
+        # Embed
+        support_embeddings = self.backbone(support_set)
 
-        # print("-----")
-        # print(prototypes[0, 0, :10])
-        # print("-----")
-        # for i in range(4):
-        #     print(query_embeddings[0, i, 0, :10])
-        #     print()
+        # FIXME Ensure all backbones have channel support
+        if len(support_embeddings.shape) == 2:
+            support_embeddings = support_embeddings.unsqueeze(1)
 
-        # print(">>>>>>")
+        # Return to original shape
+        support_embeddings = support_embeddings.reshape(
+            self.config["n_way"], self.config["k_shot"], *support_embeddings.shape[1:]
+        )
+        # Combine k_shot support samples
+        support_embeddings = support_embeddings.sum(dim=1)
 
-        # print("-----")
-        # print(prototypes[9, 0, :10])
-        # print("-----")
-        # for i in range(4):
-        #     print(query_embeddings[9, i, 0, :10])
-        #     print()
-        # quit()
+        # Create query embeddings
+        ##
 
-        ######
+        query_set = support_query[:, self.config["k_shot"] :, :, :]
+        # Reshape required for nn.conv1d
+        query_set = query_set.reshape(query_set.shape[0] * query_set.shape[1], *query_set.shape[2:])
 
-        # c = []
-        # for j in range(10):
-        #     for i in range(40):
-        #         for k in range(10):
-        #             c.append(
-        #                 torch.cat(
-        #                     [prototypes[k, :, :], query_embeddings[j, i, :, :]], dim=-2)
-        #                     # [prototypes[k, :, :], query_embeddings[j, i, :, :]], dim=-1)
-        #             )
+        # Embed
+        query_embeddings = self.backbone(query_set)
 
-        # c = torch.stack(c)
-        # distances = self.distance_network(c)
+        # FIXME Ensure all backbones have channel support
+        if len(query_embeddings.shape) == 2:
+            query_embeddings = query_embeddings.unsqueeze(1)
 
-        # distances = distances.reshape(self.config["n_way"],
-        #                               self.config["n_query"],
-        #                               self.config["n_way"]
-        #                               )
+        # Calculcate relations
+        ##
+        support_embeddings_ext = support_embeddings.unsqueeze(0).repeat(
+            self.config["n_way"] * self.config["n_query"], 1, 1, 1
+        )
 
-        # return distances
+        query_embeddings_ext = query_embeddings.unsqueeze(0).repeat(self.config["n_way"], 1, 1, 1)
+        query_embeddings_ext = torch.transpose(query_embeddings_ext, 0, 1)
 
-        ######
+        # Create pairs
+        relation_pairs = torch.cat([support_embeddings_ext, query_embeddings_ext], dim=2)
+        relation_pairs = relation_pairs.reshape(
+            relation_pairs.shape[0] * relation_pairs.shape[1], *relation_pairs.shape[2:]
+        )
 
-        query_embeddings = query_embeddings.reshape(-1,
-                                                    *query_embeddings.shape[-2:])
-        query_embeddings = query_embeddings.repeat_interleave(10, dim=0)
-        # print(query_embeddings.shape)
-
-        support_query = torch.cat([prototypes, query_embeddings], dim=-2) # Depth-wise
-        # support_query = torch.cat([prototypes, query_embeddings], dim=-1) # Length-wise
-        # [n_way * n_query * n_way, embedding_channels, embedding_len * 2]
-
-        distances = self.distance_network(support_query)
-
-        # print(distances.shape)
-        # distances = distances.flatten()
-        distances = distances.reshape(self.config["n_way"],
-                                      self.config["n_query"],
-                                      self.config["n_way"]
-                                      )
-        
-        # print("----------------")
-        # print()
-        # for i in range(4):
-        #     print(distances[0, i, :])
-        #     print()
-
-        # print(">>>>>>")
-
-        # for i in range(4):
-        #     print(distances[0, i, :])
-        #     print()
-
-        # quit()
+        # Relation scores
+        distances = self.distance_network(relation_pairs).reshape(-1, self.config["n_way"])
 
         return distances

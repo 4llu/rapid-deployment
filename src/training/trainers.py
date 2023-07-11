@@ -14,9 +14,8 @@ def target_converter(targets, config, device):
 # TRAINER
 #########
 
-def relation_train_function_wrapper(
-    engine, batch, config, model, optimizer, loss_fn, device, scaler
-):
+
+def relation_train_function_wrapper(engine, batch, config, model, optimizer, loss_fn, device, scaler):
     # Reset
     model.train()
     optimizer.zero_grad(set_to_none=True)
@@ -25,31 +24,14 @@ def relation_train_function_wrapper(
     # because model(samples) is an immediate sync point
     samples = batch[0]  # * Already moved to device in collate_fn
     # Ignore actual class labels. Can be used to map episode labels to actual classes if necessary
-    # targets = torch.diag(torch.ones(10, device=device)
-    #                      ).repeat_interleave(config["n_query"], dim=0)
-    # targets = targets.reshape(
-    #     config["n_way"], config["n_query"], config["n_way"])
-    
-    targets = torch.tensor(list(zip(*batch[1]))[0], device=device)
-    targets = target_converter(targets, config, device)
-    
+    targets = torch.diag(torch.ones(10, device=device)).repeat_interleave(config["n_query"], dim=0)
 
     # Forward pass and loss calculation
     #! No AMP support
-    # Automatic mixed precision (speed optimization)
-    # https://pytorch.org/docs/stable/amp.html
     if config["use_amp"]:
         raise "No AMP support!"
 
     outputs = model(samples)
-
-    ######
-    print(outputs[0, 0, :])
-    # print(targets[0, 0, :])
-    print(targets[0])
-    ######
-
-    outputs = outputs.reshape(outputs.shape[0] * outputs.shape[1], -1) # XXX
 
     loss = loss_fn(outputs, targets)
 
@@ -66,9 +48,7 @@ def relation_train_function_wrapper(
     return {"train_loss": train_loss}
 
 
-def train_function_wrapper(
-    engine, batch, config, model, optimizer, loss_fn, device, scaler
-):
+def train_function_wrapper(engine, batch, config, model, optimizer, loss_fn, device, scaler):
     # Reset
     model.train()
     optimizer.zero_grad(set_to_none=True)
@@ -76,8 +56,7 @@ def train_function_wrapper(
     # Legacy
     if config["data"] == "ARotor_old":
         samples = batch.to(device)
-        targets = torch.arange(
-            0, config["n_way"], dtype=torch.long, device=device)
+        targets = torch.arange(0, config["n_way"], dtype=torch.long, device=device)
         targets = targets.repeat_interleave(config["n_query"])
     # Currently important implementation
     else:
@@ -168,6 +147,7 @@ def setup_trainer(
 # EVALUATOR
 ###########
 
+
 @torch.no_grad()
 def relation_eval_function_wrapper(engine, batch, config, model, device):
     model.eval()
@@ -176,24 +156,14 @@ def relation_eval_function_wrapper(engine, batch, config, model, device):
     # because model(samples) is an immediate sync point
     samples = batch[0]  # * Already moved to device in collate_fn
     #
-    # targets = torch.diag(torch.ones(10, device=device)
-    #                      ).repeat_interleave(config["n_query"], dim=0)
-    # targets = targets.reshape(
-    #     config["n_way"], config["n_query"], config["n_way"])
-    
-    targets = torch.tensor(list(zip(*batch[1]))[0], device=device)
-    targets = target_converter(targets, config, device)
+    targets = torch.diag(torch.ones(10, device=device)).repeat_interleave(config["n_query"], dim=0)
 
     # Forward pass and loss calculation
     #! No AMP support
-    # Automatic mixed precision (speed optimization)
-    # https://pytorch.org/docs/stable/amp.html
     if config["use_amp"]:
         raise "No AMP support!"
 
     outputs = model(samples)
-
-    outputs = outputs.reshape(outputs.shape[0] * outputs.shape[1], -1) # XXX
 
     return outputs, targets
 
@@ -205,8 +175,7 @@ def eval_function_wrapper(engine, batch, config, model, device):
     # Legacy
     if config["data"] == "ARotor_old":
         samples = batch.to(device)
-        targets = torch.arange(
-            0, config["n_way"], dtype=torch.long, device=device)
+        targets = torch.arange(0, config["n_way"], dtype=torch.long, device=device)
         targets = targets.repeat_interleave(config["n_query"])
     # Currently important implementation
     else:

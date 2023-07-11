@@ -1,4 +1,5 @@
 import torch
+
 # import matplotlib.pyplot as plt
 
 # Methods
@@ -27,7 +28,8 @@ def FFT(support_query_set, config, device):
 
     if config["pad_FFT"] > 0:
         padding = torch.zeros(
-            *support_query_set.shape[:-1], config["pad_FFT"] - support_query_set.shape[-1], device=device)
+            *support_query_set.shape[:-1], config["pad_FFT"] - support_query_set.shape[-1]
+        )  # , device=device)
 
         support_query_set = torch.cat((support_query_set, padding), dim=-1)
 
@@ -63,16 +65,18 @@ def FFT(support_query_set, config, device):
 
 def additive_white_noise(support_query_set, config):
 
-    support_query_set += torch.normal(torch.zeros(support_query_set.shape), torch.ones(
-        support_query_set.shape) * config["white_noise_std"])
+    support_query_set += torch.normal(
+        torch.zeros(support_query_set.shape), torch.ones(support_query_set.shape) * config["white_noise_std"]
+    )
 
     return support_query_set
 
 
 def mult_white_noise(support_query_set, config):
 
-    support_query_set *= 1 + torch.normal(torch.zeros(support_query_set.shape), torch.ones(
-        support_query_set.shape) * config["white_noise_std"])
+    support_query_set *= 1 + torch.normal(
+        torch.zeros(support_query_set.shape), torch.ones(support_query_set.shape) * config["white_noise_std"]
+    )
 
     return support_query_set
 
@@ -84,8 +88,7 @@ def block_shuffle(support_query_set, config):
     original_size = support_query_set.size()
     num_blocks = support_query_set.size(-1) // config["block_size"]
 
-    support_query_set = support_query_set.view(
-        *support_query_set.size()[:-1], num_blocks, config["block_size"])
+    support_query_set = support_query_set.view(*support_query_set.size()[:-1], num_blocks, config["block_size"])
 
     # Shuffled indices
     block_indices = torch.randperm(num_blocks)
@@ -119,21 +122,19 @@ def random_freq_masking(support_query_set, config):
 
     num_bands = torch.randint(low=0, high=4, size=(1,))
     band_widths = torch.randint(low=2, high=401, size=(num_bands,))
-    band_locations = torch.randint(
-        low=0, high=support_query_set.shape[-1], size=(num_bands,))
+    band_locations = torch.randint(low=0, high=support_query_set.shape[-1], size=(num_bands,))
 
     for i in range(num_bands):
-        support_query_set[:, :, band_locations[i]
-            :band_locations[i]+band_widths[i]] = 0
+        support_query_set[:, :, band_locations[i] : band_locations[i] + band_widths[i]] = 0
 
     return support_query_set
 
 
 def combined_freq_masking(support_query_set, config):
-    assert sum(config["combined_freq_masking_probabilities"]
-               ) == 1, "Combined probabilites of frequency masking must sum to 1!"
-    assert len(config["combined_freq_masking_probabilities"]
-               ) == 4, "4 probabilities are required!"
+    assert (
+        sum(config["combined_freq_masking_probabilities"]) == 1
+    ), "Combined probabilites of frequency masking must sum to 1!"
+    assert len(config["combined_freq_masking_probabilities"]) == 4, "4 probabilities are required!"
 
     r = torch.rand((1,))
 
@@ -144,18 +145,24 @@ def combined_freq_masking(support_query_set, config):
     if r < config["combined_freq_masking_probabilities"][0] + config["combined_freq_masking_probabilities"][1]:
         return low_freq_masking(support_query_set, config)
     # Low masking
-    if r < config["combined_freq_masking_probabilities"][0] + config["combined_freq_masking_probabilities"][1] + config["combined_freq_masking_probabilities"][2]:
+    if (
+        r
+        < config["combined_freq_masking_probabilities"][0]
+        + config["combined_freq_masking_probabilities"][1]
+        + config["combined_freq_masking_probabilities"][2]
+    ):
         return high_freq_masking(support_query_set, config)
     else:
         return random_freq_masking(support_query_set, config)
 
 
 def gain_changer(support_query_set, config):
-    support_query_set = support_query_set * \
-        (torch.tensor([1]) + torch.normal(mean=torch.zeros(1),
-         std=torch.tensor([config["gain_std"]])))
+    support_query_set = support_query_set * (
+        torch.tensor([1]) + torch.normal(mean=torch.zeros(1), std=torch.tensor([config["gain_std"]]))
+    )
 
     return support_query_set
+
 
 # Setup
 #######
@@ -176,15 +183,11 @@ def preprocess_batch(support_query_set, config, device):
 
     # Individual min max
     if "individual_min_max" in config["preprocessing_batch"]:
-        support_query_set = individual_min_max(
-            support_query_set, config)
+        support_query_set = individual_min_max(support_query_set, config)
 
     # FFT
     # ! Sync_FFT here works only if not mixing rpms
-    if (
-        "FFT" in config["preprocessing_batch"]
-        or "sync_FFT" in config["preprocessing_batch"]
-    ):
+    if "FFT" in config["preprocessing_batch"] or "sync_FFT" in config["preprocessing_batch"]:
         support_query_set = FFT(support_query_set, config, device)
 
     if "additive_white_noise" in config["preprocessing_batch"]:

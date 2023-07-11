@@ -94,14 +94,14 @@ embedding_multiplier: 100
 #? Training
 
 epoch_len: 1
-max_epochs: 100
-patience: 50
+max_epochs: 1000
+patience: 1000
 optimizer: AdamW
-# lr: 0.3
-lr: 0.0003
+lr: 0.003
+# lr: 0.0003
 lr_scheduler: ExponentialLR
-# sch_gamma: 0.9999999
-sch_gamma: 0.9998
+sch_gamma: 0.9999999
+# sch_gamma: 0.9998
 momentum: 0.965
 # Regularization
 weight_decay: 0.001

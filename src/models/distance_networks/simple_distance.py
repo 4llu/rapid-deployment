@@ -9,18 +9,24 @@ class SimpleDistanceNetwork(nn.Module):
         super(SimpleDistanceNetwork, self).__init__()
         self.config = config
 
-        self.conv = nn.Conv1d(
-            2,
-            1,
-            kernel_size=1,
-            stride=1,
-            padding=0,
-            bias=False,
+        # self.conv = nn.Conv1d(
+        #     2,
+        #     1,
+        #     kernel_size=1,
+        #     stride=1,
+        #     padding=0,
+        #     bias=False,
+        # )
+        self.conv = nn.Sequential(
+            nn.Conv1d(2, 1, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm1d(1, momentum=1, affine=True),
+            nn.ReLU(),
+            # nn.MaxPool1d(2),
         )
 
-        # self.fc1 = nn.Linear(128, 8)
-        self.fc1 = nn.Linear(128, 1)
-        # self.fc2 = nn.Linear(8, 1)
+        self.fc1 = nn.Linear(128, 8)
+        # self.fc1 = nn.Linear(128, 1)
+        self.fc2 = nn.Linear(8, 1)
 
         # Optional FC layer weight initialization
         if self.config["kaiming_init"]:
@@ -44,19 +50,20 @@ class SimpleDistanceNetwork(nn.Module):
             print("Input:", x.shape)
 
         out = self.conv(out)
-        out = F.relu(out)
+        # out = F.relu(out)
         out = out.squeeze()
         if verbose:
             print(out.shape)
 
         out = self.fc1(out)
-        # out = F.relu(out)
+        out = F.relu(out)
+        # out = F.sigmoid(out)
         if verbose:
             print(out.shape)
 
-        # out = self.fc2(out)
-        # out = F.sigmoid(out)
-        # if verbose:
-        #     print(out.shape)
+        out = self.fc2(out)
+        out = F.sigmoid(out)
+        if verbose:
+            print(out.shape)
 
         return out
