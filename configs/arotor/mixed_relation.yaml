@@ -19,7 +19,7 @@ separate_query_and_support: false
 data: ARotor
 train_sensors: [torque1]
 validation_sensors: [torque1]
-test_sensors: [torque1]
+test_sensors: [torque2]
 # train_sensors: [en1acc_grad, en2acc_grad, en3acc_grad, en4acc_grad, en5acc_grad]
 # validation_sensors: [en1acc_grad, en2acc_grad, en3acc_grad, en4acc_grad, en5acc_grad]
 # test_sensors: [en1acc_grad, en2acc_grad, en3acc_grad, en4acc_grad, en5acc_grad]
@@ -46,15 +46,16 @@ preprocessing_sample: []
 sync_FFT_rotations: 8 # How many rotations to include for synced FFT. Only used if sync_FFT on.
 # preprocessing_class_batch: []
 preprocessing_class_batch: []
-preprocessing_batch: [FFT]
 # preprocessing_batch: [FFT]
+preprocessing_batch: [FFT, gain_changer, mult_white_noise]
 # preprocessing_batch: [FFT, gain_changer, block_shuffle]
 # preprocessing_batch: [FFT, gain_changer, mult_white_noise, block_shuffle]
 # preprocessing_batch: [FFT, gain_changer, mult_white_noise, block_shuffle, combined_freq_masking]
+# preprocessing_batch: [FFT, gain_changer]
 gain_std: 0.3
 white_noise_std: 0.005
-combined_freq_masking_probabilities: [0.6, 0, 0.2, 0.2]
-block_size: 300
+# combined_freq_masking_probabilities: [0.7, 0.3, 0, 0]
+# block_size: 2048
 # preprocessing_batch: [sync_FFT]
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 log_FFT: false
@@ -67,15 +68,10 @@ pad_FFT: 8192
 # sensor_status: batch
 # normalize: false
 
-#? Augmentation
-
-augmentation: []
-
 #? Model
 
 model: relation
-backbone: MiCNN
-# backbone: RelationDefault
+backbone: RelationDefault
 distance_network: simple
 # distance_network: default
 kaiming_init: true
@@ -94,11 +90,11 @@ embedding_multiplier: 100
 #? Training
 
 epoch_len: 1
-max_epochs: 1000
-patience: 1000
+max_epochs: 400
+patience: 100
 optimizer: AdamW
-lr: 0.003
-# lr: 0.0003
+# lr: 0.003
+lr: 0.0003
 lr_scheduler: ExponentialLR
 sch_gamma: 0.9999999
 # sch_gamma: 0.9998

@@ -1,42 +1,36 @@
 import torch.nn as nn
 
-from models.backbones.wdcnn import ConvLayer
-
 
 class RelationDefault(nn.Module):
     def __init__(self, config):
         super(RelationDefault, self).__init__()
         self.config = config
+        self.kernel_size = 3
 
         # Convolutional layers
-        # FIXME Channel nums
-        self.cn_layer1 = ConvLayer(
-            1, 16,
-            kernel_size=3,
-            stride=1,
-            padding="same",
-            dropout=config["cl_dropout"],
+        self.cn_layer1 = nn.Sequential(
+            nn.Conv1d(1, 16, kernel_size=self.kernel_size, padding="same", bias=False),
+            nn.BatchNorm1d(16, momentum=1, affine=True),
+            nn.ReLU(),
+            nn.MaxPool1d(2),
         )
-        self.cn_layer2 = ConvLayer(
-            16, 32,
-            kernel_size=3,
-            stride=1,
-            padding="same",
-            dropout=config["cl_dropout"],
+        self.cn_layer2 = nn.Sequential(
+            nn.Conv1d(16, 32, kernel_size=self.kernel_size, padding="same", bias=False),
+            nn.BatchNorm1d(32, momentum=1, affine=True),
+            nn.ReLU(),
+            nn.MaxPool1d(2),
         )
-        self.cn_layer3 = ConvLayer(
-            32, 64,
-            kernel_size=3,
-            stride=1,
-            padding="same",
-            dropout=config["cl_dropout"],
+        self.cn_layer3 = nn.Sequential(
+            nn.Conv1d(32, 64, kernel_size=self.kernel_size, padding="same", bias=False),
+            nn.BatchNorm1d(64, momentum=1, affine=True),
+            nn.ReLU(),
+            nn.MaxPool1d(2),
         )
-        self.cn_layer4 = ConvLayer(
-            64, 1,
-            kernel_size=3,
-            stride=1,
-            padding="same",
-            dropout=config["cl_dropout"],
+        self.cn_layer4 = nn.Sequential(
+            nn.Conv1d(64, 64, kernel_size=self.kernel_size, padding="same", bias=False),
+            nn.BatchNorm1d(64, momentum=1, affine=True),
+            nn.ReLU(),
+            nn.MaxPool1d(2),
         )
 
     def forward(self, x):
