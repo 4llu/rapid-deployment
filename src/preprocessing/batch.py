@@ -28,8 +28,9 @@ def FFT(support_query_set, config, device):
 
     if config["pad_FFT"] > 0:
         padding = torch.zeros(
-            *support_query_set.shape[:-1], config["pad_FFT"] - support_query_set.shape[-1]
-        )  # , device=device)
+            *support_query_set.shape[:-1], config["pad_FFT"] - support_query_set.shape[-1],
+            device=support_query_set.get_device()
+        )
 
         support_query_set = torch.cat((support_query_set, padding), dim=-1)
 
@@ -63,25 +64,33 @@ def FFT(support_query_set, config, device):
     return support_query_set
 
 
-def additive_white_noise(support_query_set, config):
+def additive_white_noise(support_query_set, config, device):
 
     support_query_set += torch.normal(
-        torch.zeros(support_query_set.shape), torch.ones(support_query_set.shape) * config["white_noise_std"]
+        torch.zeros(
+            support_query_set.shape,
+            device=device if support_query_set.get_device() >= 0 else torch.device("cpu")
+        ),
+        config["white_noise_std"],
     )
 
     return support_query_set
 
 
-def mult_white_noise(support_query_set, config):
+def mult_white_noise(support_query_set, config, device):
 
-    support_query_set *= 1 + torch.normal(
-        torch.zeros(support_query_set.shape), torch.ones(support_query_set.shape) * config["white_noise_std"]
+    support_query_set *= torch.normal(
+        torch.ones(
+            support_query_set.shape,
+            device=device if support_query_set.get_device() >= 0 else torch.device("cpu")
+        ),
+        config["white_noise_std"],
     )
 
     return support_query_set
 
 
-def block_shuffle(support_query_set, config):
+def block_shuffle(support_query_set, config, device):
     # print(support_query_set.size())
     # print(support_query_set[0, 0, :200].mean())
 
@@ -104,21 +113,21 @@ def block_shuffle(support_query_set, config):
     return support_query_set
 
 
-def low_freq_masking(support_query_set, config):
+def low_freq_masking(support_query_set, config, device):
     band_width = torch.randint(low=2, high=401, size=(1,))
     support_query_set[:, :, :band_width] = 0
 
     return support_query_set
 
 
-def high_freq_masking(support_query_set, config):
+def high_freq_masking(support_query_set, config, device):
     band_width = torch.randint(low=2, high=1001, size=(1,))
     support_query_set[:, :, -band_width:] = 0
 
     return support_query_set
 
 
-def random_freq_masking(support_query_set, config):
+def random_freq_masking(support_query_set, config, device):
 
     num_bands = torch.randint(low=0, high=4, size=(1,))
     band_widths = torch.randint(low=2, high=401, size=(num_bands,))
@@ -130,7 +139,7 @@ def random_freq_masking(support_query_set, config):
     return support_query_set
 
 
-def combined_freq_masking(support_query_set, config):
+def combined_freq_masking(support_query_set, config, device):
     assert (
         sum(config["combined_freq_masking_probabilities"]) == 1
     ), "Combined probabilites of frequency masking must sum to 1!"
@@ -143,7 +152,7 @@ def combined_freq_masking(support_query_set, config):
         return support_query_set
     # Low masking
     if r < config["combined_freq_masking_probabilities"][0] + config["combined_freq_masking_probabilities"][1]:
-        return low_freq_masking(support_query_set, config)
+        return low_freq_masking(support_query_set, config, device)
     # Low masking
     if (
         r
@@ -151,14 +160,18 @@ def combined_freq_masking(support_query_set, config):
         + config["combined_freq_masking_probabilities"][1]
         + config["combined_freq_masking_probabilities"][2]
     ):
-        return high_freq_masking(support_query_set, config)
+        return high_freq_masking(support_query_set, config, device)
     else:
-        return random_freq_masking(support_query_set, config)
+        return random_freq_masking(support_query_set, config, device)
 
 
-def gain_changer(support_query_set, config):
-    support_query_set = support_query_set * (
-        torch.tensor([1]) + torch.normal(mean=torch.zeros(1), std=torch.tensor([config["gain_std"]]))
+def gain_changer(support_query_set, config, device):
+    support_query_set *= torch.normal(
+        mean=torch.ones(
+            1,
+            device=device if support_query_set.get_device() >= 0 else torch.device("cpu")
+        ),
+        std=config["gain_std"]
     )
 
     return support_query_set
@@ -191,27 +204,27 @@ def preprocess_batch(support_query_set, config, device):
         support_query_set = FFT(support_query_set, config, device)
 
     if "additive_white_noise" in config["preprocessing_batch"]:
-        support_query_set = additive_white_noise(support_query_set, config)
+        support_query_set = additive_white_noise(support_query_set, config, device)
 
     if "mult_white_noise" in config["preprocessing_batch"]:
-        support_query_set = mult_white_noise(support_query_set, config)
+        support_query_set = mult_white_noise(support_query_set, config, device)
 
     if "gain_changer" in config["preprocessing_batch"]:
-        support_query_set = gain_changer(support_query_set, config)
+        support_query_set = gain_changer(support_query_set, config, device)
 
     if "low_freq_masking" in config["preprocessing_batch"]:
-        support_query_set = low_freq_masking(support_query_set, config)
+        support_query_set = low_freq_masking(support_query_set, config, device)
 
     if "high_freq_masking" in config["preprocessing_batch"]:
-        support_query_set = high_freq_masking(support_query_set, config)
+        support_query_set = high_freq_masking(support_query_set, config, device)
 
     if "random_freq_masking" in config["preprocessing_batch"]:
-        support_query_set = random_freq_masking(support_query_set, config)
+        support_query_set = random_freq_masking(support_query_set, config, device)
 
     if "combined_freq_masking" in config["preprocessing_batch"]:
-        support_query_set = combined_freq_masking(support_query_set, config)
+        support_query_set = combined_freq_masking(support_query_set, config, device)
 
     if "block_shuffle" in config["preprocessing_batch"]:
-        support_query_set = block_shuffle(support_query_set, config)
+        support_query_set = block_shuffle(support_query_set, config, device)
 
     return support_query_set

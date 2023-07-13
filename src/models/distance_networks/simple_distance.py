@@ -19,19 +19,21 @@ class SimpleDistanceNetwork(nn.Module):
         # )
         self.cn_layer1 = nn.Sequential(
             # *2 because prototype and query embeddings are concatenated depth-wise
-            nn.Conv1d(64 * 2, 64, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm1d(64, momentum=1, affine=True),
-            nn.ReLU(),
+            nn.Conv1d(128 * 2, 128, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm1d(128, momentum=1, affine=True),
+            # nn.ReLU(),
+            nn.Hardswish(),
             nn.MaxPool1d(2),
         )
         self.cn_layer2 = nn.Sequential(
-            nn.Conv1d(64, 64, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm1d(64, momentum=1, affine=True),
-            nn.ReLU(),
+            nn.Conv1d(128, 128, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm1d(128, momentum=1, affine=True),
+            # nn.ReLU(),
+            nn.Hardswish(),
             nn.MaxPool1d(2),
         )
 
-        self.fc1 = nn.Linear(64 * 64, 8)
+        self.fc1 = nn.Linear(128 * 64, 8)
         self.fc2 = nn.Linear(8, 1)
 
         # Optional FC layer weight initialization
@@ -57,22 +59,23 @@ class SimpleDistanceNetwork(nn.Module):
 
         out = self.cn_layer1(out)
         if verbose:
-            print(out.shape)
+            print("CN 1:", out.shape)
 
         out = self.cn_layer2(out)
         if verbose:
-            print(out.shape)
+            print("CN 2:", out.shape)
 
         out = out.reshape(out.shape[0], -1)
 
         out = self.fc1(out)
-        out = F.relu(out)
+        out = F.hardswish(out)
+        # out = F.relu(out)
         if verbose:
-            print(out.shape)
+            print("FC 1:", out.shape)
 
         out = self.fc2(out)
         out = F.sigmoid(out)
         if verbose:
-            print(out.shape)
+            print("FC 2:", out.shape)
 
         return out

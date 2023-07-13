@@ -4,9 +4,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from models.backbones.wdcnn import ConvLayer
-
-
 class InceptionModule(nn.Module):
     def __init__(
         self,
@@ -80,11 +77,246 @@ class InceptionModule(nn.Module):
 
         return z
 
+class ModdedInceptionModule(nn.Module):
+    def __init__(
+        self,
+        in_channels,
+        reduced_channels,  # list
+    ):
+        super(ModdedInceptionModule, self).__init__()
 
-# * Modified version of WDCNN for use as fewshot backbone
-class InceptionTime_asd(nn.Module):
+        self.bottleneck = nn.Conv1d(
+            in_channels,
+            reduced_channels,
+            kernel_size=1,
+            stride=1,
+            padding="same",
+            bias=False,
+        )
+
+        self.conv_s = nn.Conv1d(
+            in_channels,
+            reduced_channels,
+            kernel_size=1,
+            stride=1,
+            padding="same",
+            bias=False,
+        )
+        self.conv_m = nn.Conv1d(
+            reduced_channels,
+            reduced_channels,
+            kernel_size=3,
+            stride=1,
+            padding="same",
+            bias=False,
+        )
+        self.conv_l = nn.Conv1d(
+            reduced_channels,
+            reduced_channels,
+            kernel_size=12,
+            stride=1,
+            padding="same",
+            bias=False,
+        )
+
+        self.maxpool = nn.MaxPool1d(
+            3, stride=1, padding=1
+        )  # Padding depends on stride size
+        self.conv_maxpool = nn.Conv1d(
+            in_channels,
+            reduced_channels,
+            kernel_size=1,
+            stride=1,
+            padding=0,
+            bias=False,
+        )
+
+        self.bn = nn.BatchNorm1d(reduced_channels * 4)
+
+    def forward(self, x):
+        z_bottleneck = self.bottleneck(x)
+        z_maxpool = self.maxpool(x)
+
+        z1 = self.conv_s(x)
+        z2 = self.conv_m(z_bottleneck)
+        z3 = self.conv_l(z_bottleneck)
+        z4 = self.conv_maxpool(z_maxpool)
+
+        z = torch.concatenate([z1, z2, z3, z4], dim=1)
+
+        z = self.bn(z)
+        # z = F.relu(z)
+        z = F.hardswish(z) # TODO Try
+
+        return z
+    
+class GridReductionModule(nn.Module):
+    def __init__(
+        self,
+        in_channels,
+        reduced_channels,
+    ):
+        super(GridReductionModule, self).__init__()
+
+        self.bottleneck = nn.Conv1d(
+            in_channels,
+            reduced_channels,
+            kernel_size=1,
+            stride=1,
+            padding="same",
+            bias=False,
+        )
+
+        self.conv_1 = nn.Conv1d(
+            reduced_channels,
+            reduced_channels,
+            kernel_size=3,
+            stride=2,
+            padding=1,
+            bias=False,
+        )
+        self.conv_2 = nn.Conv1d(
+            reduced_channels,
+            reduced_channels,
+            kernel_size=9,
+            stride=2,
+            padding=4,
+            bias=False,
+        )
+
+        self.maxpool = nn.MaxPool1d(
+            2, stride=2, padding=0
+        )  # Padding depends on stride size
+
+        self.bn = nn.BatchNorm1d(reduced_channels * 2 + in_channels)
+
+    def forward(self, x):
+        z_bottleneck = self.bottleneck(x)
+        z_maxpool = self.maxpool(x)
+
+        z1 = self.conv_1(z_bottleneck)
+        z2 = self.conv_2(z_bottleneck)
+
+        z = torch.concatenate([z1, z2, z_maxpool], dim=1)
+
+        z = self.bn(z)
+        # z = F.relu(z)
+        z = F.hardswish(z) # TODO Try
+
+        return z
+    
+class SimpleGridReductionModule(nn.Module):
+    def __init__(
+        self,
+        in_channels,
+        conv_out_channels,
+    ):
+        super(SimpleGridReductionModule, self).__init__()
+
+        self.conv = nn.Conv1d(
+            in_channels,
+            conv_out_channels,
+            kernel_size=3,
+            stride=2,
+            padding=1,
+            bias=False,
+        )
+
+        self.maxpool = nn.MaxPool1d(
+            3, stride=2, padding=1
+        )
+
+        self.bn = nn.BatchNorm1d(conv_out_channels + in_channels)
+
+    def forward(self, x):
+        z1 = self.conv(x)
+        z_maxpool = self.maxpool(x)
+
+        z = torch.concatenate([z1, z_maxpool], dim=1)
+
+        z = self.bn(z)
+        # z = F.relu(z)
+        z = F.hardswish(z) # TODO Try
+
+        return z
+    
+class InceptionTime(nn.Module):
     def __init__(self, config):
         super(InceptionTime, self).__init__()
+
+        self.config = config
+
+        # Layers
+        self.conv_1 = nn.Sequential(
+            nn.Conv1d(1, 16, kernel_size=3, stride=2, padding=1, bias=False),
+            nn.BatchNorm1d(16, momentum=1, affine=True),
+            # nn.ReLU(),
+            nn.Hardswish()
+        )
+
+        self.reduction = SimpleGridReductionModule(16, 16)
+
+        self.module_1_1 = ModdedInceptionModule(32, 8)
+        self.module_1_2 = ModdedInceptionModule(32, 8)
+        self.module_1_reduction = GridReductionModule(32, 16)
+
+        self.module_2_1 = ModdedInceptionModule(64, 16)
+        self.module_2_2 = ModdedInceptionModule(64, 16)
+        self.module_2_reduction = GridReductionModule(64, 32)
+
+        # self.module_3_1 = ModdedInceptionModule(128, 32)
+        # self.module_3_2 = ModdedInceptionModule(128, 32)
+        # self.module_3_reduction = GridReductionModule(128, 64)
+
+    def forward(self, x):
+        verbose = False
+
+        if verbose:
+            print("Input:", x.shape)
+
+        out = x
+
+        out = self.conv_1(out)
+        if verbose:
+            print("C1:", out.shape)
+
+        out = self.reduction(out)
+        if verbose:
+            print("Reduction 1:", out.shape)
+
+        # 1
+
+        out = self.module_1_1(out)
+        if verbose:
+            print("1.1:", out.shape)
+
+        out = self.module_1_2(out)
+        if verbose:
+            print("1.2:", out.shape)
+
+        out = self.module_1_reduction(out)
+        if verbose:
+            print("1.reduction:", out.shape)
+
+        # 2
+
+        out = self.module_2_1(out)
+        if verbose:
+            print("2.1:", out.shape)
+
+        out = self.module_2_2(out)
+        if verbose:
+            print("2.2:", out.shape)
+
+        out = self.module_2_reduction(out)
+        if verbose:
+            print("2.reduction:", out.shape)
+
+        return out
+
+class InceptionTime_old(nn.Module):
+    def __init__(self, config):
+        super(InceptionTime_old, self).__init__()
 
         self.config = config
 
@@ -143,85 +375,6 @@ class InceptionTime_asd(nn.Module):
             print(out.shape)
 
         # Match to class num
-        # out = self.fc1(out)
-        # if verbose:
-        #     print(out.shape)
-
-        return out
-
-
-class InceptionTime(nn.Module):
-    def __init__(self, config):
-        super(InceptionTime, self).__init__()
-        self.config = config
-
-        # Convolutional layers
-        # FIXME Channel nums
-        self.cn_layer1 = ConvLayer(
-            1,  # * Multi sensor stuff is not part of the tests
-            32,
-            kernel_size=32,
-            stride=8,
-            padding=12,
-            dropout=config["cl_dropout"],
-        )
-        self.cn_layer2 = ConvLayer(32, 64, dropout=config["fc_dropout"])
-        self.cn_layer3 = ConvLayer(64, 128, dropout=config["fc_dropout"])
-        # * Note the fc_dropout here
-        # self.cn_layer4 = ConvLayer(64, 128, dropout=config["fc_dropout"])
-
-        # Global average pooling
-        self.globalAvgPool = nn.AvgPool1d(kernel_size=11)  # FIXME Kernel size
-
-        # Classifier
-        # self.fc1 = nn.Linear(
-        #     128,
-        #     config["embedding_len"],
-        # )
-
-        # Optional FC layer weight initialization
-        # if self.config["kaiming_init"]:
-        #     self.apply(self._init_weights)
-
-    # For Kaiming weight initialization
-    def _init_weights(self, module):
-        if isinstance(module, nn.Linear):
-            nn.init.kaiming_uniform_(module.weight, mode="fan_in", nonlinearity="relu")
-            if module.bias is not None:
-                fan_in, _ = nn.init._calculate_fan_in_and_fan_out(module.weight)
-                bound = 1 / math.sqrt(fan_in)
-                nn.init.uniform_(module.bias, -bound, bound)
-
-    def forward(self, x):
-        verbose = False
-
-        if verbose:
-            print(x.shape)
-
-        # Conv layers
-
-        out = self.cn_layer1(x)
-        if verbose:
-            print(out.shape)
-
-        out = self.cn_layer2(out)
-        if verbose:
-            print(out.shape)
-
-        out = self.cn_layer3(out)
-        if verbose:
-            print(out.shape)
-
-        # out = self.cn_layer4(out)
-        # if verbose:
-        #     print(out.shape)
-
-        # Global average pool
-        out = self.globalAvgPool(out).squeeze()
-        if verbose:
-            print(out.shape)
-
-        # Match channel num to embedding length
         # out = self.fc1(out)
         # if verbose:
         #     print(out.shape)

@@ -17,6 +17,7 @@ separate_query_and_support: false
 #? Data
 
 data: ARotor
+# train_sensors: [torque1, acc1, acc2, acc3, acc4, en1acc_grad, en2acc_grad, en3acc_grad, en4acc_grad, en5acc_grad]
 train_sensors: [torque1]
 validation_sensors: [torque1]
 test_sensors: [torque2]
@@ -47,6 +48,7 @@ sync_FFT_rotations: 8 # How many rotations to include for synced FFT. Only used 
 # preprocessing_class_batch: []
 preprocessing_class_batch: []
 # preprocessing_batch: [FFT]
+# preprocessing_batch: [FFT]
 preprocessing_batch: [FFT, gain_changer, mult_white_noise]
 # preprocessing_batch: [FFT, gain_changer, block_shuffle]
 # preprocessing_batch: [FFT, gain_changer, mult_white_noise, block_shuffle]
@@ -71,7 +73,8 @@ pad_FFT: 8192
 #? Model
 
 model: relation
-backbone: RelationDefault
+backbone: InceptionTime
+# backbone: RelationDefault
 distance_network: simple
 # distance_network: default
 kaiming_init: true
@@ -90,17 +93,19 @@ embedding_multiplier: 100
 #? Training
 
 epoch_len: 1
-max_epochs: 400
-patience: 100
+max_epochs: 1000
+patience: 1000
 optimizer: AdamW
 # lr: 0.003
-lr: 0.0003
+lr: 0.00161
 lr_scheduler: ExponentialLR
 sch_gamma: 0.9999999
 # sch_gamma: 0.9998
-momentum: 0.965
+# sch_gamma: 0.99
+# sch_gamma: 0.978
+momentum: 0.937
 # Regularization
-weight_decay: 0.001
+weight_decay: 0.00001
 # weight_decay: 0.0001
 cl_dropout: 0.0
 fc_dropout: 0.0
