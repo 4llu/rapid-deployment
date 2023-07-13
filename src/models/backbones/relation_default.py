@@ -17,25 +17,29 @@ class RelationDefault(nn.Module):
         self.cn_layer1 = nn.Sequential(
             nn.Conv1d(1, 16, kernel_size=self.kernel_size, padding="same", bias=False),
             nn.BatchNorm1d(16, momentum=1, affine=True),
-            nn.ReLU(),
+            # nn.ReLU(),
+            nn.Hardswish(),
             nn.MaxPool1d(2),
         )
         self.cn_layer2 = nn.Sequential(
             nn.Conv1d(16, 32, kernel_size=self.kernel_size, padding="same", bias=False),
             nn.BatchNorm1d(32, momentum=1, affine=True),
-            nn.ReLU(),
+            # nn.ReLU(),
+            nn.Hardswish(),
             nn.MaxPool1d(2),
         )
         self.cn_layer3 = nn.Sequential(
             nn.Conv1d(32, 64, kernel_size=self.kernel_size, padding="same", bias=False),
             nn.BatchNorm1d(64, momentum=1, affine=True),
-            nn.ReLU(),
+            # nn.ReLU(),
+            nn.Hardswish(),
             nn.MaxPool1d(2),
         )
         self.cn_layer4 = nn.Sequential(
             nn.Conv1d(64, 64, kernel_size=self.kernel_size, padding="same", bias=False),
             nn.BatchNorm1d(64, momentum=1, affine=True),
-            nn.ReLU(),
+            # nn.ReLU(),
+            nn.Hardswish(),
             nn.MaxPool1d(2),
         )
 

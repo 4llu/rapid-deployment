@@ -8,6 +8,8 @@ class SimpleDistanceNetwork(nn.Module):
     def __init__(self, config):
         super(SimpleDistanceNetwork, self).__init__()
         self.config = config
+        self.embedding_channels = 64
+        self.embedding_len = 256
 
         # self.conv = nn.Conv1d(
         #     2,
@@ -19,21 +21,21 @@ class SimpleDistanceNetwork(nn.Module):
         # )
         self.cn_layer1 = nn.Sequential(
             # *2 because prototype and query embeddings are concatenated depth-wise
-            nn.Conv1d(128 * 2, 128, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm1d(128, momentum=1, affine=True),
+            nn.Conv1d(self.embedding_channels * 2, self.embedding_channels, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm1d(self.embedding_channels, momentum=1, affine=True),
             # nn.ReLU(),
             nn.Hardswish(),
             nn.MaxPool1d(2),
         )
         self.cn_layer2 = nn.Sequential(
-            nn.Conv1d(128, 128, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm1d(128, momentum=1, affine=True),
+            nn.Conv1d(self.embedding_channels, self.embedding_channels, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm1d(self.embedding_channels, momentum=1, affine=True),
             # nn.ReLU(),
             nn.Hardswish(),
             nn.MaxPool1d(2),
         )
 
-        self.fc1 = nn.Linear(128 * 64, 8)
+        self.fc1 = nn.Linear(self.embedding_channels * self.embedding_len // 4, 8)
         self.fc2 = nn.Linear(8, 1)
 
         # Optional FC layer weight initialization

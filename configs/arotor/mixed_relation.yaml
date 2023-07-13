@@ -2,28 +2,28 @@
 name: mixed
 log: true
 save: false # TODO
-eval_freq: 1 # * Decrease for hyper opt and final testing
+eval_freq: 4 # * Decrease for hyper opt and final testing
 eval_episodes: 20 # * Increase for hyper opt and final testing
 
 #? Fewshot setup
 
 k_shot: 1
 n_way: 10
-n_query: 40
+n_query: 30
 mix_rpms: false
-mix_sensors: false
+mix_sensors: true
 separate_query_and_support: false
 
 #? Data
 
 data: ARotor
 # train_sensors: [torque1, acc1, acc2, acc3, acc4, en1acc_grad, en2acc_grad, en3acc_grad, en4acc_grad, en5acc_grad]
-train_sensors: [torque1]
-validation_sensors: [torque1]
-test_sensors: [torque2]
-# train_sensors: [en1acc_grad, en2acc_grad, en3acc_grad, en4acc_grad, en5acc_grad]
-# validation_sensors: [en1acc_grad, en2acc_grad, en3acc_grad, en4acc_grad, en5acc_grad]
-# test_sensors: [en1acc_grad, en2acc_grad, en3acc_grad, en4acc_grad, en5acc_grad]
+# train_sensors: [torque1]
+# validation_sensors: [torque1]
+# test_sensors: [torque2]
+train_sensors: [en1acc_grad, en2acc_grad]
+validation_sensors: [en5acc_grad]
+test_sensors: [en3acc_grad, en4acc_grad]
 # train_rpm: [750, 1000]
 # validation_rpm: [500, 1250]
 # test_rpm: [250, 1500]
@@ -47,7 +47,6 @@ preprocessing_sample: []
 sync_FFT_rotations: 8 # How many rotations to include for synced FFT. Only used if sync_FFT on.
 # preprocessing_class_batch: []
 preprocessing_class_batch: []
-# preprocessing_batch: [FFT]
 # preprocessing_batch: [FFT]
 preprocessing_batch: [FFT, gain_changer, mult_white_noise]
 # preprocessing_batch: [FFT, gain_changer, block_shuffle]
@@ -73,8 +72,8 @@ pad_FFT: 8192
 #? Model
 
 model: relation
-backbone: InceptionTime
-# backbone: RelationDefault
+# backbone: InceptionTime
+backbone: RelationDefault
 distance_network: simple
 # distance_network: default
 kaiming_init: true
