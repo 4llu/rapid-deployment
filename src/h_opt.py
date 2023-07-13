@@ -38,14 +38,10 @@ def main():
     # SETUP STUDY
     #############
 
-    study_name = (
-        f"{config['name']}_{config['data']}_{datetime.now().strftime('%m-%d_%H-%M-%S')}"
-    )
+    study_name = f"{config['name']}_{config['data']}_{datetime.now().strftime('%m-%d_%H-%M-%S')}"
     pruner = optuna.pruners.MedianPruner()
 
-    study = optuna.create_study(
-        study_name=study_name, direction="maximize", pruner=pruner
-    )
+    study = optuna.create_study(study_name=study_name, direction="maximize", pruner=pruner)
 
     # RUN
     #####
@@ -63,17 +59,15 @@ def main():
             0.9,
             0.99,
         )
-        config["weight_decay"] = trial.suggest_float(
-            "weight_decay", 0.00001, 0.001, log=True
-        )
+        config["weight_decay"] = trial.suggest_float("weight_decay", 0.00001, 0.001, log=True)
         config["sch_gamma"] = trial.suggest_float("sch_gamma", 0.95, 0.99998, log=True)
         # config["cl_dropout"] = trial.suggest_float("cl_dropout", 0.0, 0.6, step=0.1)
         # config["fc_dropout"] = trial.suggest_float("fc_dropout", 0.0, 0.6, step=0.1)
-        config["embedding_multiplier"] = trial.suggest_categorical(
-            "embedding_multiplier",
-            [100, 1000]
-            # "embedding_multiplier", [1, 10, 100, 1000, 10000]
-        )
+        # config["embedding_multiplier"] = trial.suggest_categorical(
+        #     "embedding_multiplier",
+        #     [100, 1000]
+        #     # "embedding_multiplier", [1, 10, 100, 1000, 10000]
+        # )
 
         # Repeat training with same set of hyperparameters for validity
         # NOTE This doesn't really work with pruning
@@ -81,7 +75,7 @@ def main():
         for j in range(n_repetitions):
             print()
             print("############################")
-            print(f"REPETITION {j} OF TRIAL {i}")
+            print(f"REPETITION {j + 1} OF TRIAL {i + 1}")
             print("############################")
             print()
             val_accuracy = run_training(
@@ -102,9 +96,7 @@ def main():
     ############
 
     # Save study
-    joblib.dump(
-        study, os.path.join("reports", "raw", "optuna_studies", f"{study_name}.pkl")
-    )
+    joblib.dump(study, os.path.join("reports", "raw", "optuna_studies", f"{study_name}.pkl"))
 
     # Print results
 
