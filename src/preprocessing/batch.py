@@ -49,6 +49,9 @@ def FFT(support_query_set, config, device):
     if config["log_FFT"]:
         support_query_set = torch.log1p(support_query_set)
 
+    if config["sample_cut"] > 1:
+        support_query_set = support_query_set[:, :, :config["sample_cut"]]
+
     # fig, axs = plt.subplots(2, 3, figsize=(20, 12), sharey=True)
     # axs = axs.flatten()
     # axs[0].plot(support_query_set[0, 0])
