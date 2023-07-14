@@ -37,42 +37,33 @@ class Relation(nn.Module):
             len(support_query.shape)
         )
 
-        # Create prototypes
+        # Create embeddings
         ##
 
-        support_set = support_query[:, : self.config["k_shot"], :, :]
-        # Reshape required for nn.conv1d
-        support_set = support_set.reshape(support_set.shape[0] * support_set.shape[1], *support_set.shape[2:])
-        # Embed
-        support_embeddings = self.backbone(support_set)
+        support_query = support_query.reshape(support_query.shape[0] * support_query.shape[1], *support_query.shape[2:])
+        support_query_embeddings = self.backbone(support_query)
 
         # FIXME Ensure all backbones have channel support
-        if len(support_embeddings.shape) == 2:
-            support_embeddings = support_embeddings.unsqueeze(1)
+        if len(support_query_embeddings.shape) == 2:
+            support_query_embeddings = support_query_embeddings.unsqueeze(1)
 
         # Return to original shape
-        support_embeddings = support_embeddings.reshape(
-            self.config["n_way"], self.config["k_shot"], *support_embeddings.shape[1:]
+        support_query_embeddings = support_query_embeddings.reshape(
+            self.config["n_way"], self.config["k_shot"] + self.config["n_query"], *support_query_embeddings.shape[1:]
         )
+
+        # Support embeddings summing
+        support_embeddings = support_query_embeddings[:, : self.config["k_shot"], :, :]
         # Combine k_shot support samples
-        support_embeddings = support_embeddings.sum(dim=1)
+        support_embeddings = support_embeddings.sum(dim=1) # XXX How about mean?
 
-        # Create query embeddings
-        ##
-
-        query_set = support_query[:, self.config["k_shot"] :, :, :]
-        # Reshape required for nn.conv1d
-        query_set = query_set.reshape(query_set.shape[0] * query_set.shape[1], *query_set.shape[2:])
-
-        # Embed
-        query_embeddings = self.backbone(query_set)
-
-        # FIXME Ensure all backbones have channel support
-        if len(query_embeddings.shape) == 2:
-            query_embeddings = query_embeddings.unsqueeze(1)
+        # Query embedding reshaping
+        query_embeddings = support_query_embeddings[:, self.config["k_shot"] :, :, :]
+        query_embeddings = query_embeddings.reshape(query_embeddings.shape[0] * query_embeddings.shape[1], *query_embeddings.shape[2:])
 
         # Calculcate relations
         ##
+
         support_embeddings_ext = support_embeddings.unsqueeze(0).repeat(
             self.config["n_way"] * self.config["n_query"], 1, 1, 1
         )
