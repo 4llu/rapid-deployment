@@ -35,6 +35,7 @@ class SimpleDistanceNetwork(nn.Module):
             nn.MaxPool1d(2),
         )
 
+        # self.fc1 = nn.Linear(self.embedding_channels * self.embedding_len, 8)
         self.fc1 = nn.Linear(self.embedding_channels * self.embedding_len // 4, 8)
         self.fc2 = nn.Linear(8, 1)
 
