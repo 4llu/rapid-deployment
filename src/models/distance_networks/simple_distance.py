@@ -9,7 +9,7 @@ class SimpleDistanceNetwork(nn.Module):
         super(SimpleDistanceNetwork, self).__init__()
         self.config = config
         self.embedding_channels = 64
-        self.embedding_len = 256
+        self.embedding_len = 187
 
         # self.conv = nn.Conv1d(
         #     2,
@@ -36,8 +36,9 @@ class SimpleDistanceNetwork(nn.Module):
         )
 
         # self.fc1 = nn.Linear(self.embedding_channels * self.embedding_len, 8)
-        self.fc1 = nn.Linear(self.embedding_channels * self.embedding_len // 4, 8)
-        self.fc2 = nn.Linear(8, 1)
+        # self.fc1 = nn.Linear(self.embedding_channels * self.embedding_len // 4, 8)
+        self.fc1 = nn.Linear(93 * 64, 16)
+        self.fc2 = nn.Linear(16, 1)
 
         # Optional FC layer weight initialization
         if self.config["kaiming_init"]:

@@ -30,8 +30,8 @@ class Relation(nn.Module):
         # support_query: [n_way, k_shot + n_query, window_length]
 
         # Check dimensions
-        if len(support_query.shape) == 3:
-            support_query = support_query.unsqueeze(2)
+        # if len(support_query.shape) == 3:
+        #     support_query = support_query.unsqueeze(2)
 
         assert len(support_query.shape) == 4, "Support_query set has the wrong number of dimensions: {}".format(
             len(support_query.shape)
@@ -55,11 +55,13 @@ class Relation(nn.Module):
         # Support embeddings summing
         support_embeddings = support_query_embeddings[:, : self.config["k_shot"], :, :]
         # Combine k_shot support samples
-        support_embeddings = support_embeddings.sum(dim=1) # XXX How about mean?
+        support_embeddings = support_embeddings.sum(dim=1)  # XXX How about mean?
 
         # Query embedding reshaping
         query_embeddings = support_query_embeddings[:, self.config["k_shot"] :, :, :]
-        query_embeddings = query_embeddings.reshape(query_embeddings.shape[0] * query_embeddings.shape[1], *query_embeddings.shape[2:])
+        query_embeddings = query_embeddings.reshape(
+            query_embeddings.shape[0] * query_embeddings.shape[1], *query_embeddings.shape[2:]
+        )
 
         # Calculcate relations
         ##

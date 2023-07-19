@@ -68,10 +68,10 @@ class Prototypical(nn.Module):
 
         # Add channel dim [n_way, k_shot + n_query, 1, window_length]
         # * Only single sensors inputs supported currently
-        support_query = support_query.unsqueeze(2)
+        # support_query = support_query.unsqueeze(2)
         # Reshape to fit (batch, channel, features) shape
         # [n_way * (k_shot + n_query), 1, window_length]
-        support_query = support_query.reshape(-1, 1, support_query.size(-1))
+        support_query = support_query.reshape(-1, *support_query.shape[-2:])
 
         # Compute embeddings
         embeddings = self.backbone(support_query)

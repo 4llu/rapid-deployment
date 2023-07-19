@@ -23,15 +23,7 @@ def mixed_query_normalization(train_data, validation_data, test_data, config):
         # Scaling and masks are only computed from healthy samples, so other classes are useless here
         data_head = data_head[data_head["class"] == 0]
         # Tail needs all classes for scaling
-        data_tail = data_grouped.tail(
-            int(
-                (
-                    len(train_data)
-                    / (len(classes) * len(rpms))
-                )
-                - head_len
-            )
-        )
+        data_tail = data_grouped.tail(int((len(train_data) / (len(classes) * len(rpms))) - head_len))
 
         # SCALING #
         ##
@@ -39,19 +31,16 @@ def mixed_query_normalization(train_data, validation_data, test_data, config):
 
         # Get scales
         scale = {}
-        data_head_grouped = data_head.groupby(
-            ["class", "rpm"], group_keys=False)
+        data_head_grouped = data_head.groupby(["class", "rpm"], group_keys=False)
         for n, g in data_head_grouped:
             # Scale for the healthy state of each rpm
             p25 = g[sensors].quantile(0.25)
             p75 = g[sensors].quantile(0.75)
-            scale[n[1]] = (p75 - p25).astype("float32") * \
-                config["mixed_query_normalization_scale"]
+            scale[n[1]] = (p75 - p25).astype("float32") * config["mixed_query_normalization_scale"]
 
         # Scaling helper
         def scale_group(group_data):
-            group_data[sensors
-                       ] = group_data[sensors] / scale[group_data.name[1]]
+            group_data[sensors] = group_data[sensors] / scale[group_data.name[1]]
 
             return group_data
 
@@ -59,8 +48,7 @@ def mixed_query_normalization(train_data, validation_data, test_data, config):
         data_head = data_head_grouped.apply(scale_group)
 
         # Scale tail
-        data_tail = data_tail.groupby(
-            ["class", "rpm"], group_keys=False).apply(scale_group)
+        data_tail = data_tail.groupby(["class", "rpm"], group_keys=False).apply(scale_group)
 
         # (1) MASK & (2) DISTRIBUTION STAT CALCULATION #
         ##
@@ -73,21 +61,19 @@ def mixed_query_normalization(train_data, validation_data, test_data, config):
             start_indices = np.arange(num_windows) * stride
             end_indices = start_indices + window_size
 
-            windows = [dataframe.iloc[start:end]
-                       for start, end in zip(start_indices, end_indices)]
+            windows = [dataframe.iloc[start:end] for start, end in zip(start_indices, end_indices)]
 
             return windows
 
         for n, g in data_head.groupby(["class", "rpm"]):
             windows = create_overlapping_windows(
-                g, config["window_width"], config["window_overlap"])  # FIXME for synced FFT
+                g, config["window_width"], config["window_overlap"]
+            )  # FIXME for synced FFT
 
             for sensor in sensors:
-                sensor_windows = torch.tensor(
-                    np.array([window[sensor].to_numpy() for window in windows]))
+                sensor_windows = torch.tensor(np.array([window[sensor].to_numpy() for window in windows]))
 
-                fft_windows = torch.abs(torch.fft.rfft(
-                    sensor_windows, norm="forward"))
+                fft_windows = torch.abs(torch.fft.rfft(sensor_windows, norm="forward"))
                 # First log, then mean should be the correct order
                 if config["log_FFT"]:
                     fft_windows = torch.log1p(fft_windows)
@@ -97,7 +83,9 @@ def mixed_query_normalization(train_data, validation_data, test_data, config):
                 # (2) Calculate stats to be used for std normalization
 
                 distribution_stats[(n[1], sensor)] = {
-                    "means": fft_windows.mean(dim=0), "stds": fft_windows.std(dim=0, correction=1)}
+                    "means": fft_windows.mean(dim=0),
+                    "stds": fft_windows.std(dim=0, correction=1),
+                }
 
                 # (1) Create masks
 
@@ -108,8 +96,7 @@ def mixed_query_normalization(train_data, validation_data, test_data, config):
         return data_tail
 
     new_train_data = mixed_query_normalization_helper(train_data, "train")
-    new_validation_data = mixed_query_normalization_helper(
-        validation_data, "validation")
+    new_validation_data = mixed_query_normalization_helper(validation_data, "validation")
     new_test_data = mixed_query_normalization_helper(test_data, "test")
 
     config["masks"] = masks

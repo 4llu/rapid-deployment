@@ -78,10 +78,23 @@ class InceptionModule(nn.Module):
 
 
 class ModdedInceptionModule(nn.Module):
-    def __init__(self, in_channels, reduced_channels, shortcut_connection=False):  # list
+    def __init__(self, in_channels, reduced_channels, use_bottleneck=True, use_skip_connection=False, use_sen=False):
         super(ModdedInceptionModule, self).__init__()
 
-        self.shortcut_connection = shortcut_connection
+        self.use_bottleneck = use_bottleneck
+        self.use_skip_connection = use_skip_connection
+        self.use_sen = use_sen
+
+        self.fc_sen_1 = None
+        self.fc_sen_2 = None
+        if self.use_sen:
+            assert in_channels == reduced_channels * 4, "Input and output channels must match for SEN connection!"
+            self.fc_sen_1 = nn.Linear(in_channels, in_channels // 4)  # * Using reduction factor 4
+            self.fc_sen_2 = nn.Linear(in_channels // 4, in_channels)
+
+        self.conv_skip = None
+        if self.use_skip_connection and in_channels != reduced_channels * 4:
+            self.conv_skip = nn.Conv1d(in_channels, reduced_channels * 4, kernel_size=1, stride=1)  # , bias=False)
 
         self.bottleneck = nn.Conv1d(
             in_channels,
@@ -89,29 +102,29 @@ class ModdedInceptionModule(nn.Module):
             kernel_size=1,
             stride=1,
             padding="same",
-            bias=False,
+            # bias=False,
         )
 
         self.conv_s = nn.Conv1d(
-            in_channels,
+            reduced_channels if self.use_bottleneck else in_channels,
             reduced_channels,
-            kernel_size=1,
+            kernel_size=10,
             stride=1,
             padding="same",
             bias=False,
         )
         self.conv_m = nn.Conv1d(
+            reduced_channels if self.use_bottleneck else in_channels,
             reduced_channels,
-            reduced_channels,
-            kernel_size=3,
+            kernel_size=20,
             stride=1,
             padding="same",
             bias=False,
         )
         self.conv_l = nn.Conv1d(
+            reduced_channels if self.use_bottleneck else in_channels,
             reduced_channels,
-            reduced_channels,
-            kernel_size=12,
+            kernel_size=40,
             stride=1,
             padding="same",
             bias=False,
@@ -130,22 +143,42 @@ class ModdedInceptionModule(nn.Module):
         self.bn = nn.BatchNorm1d(reduced_channels * 4)
 
     def forward(self, x):
-        z_bottleneck = self.bottleneck(x)
+        if self.use_bottleneck:
+            z_bottleneck = self.bottleneck(x)
+        else:
+            z_bottleneck = x
+
         z_maxpool = self.maxpool(x)
 
-        z1 = self.conv_s(x)
+        z1 = self.conv_s(z_bottleneck)
         z2 = self.conv_m(z_bottleneck)
         z3 = self.conv_l(z_bottleneck)
         z4 = self.conv_maxpool(z_maxpool)
 
         z = torch.concatenate([z1, z2, z3, z4], dim=1)
 
-        if self.shortcut_connection:
+        if self.use_sen:
+            x_channels = F.avg_pool1d(x, x.shape[-1])
+            x_channels = x_channels.squeeze()
+
+            x_channels = self.fc_sen_1(x_channels)
+            x_channels = F.relu(x_channels)
+            x_channels = self.fc_sen_2(x_channels)
+            x_channels = F.sigmoid(x_channels)
+
+            x_channels = x_channels.unsqueeze(-1)
+
+            z = z * x_channels
+
+        if self.use_skip_connection:
+            # Channel adjust
+            if self.conv_skip is not None:
+                x = self.conv_skip(x)
             z += x
 
         z = self.bn(z)
-        # z = F.relu(z)
-        z = F.hardswish(z)  # TODO Try
+        z = F.relu(z)
+        # z = F.hardswish(z)  # TODO Try
 
         return z
 
@@ -198,8 +231,8 @@ class GridReductionModule(nn.Module):
         z = torch.concatenate([z1, z2, z_maxpool], dim=1)
 
         z = self.bn(z)
-        # z = F.relu(z)
-        z = F.hardswish(z)  # TODO Try
+        z = F.relu(z)
+        # z = F.hardswish(z)  # TODO Try
 
         return z
 
@@ -232,10 +265,20 @@ class SimpleGridReductionModule(nn.Module):
         z = torch.concatenate([z1, z_maxpool], dim=1)
 
         z = self.bn(z)
-        # z = F.relu(z)
-        z = F.hardswish(z)  # TODO Try
+        z = F.relu(z)
+        # z = F.hardswish(z)  # TODO Try
 
         return z
+
+
+# class SkipConnection(nn.Module):
+#     def __init__(self, config):
+#         super().__init__()
+
+#         self.config = config
+
+#     def forward(self, x, x_identity):
+#         return x + x_identity
 
 
 class InceptionTime(nn.Module):
@@ -245,21 +288,26 @@ class InceptionTime(nn.Module):
         self.config = config
 
         # Layers
-        self.stem_1 = nn.Sequential(
-            nn.Conv1d(1, 16, kernel_size=16, stride=4, padding=0, bias=False),
-            nn.BatchNorm1d(16, momentum=1, affine=True),
-            # nn.ReLU(),
-            nn.Hardswish(),
-        )
+        # self.stem_1 = nn.Sequential(
+        #     nn.Conv1d(1, 16, kernel_size=64, stride=2, padding=0, bias=False),
+        #     nn.BatchNorm1d(16, momentum=1, affine=True),
+        #     nn.ReLU(),
+        #     # nn.Hardswish(),
+        # )
 
-        self.stem_reduction_1 = SimpleGridReductionModule(16, 16)
-        # self.module_1_1 = ModdedInceptionModule(32, 8, shortcut_connection=True)
+        # self.stem_reduction_1 = SimpleGridReductionModule(16, 16)
+        self.module_1_1 = ModdedInceptionModule(1, 16, use_bottleneck=False, use_skip_connection=True)
 
-        self.stem_reduction_2 = SimpleGridReductionModule(32, 32)
-        # self.module_2_1 = ModdedInceptionModule(64, 16, shortcut_connection=True)
+        # self.stem_reduction_2 = SimpleGridReductionModule(32, 32)
+        self.module_2_1 = ModdedInceptionModule(64, 16, use_skip_connection=True, use_sen=False)
 
-        self.stem_reduction_3 = SimpleGridReductionModule(64, 64)
-        # self.module_3_1 = ModdedInceptionModule(128, 32, shortcut_connection=True)
+        # self.stem_reduction_3 = SimpleGridReductionModule(64, 64)
+        self.module_3_1 = ModdedInceptionModule(64, 16, use_skip_connection=True, use_sen=False)
+        self.module_4_1 = ModdedInceptionModule(64, 32, use_skip_connection=True)
+        self.module_5_1 = ModdedInceptionModule(128, 32, use_skip_connection=True, use_sen=False)
+        self.module_6_1 = ModdedInceptionModule(128, 64, use_skip_connection=True, use_sen=False)
+
+        # self.GAP = nn.AvgPool1d(kernel_size=2969, ceil_mode=True)
         # self.stem_reduction_2 = SimpleGridReductionModule(32, 32)
 
         # self.module_1_2 = ModdedInceptionModule(32, 8)
@@ -282,33 +330,40 @@ class InceptionTime(nn.Module):
 
         out = x
 
-        out = self.stem_1(out)
-        if verbose:
-            print("C1:", out.shape)
-
-        out = self.stem_reduction_1(out)
-        if verbose:
-            print("Reduction 1:", out.shape)
-
-        # out = self.module_1_1(out)
+        # out = self.stem_1(out)
         # if verbose:
-        #     print("Module 1.1:", out.shape)
+        #     print("Stem 1:", out.shape)
 
-        out = self.stem_reduction_2(out)
+        out = self.module_1_1(out)
         if verbose:
-            print("Reduction 2:", out.shape)
+            print("Module 1.1:", out.shape)
 
-        # out = self.module_2_1(out)
-        # if verbose:
-        #     print("Module 2.1:", out.shape)
-
-        out = self.stem_reduction_3(out)
+        out = self.module_2_1(out)
         if verbose:
-            print("Reduction 3:", out.shape)
+            print("Module 2.1:", out.shape)
 
-        # out = self.module_3_1(out)
-        # if verbose:
-        #     print("Module 3.1:", out.shape)
+        out = self.module_3_1(out)
+        if verbose:
+            print("Module 3.1:", out.shape)
+
+        out = self.module_4_1(out)
+        if verbose:
+            print("Module 4.1:", out.shape)
+
+        out = self.module_5_1(out)
+        if verbose:
+            print("Module 5.1:", out.shape)
+
+        out = self.module_6_1(out)
+        if verbose:
+            print("Module 6.1:", out.shape)
+
+        out = F.avg_pool1d(out, kernel_size=out.shape[-1])
+        if verbose:
+            print("GAP:", out.shape)
+
+        if verbose:
+            quit()
 
         return out
 

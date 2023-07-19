@@ -44,13 +44,13 @@ def FFT(support_query_set, config, device):
         support_query_set = support_query_set[:, :, : config["max_fft_len"]]
 
     if not config["include_FFT_DC"]:
-        support_query_set = support_query_set[:, :, 1:]
+        support_query_set = support_query_set[:, :, :, 1:]
 
     if config["log_FFT"]:
         support_query_set = torch.log1p(support_query_set)
 
     if config["sample_cut"] > 1:
-        support_query_set = support_query_set[:, :, :config["sample_cut"]]
+        support_query_set = support_query_set[:, :, :, : config["sample_cut"]]
 
     # fig, axs = plt.subplots(2, 3, figsize=(20, 12), sharey=True)
     # axs = axs.flatten()
@@ -93,38 +93,33 @@ def mult_white_noise(support_query_set, config, device):
 
 
 def block_shuffle(support_query_set, config, device):
-    # print(support_query_set.size())
-    # print(support_query_set[0, 0, :200].mean())
-
     original_size = support_query_set.size()
     num_blocks = support_query_set.size(-1) // config["block_size"]
 
-    support_query_set = support_query_set.view(*support_query_set.size()[:-1], num_blocks, config["block_size"])
+    support_query_set = support_query_set.view(
+        *support_query_set.size()[:-2], num_blocks, support_query_set.size()[-2], config["block_size"]
+    )
 
     # Shuffled indices
     block_indices = torch.randperm(num_blocks)
     # Shuffle
-    support_query_set = support_query_set[:, :, block_indices, :]
+    support_query_set = support_query_set[:, :, block_indices, :, :]
 
     support_query_set = support_query_set.view(original_size)
-
-    # print(support_query_set[0, 0, :200].mean())
-    # print(support_query_set.size())
-    # quit()
 
     return support_query_set
 
 
 def low_freq_masking(support_query_set, config, device):
     band_width = torch.randint(low=2, high=401, size=(1,))
-    support_query_set[:, :, :band_width] = 0
+    support_query_set[:, :, :, :band_width] = 0
 
     return support_query_set
 
 
 def high_freq_masking(support_query_set, config, device):
     band_width = torch.randint(low=2, high=1001, size=(1,))
-    support_query_set[:, :, -band_width:] = 0
+    support_query_set[:, :, :, -band_width:] = 0
 
     return support_query_set
 
@@ -136,7 +131,7 @@ def random_freq_masking(support_query_set, config, device):
     band_locations = torch.randint(low=0, high=support_query_set.shape[-1], size=(num_bands,))
 
     for i in range(num_bands):
-        support_query_set[:, :, band_locations[i] : band_locations[i] + band_widths[i]] = 0
+        support_query_set[:, :, :, band_locations[i] : band_locations[i] + band_widths[i]] = 0
 
     return support_query_set
 

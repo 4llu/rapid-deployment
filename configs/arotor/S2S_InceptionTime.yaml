@@ -1,49 +1,73 @@
 #? Creation
-name: S2S
+name: time
 log: true
 save: false # TODO
-eval_freq: 10 # * Decrease for hyper opt and final testing
-eval_episodes: 10 # * Increase for hyper opt and final testing
+eval_freq: 3 # * Decrease for hyper opt and final testing
+eval_episodes: 15 # * Increase for hyper opt and final testing
 
 #? Fewshot setup
 
 k_shot: 1
 n_way: 10
-n_query: 24
-mix_rpms: false
+n_query: 30
+mix_rpms: true
 mix_sensors: false
 separate_query_and_support: false
 
 #? Data
 
 data: ARotor
-train_sensors: [en5acc]
-validation_sensors: [en1acc]
-test_sensors: [en4acc]
-# train_sensors: [acc3]
-# validation_sensors: [acc2]
-# test_sensors: [acc1]
-train_rpm: [250, 500, 750, 1000, 1250, 1500]
-validation_rpm: [250, 500, 750, 1000, 1250, 1500]
-test_rpm: [250, 500, 750, 1000, 1250, 1500]
-# train_rpm: [750]
-# validation_rpm: [1250]
-# test_rpm: [250, 500, 1000, 1500]
+# train_sensors: [torque1, acc1, acc2, acc3, acc4, en1acc_grad, en2acc_grad, en3acc_grad, en4acc_grad, en5acc_grad]
+train_sensors: [torque1]
+validation_sensors: [torque1]
+test_sensors: [torque2]
+# train_sensors: [en1acc_grad, en2acc_grad]
+# validation_sensors: [en3acc_grad]
+# test_sensors: [en5acc_grad, en4acc_grad]
+train_rpm: [250, 1500]
+validation_rpm: [750, 1000]
+test_rpm: [500, 1250]
+# train_rpm: [500, 1000, 1500]
+# validation_rpm: [250]
+# test_rpm: [750, 1250]
+# train_rpm: [500, 1250]
+# validation_rpm: [250, 1500]
+# test_rpm: [750, 1000]
 train_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 validation_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 test_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-window_width: 6000
-window_overlap: 0.95
+window_width: 4096
+window_overlap: 0.99
 
 #? Preprocessing
 
-preprocessing_full: []
-# preprocessing_sample: []
-preprocessing_sample: [sync_FFT] # ! Slow, always prefer the other two if possible
-sync_FFT_rotations: 4 # How many rotations to include for synced FFT. Only used if sync_FFT on.
-preprocessing_batch: []
+# preprocessing_full: []
+preprocessing_full: [mixed_query_normalization]
+mixed_query_normalization_scale: 0.1
+preprocessing_sample: []
+# preprocessing_sample: [FFT]
+# preprocessing_sample: [sync_FFT] # ! Slow, always prefer the other two if possible
+sync_FFT_rotations: 8 # How many rotations to include for synced FFT. Only used if sync_FFT on.
+preprocessing_class_batch: []
+# preprocessing_class_batch: [FFT]
+# preprocessing_class_batch: [FFT, FFT_mean_std_channels]
+# preprocessing_batch: []
 # preprocessing_batch: [FFT]
+preprocessing_batch: [gain_changer, add_white_noise]
+# preprocessing_batch: [FFT, gain_changer, block_shuffle]
+# preprocessing_batch: [FFT, gain_changer, mult_white_noise, block_shuffle]
+# preprocessing_batch: [FFT, gain_changer, mult_white_noise, block_shuffle, combined_freq_masking]
+# preprocessing_batch: [FFT, gain_changer]
+gain_std: 0.5
+white_noise_std: 0.005
+# combined_freq_masking_probabilities: [0.7, 0.3, 0, 0]
+# block_size: 2048
+# preprocessing_batch: [sync_FFT]
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
+log_FFT: false
+pad_FFT: -1
+sample_cut: -1 # Done in batch preprocessing
+# pad_FFT: 8192
 
 # FFT: true
 # embedding_unit_len: true
@@ -51,14 +75,13 @@ include_FFT_DC: false # Should the DC component of the FFC be included? Only rel
 # sensor_status: batch
 # normalize: false
 
-#? Augmentation
-
-augmentation: []
-
 #? Model
 
 model: prototypical
+# backbone: InceptionTime
 backbone: InceptionTime
+# distance_network: simple
+# distance_network: default
 kaiming_init: true
 embedding_len: 256
 # embedding_normalization_type: False
@@ -74,21 +97,24 @@ embedding_multiplier: 100
 
 #? Training
 
-epoch_len: 10
-max_epochs: 500
-patience: 200
+epoch_len: 1
+max_epochs: 1000
+patience: 1000
 optimizer: AdamW
-lr: 0.002526
+# lr: 0.003
+lr: 0.000161
 lr_scheduler: ExponentialLR
 # sch_gamma: 0.9999999
-sch_gamma: 0.9647
-momentum: 0.9651
+# sch_gamma: 0.9998
+# sch_gamma: 0.99
+sch_gamma: 0.978
+momentum: 0.937
 # Regularization
-weight_decay: 0.0008331
+weight_decay: 0.00001
 # weight_decay: 0.0001
 cl_dropout: 0.0
 fc_dropout: 0.0
 
 # ? Other
 
-use_amp: false
+use_amp: false  

@@ -10,7 +10,7 @@ eval_episodes: 20 # * Increase for hyper opt and final testing
 k_shot: 1
 n_way: 10
 n_query: 30
-mix_rpms: true
+mix_rpms: false
 mix_sensors: false
 separate_query_and_support: false
 
@@ -22,8 +22,8 @@ train_sensors: [torque1]
 validation_sensors: [torque1]
 test_sensors: [torque2]
 # train_sensors: [en1acc_grad, en2acc_grad]
-# validation_sensors: [en5acc_grad]
-# test_sensors: [en3acc_grad, en4acc_grad]
+# validation_sensors: [en3acc_grad]
+# test_sensors: [en5acc_grad, en4acc_grad]
 train_rpm: [500, 1000, 1500]
 validation_rpm: [250]
 test_rpm: [750, 1250]
@@ -38,17 +38,19 @@ window_overlap: 0.98
 
 #? Preprocessing
 
-# preprocessing_full: []
 preprocessing_full: []
+# preprocessing_full: [mixed_query_normalization]
 mixed_query_normalization_scale: 0.1
 preprocessing_sample: []
 # preprocessing_sample: [FFT]
 # preprocessing_sample: [sync_FFT] # ! Slow, always prefer the other two if possible
 sync_FFT_rotations: 8 # How many rotations to include for synced FFT. Only used if sync_FFT on.
-# preprocessing_class_batch: []
 preprocessing_class_batch: []
+# preprocessing_class_batch: [FFT]
+# preprocessing_class_batch: [FFT, FFT_mean_std_channels]
+# preprocessing_batch: []
 # preprocessing_batch: [FFT]
-preprocessing_batch: [FFT, gain_changer, mult_white_noise]
+preprocessing_batch: [gain_changer, mult_white_noise]
 # preprocessing_batch: [FFT, gain_changer, block_shuffle]
 # preprocessing_batch: [FFT, gain_changer, mult_white_noise, block_shuffle]
 # preprocessing_batch: [FFT, gain_changer, mult_white_noise, block_shuffle, combined_freq_masking]
@@ -61,7 +63,7 @@ white_noise_std: 0.005
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 log_FFT: false
 pad_FFT: -1
-sample_cut: 512 # Done in batch preprocessing
+sample_cut: -1 # Done in batch preprocessing
 # pad_FFT: 8192
 
 # FFT: true
@@ -74,7 +76,7 @@ sample_cut: 512 # Done in batch preprocessing
 
 model: relation
 # backbone: InceptionTime
-backbone: RelationDefault
+backbone: InceptionTime
 distance_network: simple
 # distance_network: default
 kaiming_init: true

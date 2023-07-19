@@ -15,7 +15,7 @@ def FFT(support_query_set, config):
     support_query_set = torch.abs(support_query_set)
 
     if not config["include_FFT_DC"]:
-        support_query_set = support_query_set[:, 1:]
+        support_query_set = support_query_set[:, :, 1:]
 
     if config["log_FFT"]:
         support_query_set = torch.log1p(support_query_set)
@@ -23,12 +23,34 @@ def FFT(support_query_set, config):
     return support_query_set
 
 
+def FFT_mean_std_channels(class_support_query_set, config, idx, query_samples):
+    batch_means = [
+        config["distribution_stats"][rpm, sensor]["means"]
+        for _, rpm, sensor in [idx for _ in range(config["k_shot"])] + query_samples
+    ]
+    # Masks don't have channels. so they need to be added separately
+    batch_means = torch.stack(batch_means).unsqueeze(-2)
+
+    batch_stds = [
+        config["distribution_stats"][rpm, sensor]["stds"]
+        for _, rpm, sensor in [idx for _ in range(config["k_shot"])] + query_samples
+    ]
+    # Masks don't have channels. so they need to be added separately
+    batch_stds = torch.stack(batch_stds).unsqueeze(-2)
+
+    class_support_query_set = torch.cat([class_support_query_set, batch_means, batch_stds], dim=1)
+
+    return class_support_query_set
+
+
 def FFT_masking(class_support_query_set, config, idx, query_samples):
     # k_shot x idx (for support samples)
     # + each query sample separately
-    batch_masks = [config["masks"][rpm, sensor] for _, rpm, sensor in [
-        idx for _ in range(config["k_shot"])] + query_samples]
-    batch_masks = torch.stack(batch_masks)
+    batch_masks = [
+        config["masks"][rpm, sensor] for _, rpm, sensor in [idx for _ in range(config["k_shot"])] + query_samples
+    ]
+    # Masks don't have channels. so they need to be added separately
+    batch_masks = torch.stack(batch_masks).unsqueeze(-2)
 
     class_support_query_set = class_support_query_set - batch_masks
 
@@ -37,16 +59,21 @@ def FFT_masking(class_support_query_set, config, idx, query_samples):
 
 def FFT_std_normalization(class_support_query_set, config, idx, query_samples):
 
-    batch_means = [config["distribution_stats"][rpm, sensor]["means"] for _, rpm, sensor in [
-        idx for _ in range(config["k_shot"])] + query_samples]
-    batch_means = torch.stack(batch_means)
+    batch_means = [
+        config["distribution_stats"][rpm, sensor]["means"]
+        for _, rpm, sensor in [idx for _ in range(config["k_shot"])] + query_samples
+    ]
+    # Masks don't have channels. so they need to be added separately
+    batch_means = torch.stack(batch_means).unsqueeze(-2)
 
-    batch_stds = [config["distribution_stats"][rpm, sensor]["stds"] for _, rpm, sensor in [
-        idx for _ in range(config["k_shot"])] + query_samples]
-    batch_stds = torch.stack(batch_stds)
+    batch_stds = [
+        config["distribution_stats"][rpm, sensor]["stds"]
+        for _, rpm, sensor in [idx for _ in range(config["k_shot"])] + query_samples
+    ]
+    # Masks don't have channels. so they need to be added separately
+    batch_stds = torch.stack(batch_stds).unsqueeze(-2)
 
-    new_class_support_query_set = (
-        class_support_query_set - batch_means) / batch_stds
+    new_class_support_query_set = (class_support_query_set - batch_means) / batch_stds
 
     # print(batch_means.shape)
     # print(batch_stds.shape)
@@ -79,6 +106,7 @@ def FFT_std_normalization(class_support_query_set, config, idx, query_samples):
 
     return new_class_support_query_set
 
+
 # Setup
 #######
 
@@ -98,15 +126,15 @@ def preprocess_class_batch(class_support_query_set, config, idx, query_samples):
 
     # Individual min max
     if "FFT" in config["preprocessing_class_batch"]:
-        class_support_query_set = FFT(
-            class_support_query_set, config)
+        class_support_query_set = FFT(class_support_query_set, config)
+
+    if "FFT_mean_std_channels" in config["preprocessing_class_batch"]:
+        class_support_query_set = FFT_mean_std_channels(class_support_query_set, config, idx, query_samples)
 
     if "FFT_masking" in config["preprocessing_class_batch"]:
-        class_support_query_set = FFT_masking(
-            class_support_query_set, config, idx, query_samples)
+        class_support_query_set = FFT_masking(class_support_query_set, config, idx, query_samples)
 
     if "FFT_std_normalization" in config["preprocessing_class_batch"]:
-        class_support_query_set = FFT_std_normalization(
-            class_support_query_set, config, idx, query_samples)
+        class_support_query_set = FFT_std_normalization(class_support_query_set, config, idx, query_samples)
 
     return class_support_query_set
