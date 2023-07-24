@@ -50,20 +50,19 @@ class WDCNN(nn.Module):
             1,
             16,
             kernel_size=64,
-            stride=16,
+            stride=8,
             padding=24,
             dropout=self.config["cl_dropout"],
         )
         self.cn_layer2 = ConvLayer(16, 32, dropout=self.config["cl_dropout"])
         self.cn_layer3 = ConvLayer(32, 64, dropout=self.config["cl_dropout"])
         self.cn_layer4 = ConvLayer(64, 64, dropout=self.config["cl_dropout"])
-        self.cn_layer5 = ConvLayer(
-            64, 64, padding=0, dropout=self.config["fc_dropout"]
-        )  # * Note the fc dropout here!
+        self.cn_layer5 = ConvLayer(64, 64, padding=0, dropout=self.config["fc_dropout"])  # * Note the fc dropout here!
 
         # Classifier
         self.fc1 = nn.Linear(
-            640 if "FFT" not in self.config["preprocessing_batch"] else 256,
+            1408,
+            # 640 if "FFT" not in self.config["preprocessing_batch"] else 256,
             self.config["embedding_len"],
         )
 
@@ -115,11 +114,11 @@ class WDCNN(nn.Module):
 
         # Match to class num
         out = self.fc1(out)
-        # out = F.relu(out)  # XXX Old
         if verbose:
             print(out.shape)
 
-        # out = F.normalize(out, p=1.0, dim=1) * 1000  # XXX Old
+        if verbose:
+            quit()
 
         return out
 
@@ -143,9 +142,7 @@ class WDCNN_orig(nn.Module):
         self.cn_layer2 = ConvLayer(16, 32, bias=bias, dropout=config["cl_dropout"])
         self.cn_layer3 = ConvLayer(32, 64, bias=bias, dropout=config["cl_dropout"])
         self.cn_layer4 = ConvLayer(64, 64, bias=bias, dropout=config["cl_dropout"])
-        self.cn_layer5 = ConvLayer(
-            64, 64, padding=0, bias=bias, dropout=config["cl_dropout"]
-        )
+        self.cn_layer5 = ConvLayer(64, 64, padding=0, bias=bias, dropout=config["cl_dropout"])
 
         # Classifier
         self.fc1 = nn.Linear(

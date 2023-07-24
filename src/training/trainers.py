@@ -1,7 +1,13 @@
 from functools import partial
 
+import numpy as np
+import pandas as pd
+import seaborn as sns
 import torch
 from ignite.engine import Engine
+from matplotlib import pyplot as plt
+from sklearn.manifold import TSNE
+from sklearn.metrics import confusion_matrix
 
 # Helpers
 #########
@@ -80,10 +86,10 @@ def train_function_wrapper(engine, batch, config, model, optimizer, loss_fn, dev
         #     raise Exception("AMP disabled for mps!")
 
         with torch.autocast(str(device)):
-            outputs = model(samples)
+            outputs, _, _ = model(samples)
             loss = loss_fn(outputs, targets)
     else:
-        outputs = model(samples)
+        outputs, _, _ = model(samples)
         loss = loss_fn(outputs, targets)
 
     # Backward pass
@@ -202,7 +208,41 @@ def eval_function_wrapper(engine, batch, config, model, device):
     #     with torch.autocast(str(device), enabled=config["use_amp"]):
     #         outputs = model(samples)
     # else:
-    outputs = model(samples)
+    outputs, prototypes, query_embeddings = model(samples)
+
+    # print(outputs.shape)
+    # print(outputs)
+    predictions = torch.argmax(outputs, dim=-1)
+    # print(predictions)
+    # print(targets.shape)
+    # print(targets)
+
+    verbose = True
+
+    if verbose:
+        cf = confusion_matrix(targets.cpu(), predictions.cpu())
+        print(cf)
+        print()
+
+        all_embeddings = torch.cat([prototypes.cpu(), query_embeddings.cpu()], dim=0)
+        tsne_embeddings = TSNE(n_components=2, learning_rate="auto", init="random", perplexity=20).fit_transform(
+            all_embeddings
+        )
+
+        tsne_prototypes = pd.DataFrame(tsne_embeddings[: config["n_way"]], columns=["x", "y"])
+        tsne_queries = pd.DataFrame(tsne_embeddings[config["n_way"] :], columns=["x", "y"])
+
+        proto_targets = np.arange(config["n_way"])
+        query_targets = np.arange(config["n_way"]).repeat(config["n_query"])
+
+        plt.figure(figsize=(12, 10))
+        palette = sns.color_palette()
+
+        sns.scatterplot(tsne_prototypes, x="x", y="y", s=40, hue=proto_targets, palette=palette, alpha=1.0, legend=True)
+        sns.scatterplot(tsne_queries, x="x", y="y", s=10, hue=query_targets, palette=palette, alpha=0.8, legend=False)
+
+        plt.tight_layout()
+        plt.show()
 
     return outputs, targets
 

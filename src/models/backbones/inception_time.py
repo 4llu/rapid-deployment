@@ -78,12 +78,21 @@ class InceptionModule(nn.Module):
 
 
 class ModdedInceptionModule(nn.Module):
-    def __init__(self, in_channels, reduced_channels, use_bottleneck=True, use_skip_connection=False, use_sen=False):
+    def __init__(
+        self,
+        in_channels,
+        reduced_channels,
+        use_bottleneck=True,
+        use_skip_connection=False,
+        use_sen=False,
+        activation=True,
+    ):
         super(ModdedInceptionModule, self).__init__()
 
         self.use_bottleneck = use_bottleneck
         self.use_skip_connection = use_skip_connection
         self.use_sen = use_sen
+        self.activation = activation
 
         self.fc_sen_1 = None
         self.fc_sen_2 = None
@@ -176,9 +185,10 @@ class ModdedInceptionModule(nn.Module):
                 x = self.conv_skip(x)
             z += x
 
-        z = self.bn(z)
-        z = F.relu(z)
-        # z = F.hardswish(z)  # TODO Try
+        if self.activation:
+            z = self.bn(z)
+            z = F.relu(z)
+            # z = F.hardswish(z)  # TODO Try
 
         return z
 
@@ -288,15 +298,15 @@ class InceptionTime(nn.Module):
         self.config = config
 
         # Layers
-        # self.stem_1 = nn.Sequential(
-        #     nn.Conv1d(1, 16, kernel_size=64, stride=2, padding=0, bias=False),
-        #     nn.BatchNorm1d(16, momentum=1, affine=True),
-        #     nn.ReLU(),
-        #     # nn.Hardswish(),
-        # )
+        self.stem_1 = nn.Sequential(
+            nn.Conv1d(1, 16, kernel_size=40, stride=2, padding=0, bias=False),
+            nn.BatchNorm1d(16, momentum=1, affine=True),
+            nn.ReLU(),
+            # nn.Hardswish(),
+        )
 
         # self.stem_reduction_1 = SimpleGridReductionModule(16, 16)
-        self.module_1_1 = ModdedInceptionModule(1, 16, use_bottleneck=False, use_skip_connection=True)
+        self.module_1_1 = ModdedInceptionModule(16, 16, use_bottleneck=False, use_skip_connection=True)
 
         # self.stem_reduction_2 = SimpleGridReductionModule(32, 32)
         self.module_2_1 = ModdedInceptionModule(64, 16, use_skip_connection=True, use_sen=False)
@@ -305,7 +315,7 @@ class InceptionTime(nn.Module):
         self.module_3_1 = ModdedInceptionModule(64, 16, use_skip_connection=True, use_sen=False)
         self.module_4_1 = ModdedInceptionModule(64, 32, use_skip_connection=True)
         self.module_5_1 = ModdedInceptionModule(128, 32, use_skip_connection=True, use_sen=False)
-        self.module_6_1 = ModdedInceptionModule(128, 64, use_skip_connection=True, use_sen=False)
+        self.module_6_1 = ModdedInceptionModule(128, 32, use_skip_connection=True, use_sen=False)
 
         # self.GAP = nn.AvgPool1d(kernel_size=2969, ceil_mode=True)
         # self.stem_reduction_2 = SimpleGridReductionModule(32, 32)
@@ -330,9 +340,9 @@ class InceptionTime(nn.Module):
 
         out = x
 
-        # out = self.stem_1(out)
-        # if verbose:
-        #     print("Stem 1:", out.shape)
+        out = self.stem_1(out)
+        if verbose:
+            print("Stem 1:", out.shape)
 
         out = self.module_1_1(out)
         if verbose:
