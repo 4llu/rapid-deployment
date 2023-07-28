@@ -70,7 +70,7 @@ class Prototypical(nn.Module):
         # * Only single sensors inputs supported currently
         # support_query = support_query.unsqueeze(2)
         # Reshape to fit (batch, channel, features) shape
-        # [n_way * (k_shot + n_query), 1, window_length]
+        # [n_way * (k_shot + n_query), num_channels, window_length]
         support_query = support_query.reshape(-1, *support_query.shape[-2:])
 
         # Compute embeddings

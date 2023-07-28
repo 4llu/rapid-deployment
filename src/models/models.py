@@ -21,6 +21,10 @@ def setup_model(config, device):
         from models.backbones.micnn import MiCNN
 
         backbone = MiCNN(config)
+    elif config["backbone"] == "HDC":
+        from models.backbones.hdc import HDC
+
+        backbone = HDC(config)
     elif config["backbone"] == "mininet":
         from models.backbones.mininet import mininet
 

@@ -217,7 +217,7 @@ def eval_function_wrapper(engine, batch, config, model, device):
     # print(targets.shape)
     # print(targets)
 
-    verbose = True
+    verbose = False
 
     if verbose:
         cf = confusion_matrix(targets.cpu(), predictions.cpu())
