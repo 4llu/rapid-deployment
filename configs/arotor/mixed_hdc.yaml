@@ -51,7 +51,7 @@ test_rpm: [750, 1250]
 train_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 validation_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 test_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-window_width: 6492
+window_width: 4328
 window_overlap: 0.99
 
 #? Preprocessing
@@ -68,8 +68,8 @@ preprocessing_sample: []
 # preprocessing_sample: [FFT]
 # preprocessing_sample: [sync_FFT] # ! Slow, always prefer the other two if possible
 # sync_FFT_rotations: 8 # How many rotations to include for synced FFT. Only used if sync_FFT on.
-preprocessing_class_batch: []
-# preprocessing_class_batch: [length_increase_interpolation]
+# preprocessing_class_batch: []
+preprocessing_class_batch: [length_increase_interpolation]
 interpolated_rotations: 2
 # preprocessing_class_batch: [FFT]
 # preprocessing_class_batch: [FFT, FFT_mean_std_channels]
@@ -99,10 +99,11 @@ sample_cut: -1 # Done in batch preprocessing
 
 #? Model
 
-model: prototypical
+model: relation
+# model: prototypical
 backbone: HDC
 # backbone: WDCNN
-# distance_network: simple
+distance_network: HDCD
 # distance_network: default
 kaiming_init: true
 embedding_len: 64
@@ -120,11 +121,12 @@ embedding_multiplier: 100
 #? Training
 
 epoch_len: 1
-max_epochs: 200
+max_epochs: 600
 patience: 1000
 optimizer: AdamW
 # lr: 0.003
-lr: 0.0004
+lr: 0.001
+# lr: 0.0004
 lr_scheduler: ExponentialLR
 # sch_gamma: 0.9999999
 # sch_gamma: 0.9998

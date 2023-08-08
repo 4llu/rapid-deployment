@@ -4,9 +4,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class SimpleDistanceNetwork(nn.Module):
+class HDCDistanceNetwork(nn.Module):
     def __init__(self, config):
-        super(SimpleDistanceNetwork, self).__init__()
+        super(HDCDistanceNetwork, self).__init__()
         self.config = config
         self.embedding_channels = 64
         self.embedding_len = 1082
@@ -22,7 +22,13 @@ class SimpleDistanceNetwork(nn.Module):
         self.cn_layer1 = nn.Sequential(
             # *2 because prototype and query embeddings are concatenated depth-wise
             nn.Conv1d(
-                self.embedding_channels * 2, self.embedding_channels, kernel_size=3, stride=1, padding=1, bias=False
+                self.embedding_channels * 2,
+                self.embedding_channels,
+                kernel_size=3,
+                stride=1,
+                dilation=1,
+                padding=0,
+                bias=False,
             ),
             nn.BatchNorm1d(self.embedding_channels, momentum=1, affine=True),
             # nn.ReLU(),
@@ -30,7 +36,30 @@ class SimpleDistanceNetwork(nn.Module):
             nn.MaxPool1d(2, 2),
         )
         self.cn_layer2 = nn.Sequential(
-            nn.Conv1d(self.embedding_channels, self.embedding_channels, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.Conv1d(
+                self.embedding_channels,
+                self.embedding_channels,
+                kernel_size=3,
+                stride=1,
+                dilation=1,
+                padding=0,
+                bias=False,
+            ),
+            nn.BatchNorm1d(self.embedding_channels, momentum=1, affine=True),
+            # nn.ReLU(),
+            nn.Hardswish(),
+            nn.MaxPool1d(2, 2),
+        )
+        self.cn_layer3 = nn.Sequential(
+            nn.Conv1d(
+                self.embedding_channels,
+                self.embedding_channels,
+                kernel_size=3,
+                stride=1,
+                dilation=1,
+                padding=0,
+                bias=False,
+            ),
             nn.BatchNorm1d(self.embedding_channels, momentum=1, affine=True),
             # nn.ReLU(),
             nn.Hardswish(),
@@ -39,7 +68,7 @@ class SimpleDistanceNetwork(nn.Module):
 
         # self.fc1 = nn.Linear(self.embedding_channels * self.embedding_len, 8)
         # self.fc1 = nn.Linear(self.embedding_channels * self.embedding_len // 4, 8)
-        self.fc1 = nn.Linear(67 * 64, 16)
+        self.fc1 = nn.Linear(133 * 64, 16)
         self.fc2 = nn.Linear(16, 1)
 
         # Optional FC layer weight initialization
@@ -70,6 +99,10 @@ class SimpleDistanceNetwork(nn.Module):
         out = self.cn_layer2(out)
         if verbose:
             print("CN 2:", out.shape)
+
+        out = self.cn_layer3(out)
+        if verbose:
+            print("CN 3:", out.shape)
 
         out = out.reshape(out.shape[0], -1)
 

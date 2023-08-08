@@ -154,7 +154,7 @@ class HDC(nn.Module):
 
         # TODO Convert to config option
         use_bn = True
-        use_max_pool = False
+        use_max_pool = True
         dilation_pattern = [1, 3, 5]
         # dilation_pattern = [1, 2, 3]
 
@@ -272,8 +272,8 @@ class HDC(nn.Module):
         if verbose:
             print("AFTER BLOCKS:", out.shape)
 
-        out = F.avg_pool1d(out, out.shape[-1])
-        out = out.squeeze()
+        # out = F.avg_pool1d(out, out.shape[-1])
+        # out = out.squeeze()
 
         if verbose:
             print("OUT:", out.shape)

@@ -63,6 +63,10 @@ def setup_model(config, device):
             from models.distance_networks.simple_distance import SimpleDistanceNetwork
 
             distance_network = SimpleDistanceNetwork(config)
+        elif config["distance_network"] == "HDCD":
+            from models.distance_networks.hdc_distance import HDCDistanceNetwork
+
+            distance_network = HDCDistanceNetwork(config)
 
         model = Relation(backbone, distance_network, config)
 
