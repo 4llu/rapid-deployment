@@ -1,8 +1,87 @@
 import numpy as np
 import torch
+from scipy.signal import butter, sosfilt
+from matplotlib import pyplot as plt
 
 # Methods
 #########
+
+
+def lowpass_filtering(train_data, validation_data, test_data, config):
+    sos = butter(2, config["lp_filter_cutoff"], "lowpass", analog=False, output="sos", fs=3012)
+
+    # Filtering helper
+    def lowpass_filtering_helper(data, split):
+        sensors = config[f"{split}_sensors"]
+
+        def filter_group(group_data):
+            group_data[sensors] = sosfilt(sos, group_data[sensors].values, axis=0)  # .astype("float32")
+
+            return group_data
+
+        data = data.groupby(["class", "rpm"], group_keys=False).apply(filter_group)
+
+        return data
+
+    new_train_data = lowpass_filtering_helper(train_data, "train")
+    new_validation_data = lowpass_filtering_helper(validation_data, "validation")
+    new_test_data = lowpass_filtering_helper(test_data, "test")
+
+    return new_train_data, new_validation_data, new_test_data
+
+
+# * Same as below, but without mask calculation
+def robust_scaling(train_data, validation_data, test_data, config):
+    head_len = 3012 * 6
+
+    def mixed_query_normalization_helper(data, split):
+        classes = config[f"{split}_classes"]
+        sensors = config[f"{split}_sensors"]
+        rpms = config[f"{split}_rpm"]
+
+        data_grouped = data.groupby(["class", "rpm"])
+
+        # Separate head (to be used for scaling, etc.) from measurements to be used for training/validation/testing (tail)
+        # * Take the same amount away from fault measurements too, to keep class balance
+        data_head = data_grouped.head(head_len)
+        # Scaling and masks are only computed from healthy samples, so other classes are useless here
+        data_head = data_head[data_head["class"] == 0]
+        # Tail needs all classes for scaling
+        data_tail = data_grouped.tail(int((len(train_data) / (len(classes) * len(rpms))) - head_len))
+
+        # SCALING #
+        ##
+        # Robust scaling with 25 and 75 percentiles
+
+        # Get scales
+        scale = {}
+        data_head_grouped = data_head.groupby(["class", "rpm"], group_keys=False)
+        for n, g in data_head_grouped:
+            # Scale for the healthy state of each rpm
+            p25 = g[sensors].quantile(config["robust_scaling_low"])
+            p75 = g[sensors].quantile(config["robust_scaling_high"])
+            scale[n[1]] = (p75 - p25).astype("float32")  # * config["mixed_query_normalization_scale"]
+
+        # Scaling helper
+        def scale_group(group_data):
+            group_data[sensors] = group_data[sensors] / scale[group_data.name[1]]
+
+            return group_data
+
+        # Scale head
+        # ? Not really used for anything
+        # data_head = data_head_grouped.apply(scale_group)
+
+        # Scale tail
+        data_tail = data_tail.groupby(["class", "rpm"], group_keys=False).apply(scale_group)
+
+        return data_tail
+
+    new_train_data = mixed_query_normalization_helper(train_data, "train")
+    new_validation_data = mixed_query_normalization_helper(validation_data, "validation")
+    new_test_data = mixed_query_normalization_helper(test_data, "test")
+
+    return new_train_data, new_validation_data, new_test_data
 
 
 def mixed_query_normalization(train_data, validation_data, test_data, config):
@@ -126,10 +205,13 @@ def preprocess_full(train_data, validation_data, test_data, config):
         test_data : pd.df
     """
 
-    # Z-score
     if "mixed_query_normalization" in config["preprocessing_full"]:
         train_data, validation_data, test_data = mixed_query_normalization(
             train_data, validation_data, test_data, config
         )
+    if "lowpass_filtering" in config["preprocessing_full"]:
+        train_data, validation_data, test_data = lowpass_filtering(train_data, validation_data, test_data, config)
+    if "robust_scaling" in config["preprocessing_full"]:
+        train_data, validation_data, test_data = robust_scaling(train_data, validation_data, test_data, config)
 
     return train_data, validation_data, test_data

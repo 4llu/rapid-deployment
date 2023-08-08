@@ -1,5 +1,4 @@
-import math
-
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -32,6 +31,9 @@ class HDCModule(nn.Module):
             padding="same",
             bias=not self.use_bn,
         )
+        if self.use_bn:
+            self.bn_1 = nn.BatchNorm1d(out_channels)
+
         self.conv_2 = nn.Conv1d(
             out_channels,
             out_channels,
@@ -41,6 +43,9 @@ class HDCModule(nn.Module):
             padding="same",
             bias=not self.use_bn,
         )
+        if self.use_bn:
+            self.bn_2 = nn.BatchNorm1d(out_channels)
+
         self.conv_3 = nn.Conv1d(
             out_channels,
             out_channels,
@@ -51,12 +56,8 @@ class HDCModule(nn.Module):
             bias=not self.use_bn,
         )
 
-        if self.use_bn:
-            self.bn_1 = nn.BatchNorm1d(out_channels)
-            self.bn_2 = nn.BatchNorm1d(out_channels)
-
-            if not self.last:
-                self.bn_3 = nn.BatchNorm1d(out_channels)
+        if self.use_bn:  # and not self.last:
+            self.bn_3 = nn.BatchNorm1d(out_channels)
 
         # SEN
         if self.use_sen:
@@ -138,6 +139,10 @@ class HDCModule(nn.Module):
             if self.use_bn:
                 out = self.bn_3(out)
             out = F.relu(out)
+        else:
+            if self.use_bn:
+                out = self.bn_3(out)
+            out = F.leaky_relu(out) * 10
 
         return out
 
@@ -149,85 +154,106 @@ class HDC(nn.Module):
 
         # TODO Convert to config option
         use_bn = True
-        dilation_pattern = [1, 2, 3]
+        use_max_pool = False
+        dilation_pattern = [1, 3, 5]
+        # dilation_pattern = [1, 2, 3]
 
         # Stem
 
-        stem = []
-        stem.append(
-            nn.Conv1d(
-                1,
-                16,
-                kernel_size=64,
-                stride=2,
-                bias=False,
-            )
-        )
-        stem.append(nn.ReLU())
-        if use_bn:
-            stem.append(nn.BatchNorm1d(16))
-        self.stem = nn.Sequential(*stem)
+        # stem = []
+        # stem.append(
+        #     nn.Conv1d(
+        #         1,
+        #         16,
+        #         kernel_size=64,
+        #         stride=2,
+        #         bias=False,
+        #     )
+        # )
+        # stem.append(nn.ReLU())
+        # if use_bn:
+        #     stem.append(nn.BatchNorm1d(16))
+        # self.stem = nn.Sequential(*stem)
 
         # HDC modules
 
-        module_32_1 = HDCModule(16, 32, dilation_pattern=dilation_pattern, use_bn=use_bn, use_res=True, use_sen=False)
+        module_16_1 = HDCModule(1, 16, dilation_pattern=dilation_pattern, use_bn=use_bn, use_res=True, use_sen=False)
+        module_16_2 = HDCModule(16, 16, dilation_pattern=dilation_pattern, use_bn=use_bn, use_res=True, use_sen=False)
+        module_16_3 = HDCModule(16, 16, dilation_pattern=dilation_pattern, use_bn=use_bn, use_res=True, use_sen=False)
 
+        if use_max_pool:
+            maxpool_1 = nn.MaxPool1d(2, 2)
+
+        module_32_1 = HDCModule(16, 32, dilation_pattern=dilation_pattern, use_bn=use_bn, use_res=True, use_sen=False)
         module_32_2 = HDCModule(32, 32, dilation_pattern=dilation_pattern, use_bn=use_bn, use_res=True, use_sen=False)
         module_32_3 = HDCModule(32, 32, dilation_pattern=dilation_pattern, use_bn=use_bn, use_res=True, use_sen=False)
         # module_32_4 = HDCModule(
         #     32, 32, dilation_pattern=dilation_pattern, use_bn=use_bn, use_res=True, use_sen=False
         # )
 
+        if use_max_pool:
+            maxpool_2 = nn.MaxPool1d(2, 2)
+
         module_64_1 = HDCModule(32, 64, dilation_pattern=dilation_pattern, use_bn=use_bn, use_res=True, use_sen=False)
         module_64_2 = HDCModule(64, 64, dilation_pattern=dilation_pattern, use_bn=use_bn, use_res=True, use_sen=False)
-        module_64_3 = HDCModule(64, 64, dilation_pattern=dilation_pattern, use_bn=use_bn, use_res=True, use_sen=False)
+        module_64_3 = HDCModule(
+            64, 64, dilation_pattern=dilation_pattern, use_bn=use_bn, use_res=True, use_sen=False, last=True
+        )
         # module_64_4 = HDCModule(
         #     64, 64, dilation_pattern=dilation_pattern, use_bn=use_bn, use_res=True, use_sen=False
         # )
 
-        module_128_1 = HDCModule(64, 128, dilation_pattern=dilation_pattern, use_bn=use_bn, use_res=True, use_sen=False)
-        module_128_2 = HDCModule(
-            128, 128, dilation_pattern=dilation_pattern, use_bn=use_bn, use_res=True, use_sen=False
-        )
-        module_128_3 = HDCModule(
-            128, 128, dilation_pattern=dilation_pattern, use_bn=use_bn, use_res=True, use_sen=False, last=False
-        )
+        # if use_max_pool:
+        #     maxpool_3 = nn.MaxPool1d(2, 2)
 
-        self.blocks = nn.Sequential(
+        # module_128_1 = HDCModule(64, 128, dilation_pattern=dilation_pattern, use_bn=use_bn, use_res=True, use_sen=False)
+        # module_128_2 = HDCModule(
+        #     128, 128, dilation_pattern=dilation_pattern, use_bn=use_bn, use_res=True, use_sen=False
+        # )
+        # module_128_3 = HDCModule(
+        #     128, 128, dilation_pattern=dilation_pattern, use_bn=use_bn, use_res=True, use_sen=False, last=False
+        # )
+
+        self.blocks = []
+
+        block_16 = nn.Sequential(
+            module_16_1,
+            module_16_2,
+            module_16_3,
+        )
+        self.blocks.append(block_16)
+
+        if use_max_pool:
+            self.blocks.append(maxpool_1)
+
+        block_32 = nn.Sequential(
             module_32_1,
             module_32_2,
             module_32_3,
+        )
+        self.blocks.append(block_32)
+
+        if use_max_pool:
+            self.blocks.append(maxpool_2)
+
+        block_64 = nn.Sequential(
             module_64_1,
             module_64_2,
             module_64_3,
-            module_128_1,
-            module_128_2,
-            module_128_3,
         )
+        self.blocks.append(block_64)
 
-        # Output
+        # if use_max_pool:
+        #     self.blocks.append(maxpool_3)
 
-        # # Global average pooling
-        # self.globalAvgPool = nn.AvgPool1d(kernel_size=11)  # FIXME Kernel size
-
-        # # Classifier
-        # self.fc1 = nn.Linear(
-        #     128,
-        #     config["embedding_len"],
+        # block_128 = nn.Sequential(
+        #     module_128_1,
+        #     module_128_2,
+        #     module_128_3,
         # )
+        # self.blocks.append(block_128)
 
-        # Optional FC layer weight initialization
-        # if self.config["kaiming_init"]:
-        #     self.apply(self._init_weights)
-
-    # For Kaiming weight initialization
-    # def _init_weights(self, module):
-    #     if isinstance(module, nn.Linear):
-    #         nn.init.kaiming_uniform_(module.weight, mode="fan_in", nonlinearity="relu")
-    #         if module.bias is not None:
-    #             fan_in, _ = nn.init._calculate_fan_in_and_fan_out(module.weight)
-    #             bound = 1 / math.sqrt(fan_in)
-    #             nn.init.uniform_(module.bias, -bound, bound)
+        self.blocks = nn.Sequential(*self.blocks)
 
     def forward(self, x):
         verbose = False
@@ -238,18 +264,19 @@ class HDC(nn.Module):
         out = x
 
         # Layers
-        out = self.stem(out)
-        if verbose:
-            print(out.shape)
+        # out = self.stem(out)
+        # if verbose:
+        #     print("AFTER STEM:", out.shape)
 
         out = self.blocks(out)
         if verbose:
-            print(out.shape)
+            print("AFTER BLOCKS:", out.shape)
 
         out = F.avg_pool1d(out, out.shape[-1])
         out = out.squeeze()
 
         if verbose:
+            print("OUT:", out.shape)
             quit()
 
         return out

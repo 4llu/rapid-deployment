@@ -155,7 +155,7 @@ def setup_trainer(
 
 
 @torch.no_grad()
-def relation_eval_function_wrapper(engine, batch, config, model, device):
+def relation_eval_function_wrapper(engine, batch, config, model, device, split):
     model.eval()
 
     # Non-blocking probably has no effect here,
@@ -175,7 +175,7 @@ def relation_eval_function_wrapper(engine, batch, config, model, device):
 
 
 @torch.no_grad()
-def eval_function_wrapper(engine, batch, config, model, device):
+def eval_function_wrapper(engine, batch, config, model, device, split):
     model.eval()
 
     # Legacy
@@ -217,12 +217,26 @@ def eval_function_wrapper(engine, batch, config, model, device):
     # print(targets.shape)
     # print(targets)
 
-    verbose = False
+    plot_samples = False
+    print_cf = True
+    plot_embeddings = False
 
-    if verbose:
+    if plot_samples:
+        print(split)
+        print(samples.shape)
+
+        plt.figure(figsize=(12, 10))
+        print(samples[9, 0, 0, :].cpu())
+        plt.plot(samples[9, 0, 0, :].cpu())
+        plt.tight_layout()
+        plt.show()
+
+    if print_cf and split == "test":
         cf = confusion_matrix(targets.cpu(), predictions.cpu())
         print(cf)
         print()
+
+    if plot_embeddings and split == "test":
 
         all_embeddings = torch.cat([prototypes.cpu(), query_embeddings.cpu()], dim=0)
         tsne_embeddings = TSNE(n_components=2, learning_rate="auto", init="random", perplexity=20).fit_transform(
@@ -247,11 +261,7 @@ def eval_function_wrapper(engine, batch, config, model, device):
     return outputs, targets
 
 
-def setup_evaluator(
-    config,
-    model,
-    device,
-):
+def setup_evaluator(config, model, device, split):
 
     if config["model"] == "prototypical":
         eval_function_ = eval_function_wrapper
@@ -264,6 +274,7 @@ def setup_evaluator(
         config=config,
         model=model,
         device=device,
+        split=split,
     )
 
     return Engine(eval_function)

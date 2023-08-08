@@ -58,9 +58,10 @@ class FewShotMixedDataset(Dataset):
                 *self.config["test_rpm"],
             ]
         )
-        min_window_len = self.rotation_len_map[max_rpm] * self.config["sync_FFT_rotations"]
-        #! Completely new value added to config!
-        self.config["max_fft_len"] = len(torch.fft.rfft(torch.arange(min_window_len)))
+        if "sync_FFT_rotations" in self.config:
+            min_window_len = self.rotation_len_map[max_rpm] * self.config["sync_FFT_rotations"]
+            #! Completely new value added to config!
+            self.config["max_fft_len"] = len(torch.fft.rfft(torch.arange(min_window_len)))
 
         # Max window width to calculate stride and max index that can be sampled
         # ! Remember to not use `self.config["window_width"]` after this point
@@ -145,20 +146,22 @@ class FewShotMixedDataset(Dataset):
             window_width = self.rotation_len_map[idx[1]] * self.config["sync_FFT_rotations"]
 
         # Select random measurement windows for the support and query set
-        # sample_idxs = torch.randperm(self.max_measurement_index, dtype=torch.long)[
-        # * +1 because non-inclusive of upper bound
-        sample_idxs = np.random.permutation(self.max_measurement_index + 1)[
-            : self.config["k_shot"] + self.config["n_query"]
-        ]
+        # * 1. +1 because `.permutation` is non-inclusive of upper bound
+        # * 2. Max measurement index is in terms of window index, not measurement samples,
+        # * so it needs to be multiplied by the stride
+        sample_idxs = (
+            np.random.permutation(self.max_measurement_index + 1)[: self.config["k_shot"] + self.config["n_query"]]
+            * self.window_stride
+        )
 
         support_query_set = []
 
         # Support samples
-        for i in sample_idxs[: self.config["k_shot"]]:
+        for sample_i in sample_idxs[: self.config["k_shot"]]:
             # i corresponds to window index, not measurement samples, so it need to be multiplied by the stride
-            j = i * self.window_stride
+            # j = i * self.window_stride # ? Done above
 
-            sample = self.data[idx][self.support_offset + j : self.support_offset + j + window_width]
+            sample = self.data[idx][self.support_offset + sample_i : self.support_offset + sample_i + window_width]
             support_query_set.append(sample)
 
         # Query samples
@@ -184,15 +187,17 @@ class FewShotMixedDataset(Dataset):
             )
         query_sampling = list(query_sampling)
 
-        for i in query_sampling:
+        for sample_i, sample_rpm, sample_sensor in query_sampling:
             # i corresponds to window index, not measurement samples, so it need to be multiplied by the stride
-            j = i[0] * self.window_stride
+            # j = i[0] * self.window_stride # ? Done above
 
             # Use rpm specific window_width for each sample if using synced FFT
             if "sync_FFT" in self.config["preprocessing_sample"] or "sync_FFT" in self.config["preprocessing_batch"]:
-                window_width = self.rotation_len_map[i[1]] * self.config["sync_FFT_rotations"]
+                window_width = self.rotation_len_map[sample_rpm] * self.config["sync_FFT_rotations"]
 
-            sample = self.data[(idx[0], i[1], i[2])][self.query_offset + j : self.query_offset + j + window_width]
+            sample = self.data[(idx[0], sample_rpm, sample_sensor)][
+                self.query_offset + sample_i : self.query_offset + sample_i + window_width
+            ]
             support_query_set.append(sample)
 
         # Preprocess as individual samples
@@ -336,7 +341,9 @@ def get_arotor_data(config, device):
     abs_path = os.path.dirname(__file__)
     data_folder = os.path.join(abs_path, os.pardir, os.pardir, "data")
 
-    data = pd.read_feather(os.path.join(data_folder, "processed", "arotor.feather"))
+    data = pd.read_feather(os.path.join(data_folder, "processed", "arotor_V2.feather"))
+    # data = pd.read_feather(os.path.join(data_folder, "processed", "arotor_enc_angle_02_res_PCHIP_V2.feather"))
+    # data = pd.read_feather(os.path.join(data_folder, "processed", "arotor.feather"))
 
     # Data selection
     ################

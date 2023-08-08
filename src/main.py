@@ -98,8 +98,8 @@ def run_training(
 
     # Setup trainers
     trainer = setup_trainer(config, model, optimizer, loss_fn, device)  # Training
-    evaluator = setup_evaluator(config, model, device)  # Validation
-    evaluator_test = setup_evaluator(config, model, device)  # Testing
+    evaluator = setup_evaluator(config, model, device, "validation")  # Validation
+    evaluator_test = setup_evaluator(config, model, device, "test")  # Testing
 
     # Enable the use of multiple episodes for the final metrics of evaluation and testing
     runWiseUsage = MetricUsage(Events.STARTED, Events.COMPLETED, Events.ITERATION_COMPLETED)

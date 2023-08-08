@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+from scipy.interpolate import Akima1DInterpolator
+from matplotlib import pyplot as plt
 
 # Methods
 #########
@@ -107,6 +109,66 @@ def FFT_std_normalization(class_support_query_set, config, idx, query_samples):
     return new_class_support_query_set
 
 
+rpm_rotation_lengths = {
+    250: 2164,
+    500: 1082,
+    750: 721,
+    1000: 541,
+    1250: 433,
+    1500: 361,
+}
+
+
+def length_increase_interpolation(class_support_query_set, config, idx, query_samples):
+    new_class_support_query_set = []
+
+    truncated_support_set = class_support_query_set[
+        : config["k_shot"], :, : rpm_rotation_lengths[idx[1]] * config["interpolated_rotations"]
+    ]
+    if idx[1] == 250:
+        new_class_support_query_set.extend(truncated_support_set)
+    else:
+        new_support_x = np.linspace(
+            0,
+            rpm_rotation_lengths[idx[1]] * config["interpolated_rotations"] - 1,
+            rpm_rotation_lengths[250] * config["interpolated_rotations"],
+            endpoint=True,
+        )
+        new_support_set = Akima1DInterpolator(range(truncated_support_set.shape[-1]), truncated_support_set, axis=2)(
+            new_support_x
+        )
+        new_class_support_query_set.extend(new_support_set)
+
+    # Count number of unique rpms
+    unique_rpms = np.unique(np.array(query_samples)[:, 1])
+    unique_rpms = [int(x) for x in unique_rpms]
+    query_rpm_set_len = int((class_support_query_set.shape[0] - config["k_shot"]) / len(unique_rpms))
+
+    for i in range(len(unique_rpms)):
+        truncated_query_rpm = class_support_query_set[
+            config["k_shot"] + i * query_rpm_set_len : config["k_shot"] + (i + 1) * query_rpm_set_len,
+            :,
+            : rpm_rotation_lengths[unique_rpms[i]] * config["interpolated_rotations"],
+        ]
+        if unique_rpms[i] == 250:
+            new_class_support_query_set.extend(truncated_query_rpm)
+        else:
+            new_x = np.linspace(
+                0,
+                rpm_rotation_lengths[unique_rpms[i]] * config["interpolated_rotations"] - 1,
+                rpm_rotation_lengths[250] * config["interpolated_rotations"],
+                endpoint=True,
+            )
+            new_query_rpm = Akima1DInterpolator(range(truncated_query_rpm.shape[-1]), truncated_query_rpm, axis=2)(
+                new_x
+            )
+            new_class_support_query_set.extend(new_query_rpm)
+
+    new = torch.tensor(np.stack(new_class_support_query_set, axis=0), dtype=torch.float32)
+
+    return new
+
+
 # Setup
 #######
 
@@ -136,5 +198,7 @@ def preprocess_class_batch(class_support_query_set, config, idx, query_samples):
 
     if "FFT_std_normalization" in config["preprocessing_class_batch"]:
         class_support_query_set = FFT_std_normalization(class_support_query_set, config, idx, query_samples)
+    if "length_increase_interpolation" in config["preprocessing_class_batch"]:
+        class_support_query_set = length_increase_interpolation(class_support_query_set, config, idx, query_samples)
 
     return class_support_query_set

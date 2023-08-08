@@ -61,7 +61,7 @@ class WDCNN(nn.Module):
 
         # Classifier
         self.fc1 = nn.Linear(
-            1408,
+            960,
             # 640 if "FFT" not in self.config["preprocessing_batch"] else 256,
             self.config["embedding_len"],
         )
