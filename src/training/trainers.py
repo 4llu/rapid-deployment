@@ -225,7 +225,7 @@ def eval_function_wrapper(engine, batch, config, model, device, split):
         print(split)
         print(samples.shape)
 
-        plt.figure(figsize=(12, 10))
+        plt.figure(figsize=(20, 10))
         print(samples[9, 0, 0, :].cpu())
         plt.plot(samples[9, 0, 0, :].cpu())
         plt.tight_layout()
@@ -249,7 +249,7 @@ def eval_function_wrapper(engine, batch, config, model, device, split):
         proto_targets = np.arange(config["n_way"])
         query_targets = np.arange(config["n_way"]).repeat(config["n_query"])
 
-        plt.figure(figsize=(12, 10))
+        plt.figure(figsize=(20, 10))
         palette = sns.color_palette()
 
         sns.scatterplot(tsne_prototypes, x="x", y="y", s=40, hue=proto_targets, palette=palette, alpha=1.0, legend=True)

@@ -15,7 +15,7 @@ def lowpass_filtering(train_data, validation_data, test_data, config):
         sensors = config[f"{split}_sensors"]
 
         def filter_group(group_data):
-            group_data[sensors] = sosfilt(sos, group_data[sensors].values, axis=0)  # .astype("float32")
+            group_data[sensors] = sosfilt(sos, group_data[sensors].values, axis=0).astype("float32")
 
             return group_data
 

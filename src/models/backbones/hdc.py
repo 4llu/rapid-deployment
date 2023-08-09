@@ -157,6 +157,7 @@ class HDC(nn.Module):
         use_max_pool = True
         dilation_pattern = [1, 3, 5]
         # dilation_pattern = [1, 2, 3]
+        self.use_multiscale = False
 
         # Stem
 
@@ -272,8 +273,34 @@ class HDC(nn.Module):
         if verbose:
             print("AFTER BLOCKS:", out.shape)
 
-        # out = F.avg_pool1d(out, out.shape[-1])
-        # out = out.squeeze()
+        if self.use_multiscale:
+            out_x2 = F.avg_pool1d(x, 2, 2)
+            out_x3 = F.avg_pool1d(x, 3, 3)
+            out_x4 = F.avg_pool1d(out_x2, 2, 2)
+            # out_x8 = F.avg_pool1d(out_x4, 2, 2)
+
+            out_x2 = self.blocks(out_x2)
+            out_x3 = self.blocks(out_x3)
+            out_x4 = self.blocks(out_x4)
+            # out_x8 = self.blocks(out_x8)
+
+            out = torch.cat(
+                [
+                    out,
+                    out_x2,
+                    out_x3,
+                    out_x4,
+                    # out_x8,
+                ],
+                dim=-1,
+            )
+
+            if verbose:
+                print("AFTER MULTISCALE:", out.shape)
+
+        # out = F.max_pool1d(out, out.shape[-1])
+        out = F.avg_pool1d(out, out.shape[-1])
+        out = out.squeeze()
 
         if verbose:
             print("OUT:", out.shape)
