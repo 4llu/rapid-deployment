@@ -109,4 +109,4 @@ class Prototypical(nn.Module):
         # -1 because we wan't shorter distance to be better (bigger prob. after softmax)
         out = -1 * torch.cdist(query_embeddings, prototypes, p=2.0)
 
-        return out, prototypes, query_embeddings
+        return out, support_embeddings, prototypes, self._prev_query_embeddings

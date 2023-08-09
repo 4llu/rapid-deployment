@@ -10,7 +10,8 @@ eval_episodes: 4 # * Increase for hyper opt and final testing
 
 k_shot: 1
 n_way: 10
-n_query: 30
+# n_query: 30
+n_query: 60
 mix_rpms: true
 mix_sensors: false
 separate_query_and_support: false
@@ -46,7 +47,8 @@ test_sensors: [en3speed_grad]
 # test_rpm: [250, 500, 750, 1000, 1250, 500]
 train_rpm: [500, 1000, 1500]
 validation_rpm: [500, 1000]
-test_rpm: [750, 1250]
+# test_rpm: [750, 1250]
+test_rpm: [250, 500, 750, 1000, 1250, 1500]
 
 # train_rpm: [500, 1250]
 # validation_rpm: [250, 1500]
@@ -110,7 +112,7 @@ backbone: HDC
 # distance_network: HDCD
 # distance_network: default
 kaiming_init: true
-embedding_len: 64
+embedding_len: 32
 # embedding_normalization_type: False
 # Legacy
 # embedding_normalization_type: old
@@ -130,7 +132,8 @@ patience: 1000
 optimizer: AdamW
 # lr: 0.003
 # lr: 0.001
-lr: 0.0004
+# lr: 0.0004
+lr: 0.0001
 lr_scheduler: ExponentialLR
 # sch_gamma: 0.9999999
 # sch_gamma: 0.9998

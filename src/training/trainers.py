@@ -1,4 +1,5 @@
 from functools import partial
+import pickle
 
 import numpy as np
 import pandas as pd
@@ -86,10 +87,10 @@ def train_function_wrapper(engine, batch, config, model, optimizer, loss_fn, dev
         #     raise Exception("AMP disabled for mps!")
 
         with torch.autocast(str(device)):
-            outputs, _, _ = model(samples)
+            outputs, _, _, _ = model(samples)
             loss = loss_fn(outputs, targets)
     else:
-        outputs, _, _ = model(samples)
+        outputs, _, _, _ = model(samples)
         loss = loss_fn(outputs, targets)
 
     # Backward pass
@@ -208,7 +209,7 @@ def eval_function_wrapper(engine, batch, config, model, device, split):
     #     with torch.autocast(str(device), enabled=config["use_amp"]):
     #         outputs = model(samples)
     # else:
-    outputs, prototypes, query_embeddings = model(samples)
+    outputs, support_embeddings, prototypes, query_embeddings = model(samples)
 
     # print(outputs.shape)
     # print(outputs)
@@ -220,6 +221,7 @@ def eval_function_wrapper(engine, batch, config, model, device, split):
     plot_samples = False
     print_cf = True
     plot_embeddings = False
+    save_embeddings = True
 
     if plot_samples:
         print(split)
@@ -257,6 +259,14 @@ def eval_function_wrapper(engine, batch, config, model, device, split):
 
         plt.tight_layout()
         plt.show()
+
+    if save_embeddings and split == "test":
+        with open('embeddings.pkl', 'ab') as f:
+            pickle.dump({
+                "support_embeddings": support_embeddings.cpu().numpy(),
+                "prototypes": prototypes.cpu().numpy(),
+                "query_embeddings": query_embeddings.cpu().numpy(),
+            }, f)
 
     return outputs, targets
 
