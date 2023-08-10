@@ -234,15 +234,15 @@ class HDC(nn.Module):
         )
         self.blocks.append(block_32)
 
-        # if use_max_pool:
-        #     self.blocks.append(maxpool_2)
+        if use_max_pool:
+            self.blocks.append(maxpool_2)
 
-        # block_64 = nn.Sequential(
-        #     module_64_1,
-        #     module_64_2,
-        #     module_64_3,
-        # )
-        # self.blocks.append(block_64)
+        block_64 = nn.Sequential(
+            module_64_1,
+            module_64_2,
+            module_64_3,
+        )
+        self.blocks.append(block_64)
 
         # if use_max_pool:
         #     self.blocks.append(maxpool_3)

@@ -45,7 +45,7 @@ test_sensors: [en3speed_grad]
 # train_rpm: [250, 500, 750, 1000, 1250, 500]
 # validation_rpm: [250, 500, 750, 1000, 1250, 500]
 # test_rpm: [250, 500, 750, 1000, 1250, 500]
-train_rpm: [500, 1000, 1500]
+train_rpm: [500, 750, 1500]
 validation_rpm: [500, 1000]
 # test_rpm: [750, 1250]
 test_rpm: [250, 500, 750, 1000, 1250, 1500]
@@ -112,7 +112,7 @@ backbone: HDC
 # distance_network: HDCD
 # distance_network: default
 kaiming_init: true
-embedding_len: 32
+embedding_len: 64
 # embedding_normalization_type: False
 # Legacy
 # embedding_normalization_type: old

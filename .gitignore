@@ -11,6 +11,7 @@ torch_downloads/*
 reports/raw/logs/*
 reports/raw/logs_tb/*
 reports/raw/optuna_studies/*
+reports/**/*.pkl
 
 # Exceptions
 !/**/.gitkeep

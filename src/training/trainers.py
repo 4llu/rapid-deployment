@@ -221,7 +221,7 @@ def eval_function_wrapper(engine, batch, config, model, device, split):
     plot_samples = False
     print_cf = True
     plot_embeddings = False
-    save_embeddings = True
+    save_embeddings = False
 
     if plot_samples:
         print(split)
@@ -261,12 +261,15 @@ def eval_function_wrapper(engine, batch, config, model, device, split):
         plt.show()
 
     if save_embeddings and split == "test":
-        with open('embeddings.pkl', 'ab') as f:
-            pickle.dump({
-                "support_embeddings": support_embeddings.cpu().numpy(),
-                "prototypes": prototypes.cpu().numpy(),
-                "query_embeddings": query_embeddings.cpu().numpy(),
-            }, f)
+        with open("embeddings.pkl", "ab") as f:
+            pickle.dump(
+                {
+                    "support_embeddings": support_embeddings.cpu().numpy(),
+                    "prototypes": prototypes.cpu().numpy(),
+                    "query_embeddings": query_embeddings.cpu().numpy(),
+                },
+                f,
+            )
 
     return outputs, targets
 
