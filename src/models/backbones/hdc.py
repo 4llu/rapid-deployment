@@ -300,7 +300,7 @@ class HDC(nn.Module):
 
         # out = F.max_pool1d(out, out.shape[-1])
         out = F.avg_pool1d(out, out.shape[-1])
-        # out = out.squeeze()
+        out = out.squeeze()
 
         if verbose:
             print("OUT:", out.shape)

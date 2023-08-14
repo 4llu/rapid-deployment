@@ -2,8 +2,8 @@
 name: time
 log: true
 save: false # TODO
-eval_freq: 3 # * Decrease for hyper opt and final testing
-eval_episodes: 1 # * Increase for hyper opt and final testing
+eval_freq: 1 # * Decrease for hyper opt and final testing
+eval_episodes: 4 # * Increase for hyper opt and final testing
 # eval_episodes: 15 # * Increase for hyper opt and final testing
 
 #? Fewshot setup
@@ -11,8 +11,8 @@ eval_episodes: 1 # * Increase for hyper opt and final testing
 k_shot: 1
 n_way: 10
 n_query: 30
-mix_rpms: false
-mix_sensors: true
+mix_rpms: true
+mix_sensors: false
 separate_query_and_support: false
 
 #? Data
@@ -22,12 +22,15 @@ data: ARotor
 # train_sensors: [torque1]
 # validation_sensors: [torque1]
 # test_sensors: [torque2]
-train_sensors: [en1acc_grad, en2acc_grad]
-validation_sensors: [en3acc_grad]
-test_sensors: [en5acc_grad, en4acc_grad]
+train_sensors: [en1speed_grad]
+validation_sensors: [en2speed_grad]
+test_sensors: [en1speed_grad]
 train_rpm: [250, 1500]
 validation_rpm: [750, 1000]
 test_rpm: [500, 1250]
+# train_rpm: [250, 750, 1500]
+# validation_rpm: [500, 1000]
+# test_rpm: [500, 1250]
 # train_rpm: [500, 1000, 1500]
 # validation_rpm: [250]
 # test_rpm: [750, 1250]
@@ -37,30 +40,34 @@ test_rpm: [500, 1250]
 train_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 validation_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 test_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-window_width: 6000
+window_width: 4328
 window_overlap: 0.99
 
 #? Preprocessing
 
 # preprocessing_full: []
-preprocessing_full: [mixed_query_normalization]
-mixed_query_normalization_scale: 0.1
+preprocessing_full: [robust_scaling]
+# preprocessing_full: [lowpass_filtering, robust_scaling]
+lp_filter_cutoff: 200
+robust_scaling_low: 0.25
+robust_scaling_high: 0.75
+# mixed_query_normalization_scale: 0.1
 preprocessing_sample: []
 # preprocessing_sample: [FFT]
 # preprocessing_sample: [sync_FFT] # ! Slow, always prefer the other two if possible
-sync_FFT_rotations: 8 # How many rotations to include for synced FFT. Only used if sync_FFT on.
+# sync_FFT_rotations: 8 # How many rotations to include for synced FFT. Only used if sync_FFT on.
 preprocessing_class_batch: []
 # preprocessing_class_batch: [FFT]
 # preprocessing_class_batch: [FFT, FFT_mean_std_channels]
-# preprocessing_batch: []
+preprocessing_batch: []
 # preprocessing_batch: [FFT]
-preprocessing_batch: [gain_changer, add_white_noise]
+# preprocessing_batch: [gain_changer, add_white_noise]
 # preprocessing_batch: [FFT, gain_changer, block_shuffle]
 # preprocessing_batch: [FFT, gain_changer, mult_white_noise, block_shuffle]
 # preprocessing_batch: [FFT, gain_changer, mult_white_noise, block_shuffle, combined_freq_masking]
 # preprocessing_batch: [FFT, gain_changer]
-gain_std: 0.5
-white_noise_std: 0.005
+gain_std: 0.2
+white_noise_std: 0.02
 # combined_freq_masking_probabilities: [0.7, 0.3, 0, 0]
 # block_size: 2048
 # preprocessing_batch: [sync_FFT]
@@ -84,7 +91,7 @@ backbone: InceptionTime
 # distance_network: simple
 # distance_network: default
 kaiming_init: true
-embedding_len: 128
+embedding_len: 32
 # embedding_normalization_type: False
 # Legacy
 # embedding_normalization_type: old
@@ -99,10 +106,11 @@ embedding_multiplier: 100
 #? Training
 
 epoch_len: 1
-max_epochs: 20
+max_epochs: 200
 patience: 1000
 optimizer: AdamW
 # lr: 0.003
+# lr: 0.0001
 lr: 0.00442
 lr_scheduler: ExponentialLR
 # sch_gamma: 0.9999999

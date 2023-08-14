@@ -117,7 +117,8 @@ class ModdedInceptionModule(nn.Module):
         self.conv_s = nn.Conv1d(
             reduced_channels if self.use_bottleneck else in_channels,
             reduced_channels,
-            kernel_size=10,
+            kernel_size=3,
+            # kernel_size=10,
             stride=1,
             padding="same",
             bias=False,
@@ -125,7 +126,8 @@ class ModdedInceptionModule(nn.Module):
         self.conv_m = nn.Conv1d(
             reduced_channels if self.use_bottleneck else in_channels,
             reduced_channels,
-            kernel_size=20,
+            kernel_size=21,
+            # kernel_size=20,
             stride=1,
             padding="same",
             bias=False,
@@ -133,7 +135,8 @@ class ModdedInceptionModule(nn.Module):
         self.conv_l = nn.Conv1d(
             reduced_channels if self.use_bottleneck else in_channels,
             reduced_channels,
-            kernel_size=40,
+            kernel_size=51,
+            # kernel_size=40,
             stride=1,
             padding="same",
             bias=False,
@@ -189,6 +192,9 @@ class ModdedInceptionModule(nn.Module):
             z = self.bn(z)
             z = F.relu(z)
             # z = F.hardswish(z)  # TODO Try
+        else:
+            z = self.bn(z)
+            z = F.sigmoid(z)
 
         return z
 
@@ -298,24 +304,25 @@ class InceptionTime(nn.Module):
         self.config = config
 
         # Layers
-        self.stem_1 = nn.Sequential(
-            nn.Conv1d(1, 16, kernel_size=40, stride=2, padding=0, bias=False),
-            nn.BatchNorm1d(16, momentum=1, affine=True),
-            nn.ReLU(),
-            # nn.Hardswish(),
-        )
+        # self.stem_1 = nn.Sequential(
+        #     nn.Conv1d(1, 16, kernel_size=40, stride=2, padding=0, bias=False),
+        #     nn.BatchNorm1d(16, momentum=1, affine=True),
+        #     nn.ReLU(),
+        #     # nn.Hardswish(),
+        # )
 
-        # self.stem_reduction_1 = SimpleGridReductionModule(16, 16)
-        self.module_1_1 = ModdedInceptionModule(16, 16, use_bottleneck=False, use_skip_connection=True)
+        self.module_1_1 = ModdedInceptionModule(1, 2, use_bottleneck=False, use_skip_connection=True)
+        self.module_2_1 = ModdedInceptionModule(8, 2, use_skip_connection=True, use_sen=False)
 
-        # self.stem_reduction_2 = SimpleGridReductionModule(32, 32)
-        self.module_2_1 = ModdedInceptionModule(64, 16, use_skip_connection=True, use_sen=False)
+        self.reduction_1 = SimpleGridReductionModule(8, 8)
 
-        # self.stem_reduction_3 = SimpleGridReductionModule(64, 64)
-        self.module_3_1 = ModdedInceptionModule(64, 16, use_skip_connection=True, use_sen=False)
-        self.module_4_1 = ModdedInceptionModule(64, 32, use_skip_connection=True)
-        self.module_5_1 = ModdedInceptionModule(128, 32, use_skip_connection=True, use_sen=False)
-        self.module_6_1 = ModdedInceptionModule(128, 32, use_skip_connection=True, use_sen=False)
+        self.module_3_1 = ModdedInceptionModule(16, 4, use_skip_connection=True, use_sen=False)
+        self.module_4_1 = ModdedInceptionModule(16, 4, use_skip_connection=True, use_sen=False)
+
+        self.reduction_2 = SimpleGridReductionModule(16, 16)
+
+        self.module_5_1 = ModdedInceptionModule(32, 8, use_skip_connection=True, use_sen=False)
+        self.module_6_1 = ModdedInceptionModule(32, 8, use_skip_connection=True, use_sen=False, activation=False)
 
         # self.GAP = nn.AvgPool1d(kernel_size=2969, ceil_mode=True)
         # self.stem_reduction_2 = SimpleGridReductionModule(32, 32)
@@ -340,9 +347,9 @@ class InceptionTime(nn.Module):
 
         out = x
 
-        out = self.stem_1(out)
-        if verbose:
-            print("Stem 1:", out.shape)
+        # out = self.stem_1(out)
+        # if verbose:
+        #     print("Stem 1:", out.shape)
 
         out = self.module_1_1(out)
         if verbose:
@@ -352,6 +359,11 @@ class InceptionTime(nn.Module):
         if verbose:
             print("Module 2.1:", out.shape)
 
+        out = self.reduction_1(out)
+        if verbose:
+            print("Reduction 1:", out.shape)
+        #
+
         out = self.module_3_1(out)
         if verbose:
             print("Module 3.1:", out.shape)
@@ -359,6 +371,11 @@ class InceptionTime(nn.Module):
         out = self.module_4_1(out)
         if verbose:
             print("Module 4.1:", out.shape)
+
+        out = self.reduction_2(out)
+        if verbose:
+            print("Reduction 2:", out.shape)
+        #
 
         out = self.module_5_1(out)
         if verbose:
