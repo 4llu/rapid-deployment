@@ -63,6 +63,10 @@ def setup_model(config, device):
             from models.distance_networks.simple_distance import SimpleDistanceNetwork
 
             distance_network = SimpleDistanceNetwork(config)
+        elif config["distance_network"] == "very_simple":
+            from models.distance_networks.very_simple_distance import VerySimpleDistanceNetwork
+
+            distance_network = VerySimpleDistanceNetwork(config)
         elif config["distance_network"] == "HDCD":
             from models.distance_networks.hdc_distance import HDCDistanceNetwork
 

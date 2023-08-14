@@ -1,4 +1,6 @@
+import numpy as np
 import torch
+from scipy.signal import hilbert
 
 # import matplotlib.pyplot as plt
 
@@ -171,6 +173,12 @@ def gain_changer(support_query_set, config, device):
     return support_query_set
 
 
+def hilbert_envelope(support_query_set, config, device):
+    support_query_set = torch.tensor(np.abs(hilbert(support_query_set)))
+
+    return support_query_set
+
+
 # Setup
 #######
 
@@ -220,5 +228,8 @@ def preprocess_batch(support_query_set, config, device):
 
     if "block_shuffle" in config["preprocessing_batch"]:
         support_query_set = block_shuffle(support_query_set, config, device)
+
+    if "hilbert_envelope" in config["preprocessing_batch"]:
+        support_query_set = hilbert_envelope(support_query_set, config, device)
 
     return support_query_set

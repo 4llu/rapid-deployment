@@ -11,7 +11,7 @@ eval_episodes: 4 # * Increase for hyper opt and final testing
 k_shot: 1
 n_way: 10
 # n_query: 30
-n_query: 60
+n_query: 30
 mix_rpms: true
 mix_sensors: false
 separate_query_and_support: false
@@ -45,10 +45,10 @@ test_sensors: [en3speed_grad]
 # train_rpm: [250, 500, 750, 1000, 1250, 500]
 # validation_rpm: [250, 500, 750, 1000, 1250, 500]
 # test_rpm: [250, 500, 750, 1000, 1250, 500]
-train_rpm: [500, 750, 1500]
+train_rpm: [250, 750, 1500]
 validation_rpm: [500, 1000]
-# test_rpm: [750, 1250]
-test_rpm: [250, 500, 750, 1000, 1250, 1500]
+test_rpm: [500, 1250]
+# test_rpm: [250, 500, 750, 1000, 1250, 1500]
 
 # train_rpm: [500, 1250]
 # validation_rpm: [250, 1500]
@@ -79,6 +79,7 @@ preprocessing_class_batch: []
 # preprocessing_class_batch: [FFT]
 # preprocessing_class_batch: [FFT, FFT_mean_std_channels]
 preprocessing_batch: []
+# preprocessing_batch: [hilbert_envelope]
 # preprocessing_batch: [gain_changer]
 # preprocessing_batch: [gain_changer, add_white_noise]
 # preprocessing_batch: [FFT]
@@ -111,7 +112,8 @@ backbone: HDC
 # backbone: WDCNN
 # distance_network: HDCD
 # distance_network: default
-kaiming_init: true
+# distance_network: very_simple
+kaiming_init: False
 embedding_len: 64
 # embedding_normalization_type: False
 # Legacy
@@ -127,13 +129,13 @@ embedding_multiplier: 100
 #? Training
 
 epoch_len: 1
-max_epochs: 200
+max_epochs: 1000
 patience: 1000
 optimizer: AdamW
 # lr: 0.003
-# lr: 0.001
+lr: 0.001
 # lr: 0.0004
-lr: 0.0001
+# lr: 0.0001
 lr_scheduler: ExponentialLR
 # sch_gamma: 0.9999999
 # sch_gamma: 0.9998
