@@ -126,7 +126,7 @@ class ModdedInceptionModule(nn.Module):
         self.conv_m = nn.Conv1d(
             reduced_channels if self.use_bottleneck else in_channels,
             reduced_channels,
-            kernel_size=21,
+            kernel_size=11,
             # kernel_size=20,
             stride=1,
             padding="same",
@@ -135,7 +135,7 @@ class ModdedInceptionModule(nn.Module):
         self.conv_l = nn.Conv1d(
             reduced_channels if self.use_bottleneck else in_channels,
             reduced_channels,
-            kernel_size=51,
+            kernel_size=41,
             # kernel_size=40,
             stride=1,
             padding="same",
@@ -322,7 +322,12 @@ class InceptionTime(nn.Module):
         self.reduction_2 = SimpleGridReductionModule(16, 16)
 
         self.module_5_1 = ModdedInceptionModule(32, 8, use_skip_connection=True, use_sen=False)
-        self.module_6_1 = ModdedInceptionModule(32, 8, use_skip_connection=True, use_sen=False, activation=False)
+        self.module_6_1 = ModdedInceptionModule(32, 8, use_skip_connection=True, use_sen=False)
+
+        self.reduction_3 = SimpleGridReductionModule(32, 32)
+
+        self.module_7_1 = ModdedInceptionModule(64, 16, use_skip_connection=True, use_sen=False)
+        self.module_8_1 = ModdedInceptionModule(64, 16, use_skip_connection=True, use_sen=False, activation=False)
 
         # self.GAP = nn.AvgPool1d(kernel_size=2969, ceil_mode=True)
         # self.stem_reduction_2 = SimpleGridReductionModule(32, 32)
@@ -384,6 +389,20 @@ class InceptionTime(nn.Module):
         out = self.module_6_1(out)
         if verbose:
             print("Module 6.1:", out.shape)
+
+        out = self.reduction_3(out)
+        if verbose:
+            print("Reduction 3:", out.shape)
+        #
+
+        out = self.module_7_1(out)
+        if verbose:
+            print("Module 7.1:", out.shape)
+
+        out = self.module_8_1(out)
+        if verbose:
+            print("Module 8.1:", out.shape)
+        #
 
         out = F.avg_pool1d(out, kernel_size=out.shape[-1])
         if verbose:

@@ -106,17 +106,19 @@ class FewShotMixedDataset(Dataset):
         self.query_offset = min_measurement_length
 
         # Determine rpm sampling pattern for the query samples
-        unique_rpms = df["rpm"].unique()
-        rpm_repeats = self.config["n_query"] / len(unique_rpms)
-        assert rpm_repeats % 1 == 0, "n_query needs to be divisible by the number of unique rpms in the split!"
-        self.rpm_sampling_pattern = np.repeat(unique_rpms, rpm_repeats)
+        if self.config["mix_rpms"]:
+            unique_rpms = df["rpm"].unique()
+            rpm_repeats = self.config["n_query"] / len(unique_rpms)
+            assert rpm_repeats % 1 == 0, "n_query needs to be divisible by the number of unique rpms in the split!"
+            self.rpm_sampling_pattern = np.repeat(unique_rpms, rpm_repeats)
 
         # Determine sensor sampling pattern for the query samples
         # Unused if not config["mix_sensors"] == True
-        sensor_repeats = self.config["n_query"] / len(sensors)
-        assert sensor_repeats % 1 == 0, "n_query needs to be divisible by the number of sensors in the split!"
+        if self.config["mix_sensors"]:
+            sensor_repeats = self.config["n_query"] / len(sensors)
+            assert sensor_repeats % 1 == 0, "n_query needs to be divisible by the number of sensors in the split!"
 
-        self.sensor_sampling_pattern = np.repeat(sensors, sensor_repeats)
+            self.sensor_sampling_pattern = np.repeat(sensors, sensor_repeats)
 
     def __len__(self):
         return self.length
@@ -341,6 +343,7 @@ def get_arotor_data(config, device):
     abs_path = os.path.dirname(__file__)
     data_folder = os.path.join(abs_path, os.pardir, os.pardir, "data")
 
+    # XXX HUOM! V2 version in use
     data = pd.read_feather(os.path.join(data_folder, "processed", "arotor_V2.feather"))
     # data = pd.read_feather(os.path.join(data_folder, "processed", "arotor_enc_angle_02_res_PCHIP_V2.feather"))
     # data = pd.read_feather(os.path.join(data_folder, "processed", "arotor.feather"))

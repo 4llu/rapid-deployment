@@ -26,9 +26,10 @@ data: ARotor
 # train_sensors: [en1speed_grad, en2speed_grad]
 # validation_sensors: [en4speed_grad, en5speed_grad]
 # test_sensors: [en3speed_grad, en4speed_grad]
-train_sensors: [en3speed_grad]
-validation_sensors: [en4speed_grad]
-test_sensors: [en3speed_grad]
+train_sensors: [en1speed_grad]
+validation_sensors: [en2speed_grad]
+test_sensors: [en1speed_grad]
+
 # train_sensors: [torque1]
 # validation_sensors: [torque1]
 # test_sensors: [torque1]
@@ -45,8 +46,8 @@ test_sensors: [en3speed_grad]
 # train_rpm: [250, 500, 750, 1000, 1250, 500]
 # validation_rpm: [250, 500, 750, 1000, 1250, 500]
 # test_rpm: [250, 500, 750, 1000, 1250, 500]
-train_rpm: [250, 750, 1500]
-validation_rpm: [500, 1000]
+train_rpm: [250, 1500]
+validation_rpm: [750, 1250]
 test_rpm: [500, 1250]
 # test_rpm: [250, 500, 750, 1000, 1250, 1500]
 
@@ -62,9 +63,9 @@ window_overlap: 0.99
 #? Preprocessing
 
 # preprocessing_full: []
-preprocessing_full: [robust_scaling]
-# preprocessing_full: [lowpass_filtering, robust_scaling]
-lp_filter_cutoff: 200
+# preprocessing_full: [robust_scaling]
+preprocessing_full: [lowpass_filtering, robust_scaling]
+# lp_filter_cutoff: 200 #! lowpass doesn't use this currently!
 robust_scaling_low: 0.25
 robust_scaling_high: 0.75
 # preprocessing_full: [mixed_query_normalization]

@@ -227,11 +227,18 @@ def eval_function_wrapper(engine, batch, config, model, device, split):
         print(split)
         print(samples.shape)
 
-        plt.figure(figsize=(20, 10))
-        print(samples[9, 0, 0, :].cpu())
-        plt.plot(samples[9, 0, 0, :].cpu())
+        fig, axs = plt.subplots(4, 1, figsize=(20, 10))
+        axs = axs.flatten()
+
+        # print(samples[9, 0, 0, :].cpu())
+        axs[0].plot(samples[9, 0, 0, :].cpu())
+        axs[1].plot(samples[9, 1, 0, :].cpu())
+        axs[2].plot(samples[9, -2, 0, :].cpu())
+        axs[3].plot(samples[9, -1, 0, :].cpu())
+
         plt.tight_layout()
         plt.show()
+        quit()
 
     if print_cf and split == "test":
         cf = confusion_matrix(targets.cpu(), predictions.cpu())

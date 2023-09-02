@@ -174,7 +174,8 @@ def gain_changer(support_query_set, config, device):
 
 
 def hilbert_envelope(support_query_set, config, device):
-    support_query_set = torch.tensor(np.abs(hilbert(support_query_set)))
+    mean = support_query_set.mean(dim=-1, keepdim=True)
+    support_query_set = torch.tensor(np.abs(hilbert(support_query_set - mean))) + mean
 
     return support_query_set
 

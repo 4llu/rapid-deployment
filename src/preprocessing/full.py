@@ -8,18 +8,25 @@ from matplotlib import pyplot as plt
 
 
 def lowpass_filtering(train_data, validation_data, test_data, config):
-    sos = butter(2, config["lp_filter_cutoff"], "lowpass", analog=False, output="sos", fs=3012)
+    # sos = butter(2, config["lp_filter_cutoff"], "lowpass", analog=False, output="sos", fs=3012)
 
     # Filtering helper
     def lowpass_filtering_helper(data, split):
         sensors = config[f"{split}_sensors"]
 
         def filter_group(group_data):
+            # if True:
+            cutoff = group_data["rpm"].iloc[0] / 60 / 3 * 15 + 30
+            # print(">", group_data["rpm"].iloc[0], cutoff)
+            sos = butter(4, cutoff, "lowpass", analog=False, output="sos", fs=3012)
+
             group_data[sensors] = sosfilt(sos, group_data[sensors].values, axis=0).astype("float32")
+            # print(group_data)
+            # quit()
 
             return group_data
 
-        data = data.groupby(["class", "rpm"], group_keys=False).apply(filter_group)
+        data = data.groupby(["class", "rpm"], group_keys=True).apply(filter_group).reset_index(drop=True)
 
         return data
 
