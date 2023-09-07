@@ -1,5 +1,5 @@
 #? Creation
-name: HDC
+name: WDCNN
 log: true
 save: false # TODO
 eval_freq: 10 # * Decrease for hyper opt and final testing
@@ -57,14 +57,15 @@ test_rpm: [500, 1250]
 train_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 validation_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 test_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-window_width: 6000
-# window_width: 4328
+# window_width: 6000
+window_width: 4328
 window_overlap: 0.99
 
 #? Preprocessing
 
 # preprocessing_full: []
-preprocessing_full: [robust_scaling]
+# preprocessing_full: [robust_scaling]
+preprocessing_full: [lowpass_filtering]
 # preprocessing_full: [lowpass_filtering, robust_scaling]
 # lp_filter_cutoff: 200 #! lowpass doesn't use this currently!
 robust_scaling_low: 0.25
@@ -84,14 +85,15 @@ preprocessing_class_batch: []
 # preprocessing_batch: [hilbert_envelope]
 # preprocessing_batch: [gain_changer]
 # preprocessing_batch: [gain_changer, add_white_noise]
-preprocessing_batch: [FFT]
+# preprocessing_batch: [FFT]
 # preprocessing_batch: [FFT_w_phase]
+preprocessing_batch: [FFT_w_phase, gain_changer, mult_white_noise]
 # preprocessing_batch: [FFT, gain_changer, block_shuffle]
 # preprocessing_batch: [FFT, gain_changer, mult_white_noise, block_shuffle]
 # preprocessing_batch: [FFT, gain_changer, mult_white_noise, block_shuffle, combined_freq_masking]
 # preprocessing_batch: [FFT, gain_changer]
-# gain_std: 0.1
-# white_noise_std: 0.02
+gain_std: 0.1
+white_noise_std: 0.02
 # combined_freq_masking_probabilities: [0.7, 0.3, 0, 0]
 # block_size: 2048
 # preprocessing_batch: [sync_FFT]
@@ -109,35 +111,25 @@ sample_cut: -1 # Done in batch preprocessing
 
 #? Model
 
-# model: relation
 model: prototypical
-backbone: HDC
-# backbone: WDCNN
-# distance_network: HDCD
-# distance_network: default
-# distance_network: very_simple
-kaiming_init: False
+backbone: WDCNN
+kaiming_init: True
 embedding_len: 64
-# embedding_normalization_type: False
-# Legacy
-# embedding_normalization_type: old
 # Lp-norm
 embedding_normalization_type: lp
 lp_norm: 2
-# Mahalanobis
-# embedding_normalization_type: mahalanobis # TODO
 
 embedding_multiplier: 100
 
 #? Training
 
 epoch_len: 1
-max_epochs: 1000
-patience: 1000
+max_epochs: 900
+patience: 400
 optimizer: AdamW
 # lr: 0.003
-lr: 0.001 # This
-# lr: 0.1
+# lr: 0.001 # This
+lr: 0.01
 # lr: 0.0004
 # lr: 0.0001
 lr_scheduler: ExponentialLR

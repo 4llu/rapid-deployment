@@ -219,7 +219,7 @@ def eval_function_wrapper(engine, batch, config, model, device, split):
     # print(targets)
 
     plot_samples = False
-    print_cf = True
+    print_cf = False
     plot_embeddings = False
     save_embeddings = False
 
@@ -246,8 +246,10 @@ def eval_function_wrapper(engine, batch, config, model, device, split):
         print()
 
     if plot_embeddings and split == "test":
-
-        all_embeddings = torch.cat([prototypes.cpu(), query_embeddings.cpu()], dim=0)
+        # print(prototypes.shape)
+        # print(query_embeddings.shape)
+        # quit()
+        all_embeddings = torch.cat([prototypes.cpu().unsquueze(1), query_embeddings.cpu()], dim=0)
         tsne_embeddings = TSNE(n_components=2, learning_rate="auto", init="random", perplexity=20).fit_transform(
             all_embeddings
         )

@@ -46,6 +46,14 @@ class WDCNN(nn.Module):
         self.config = config
 
         # Convolutional layers
+        # self.cn_layer1 = ConvLayer(
+        #     2,
+        #     16,
+        #     kernel_size=3,
+        #     stride=1,
+        #     padding=0,
+        #     dropout=self.config["cl_dropout"],
+        # )
         self.cn_layer1 = ConvLayer(
             1,
             16,
@@ -61,8 +69,8 @@ class WDCNN(nn.Module):
 
         # Classifier
         self.fc1 = nn.Linear(
-            960,
-            # 640 if "FFT" not in self.config["preprocessing_batch"] else 256,
+            # 64 * 66,
+            640,
             self.config["embedding_len"],
         )
 
@@ -90,6 +98,7 @@ class WDCNN(nn.Module):
         out = self.cn_layer1(x)
         if verbose:
             print(out.shape)
+        # print(self.cn_layer1.conv.weight)
 
         out = self.cn_layer2(out)
         if verbose:

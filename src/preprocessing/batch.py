@@ -70,6 +70,25 @@ def FFT(support_query_set, config, device):
     return support_query_set
 
 
+def FFT_w_phase(support_query_set, config, device):
+    # * This changes the sample length!!!
+    # * Specifically, halves it (and adds a channel)
+
+    # Keep only the magnitude of the positive complex conjugates
+    support_query_set = torch.fft.rfft(support_query_set, norm="forward")
+
+    support_query_set = torch.cat([torch.abs(support_query_set), torch.angle(support_query_set)], dim=-2)
+    # print(support_query_set.shape)
+
+    if not config["include_FFT_DC"]:
+        support_query_set = support_query_set[:, :, :, 1:]
+
+    if config["log_FFT"]:
+        support_query_set = torch.log1p(support_query_set)
+
+    return support_query_set
+
+
 def additive_white_noise(support_query_set, config, device):
 
     support_query_set += torch.normal(
@@ -205,6 +224,9 @@ def preprocess_batch(support_query_set, config, device):
     # ! Sync_FFT here works only if not mixing rpms
     if "FFT" in config["preprocessing_batch"] or "sync_FFT" in config["preprocessing_batch"]:
         support_query_set = FFT(support_query_set, config, device)
+
+    if "FFT_w_phase" in config["preprocessing_batch"]:
+        support_query_set = FFT_w_phase(support_query_set, config, device)
 
     if "additive_white_noise" in config["preprocessing_batch"]:
         support_query_set = additive_white_noise(support_query_set, config, device)
