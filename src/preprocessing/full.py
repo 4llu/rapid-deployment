@@ -26,7 +26,14 @@ def lowpass_filtering(train_data, validation_data, test_data, config):
 
             return group_data
 
-        data = data.groupby(["class", "rpm"], group_keys=True).apply(filter_group).reset_index(drop=True)
+        if config["data"] == "ARotor":
+            data = data.groupby(["class", "rpm"], group_keys=True).apply(filter_group).reset_index(drop=True)
+        elif config["data"] == "ARotor_replication":
+            data = (
+                data.groupby(["rpm", "torque", "severity", "fault"], group_keys=True)
+                .apply(filter_group)
+                .reset_index(drop=True)
+            )
 
         return data
 
@@ -80,7 +87,10 @@ def robust_scaling(train_data, validation_data, test_data, config):
         # data_head = data_head_grouped.apply(scale_group)
 
         # Scale tail
-        data_tail = data_tail.groupby(["class", "rpm"], group_keys=False).apply(scale_group)
+        if config["data"] == "ARotor":
+            data_tail = data_tail.groupby(["class", "rpm"], group_keys=False).apply(scale_group)
+        elif config["data"] == "ARotor_replication":
+            data_tail = data_tail.groupby(["rpm", "torque", "severity", "fault"], group_keys=False).apply(scale_group)
 
         return data_tail
 
@@ -91,6 +101,8 @@ def robust_scaling(train_data, validation_data, test_data, config):
     return new_train_data, new_validation_data, new_test_data
 
 
+# ! DO NOT USE FOR AROTOR REPLICATION DATASET
+# TODO If necessary at some point, modify for new datasets
 def mixed_query_normalization(train_data, validation_data, test_data, config):
     head_len = 3012 * 10
     masks = {}
@@ -213,6 +225,7 @@ def preprocess_full(train_data, validation_data, test_data, config):
     """
 
     if "mixed_query_normalization" in config["preprocessing_full"]:
+        raise Exception("NOT CURRENTLY IN USE BECAUSE DOESN'T SUPPORT OTHER DATASETS!")
         train_data, validation_data, test_data = mixed_query_normalization(
             train_data, validation_data, test_data, config
         )

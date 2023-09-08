@@ -1,0 +1,108 @@
+#? Creation
+name: BASE
+log: true
+save: false # TODO
+eval_freq: 10 # * Decrease for hyper opt and final testing
+# eval_episodes: 1 # * Increase for hyper opt and final testing
+eval_episodes: 4 # * Increase for hyper opt and final testing
+
+#? Fewshot setup
+
+k_shot: 1
+n_way: 4
+n_query: 30
+mix_rpms: false
+mix_sensors: false
+mix_severities: false
+mix_torques: false
+separate_query_and_support: false
+
+#? Data
+
+data: ARotor_replication
+train_sensors: [en1speed_grad]
+validation_sensors: [en2speed_grad]
+test_sensors: [en1speed_grad]
+
+train_rpm: [250, 1500]
+validation_rpm: [1000]
+test_rpm: [500, 1250]
+
+train_torques: [6]
+validation_torques: [6]
+test_torques: [6]
+
+train_baseline_GPs: [1, 2, 3]
+validation_baseline_GPs: [4, 5, 6]
+test_baseline_GPs: [7, 8, 9]
+
+train_severities: [mild, severe]
+validation_severities: [mild, severe]
+test_severities: [mild, severe]
+
+# * Baseline included by default, removing it currently requires manual changes!
+train_faults: [baseline, pitting, wear, micropitting, tff]
+validation_faults: [baseline, pitting, wear, micropitting, tff]
+test_faults: [baseline, pitting, wear, micropitting, tff]
+
+
+
+# window_width: 6000
+window_width: 4328
+window_overlap: 0.99
+
+#? Preprocessing
+
+preprocessing_full: []
+preprocessing_full: [lowpass_filtering]
+# preprocessing_full: [lowpass_filtering, robust_scaling]
+# lp_filter_cutoff: 200 #! lowpass doesn't use this currently!
+robust_scaling_low: 0.25
+robust_scaling_high: 0.75
+preprocessing_sample: []
+# preprocessing_sample: [FFT]
+preprocessing_class_batch: []
+# preprocessing_class_batch: [FFT]
+# preprocessing_batch: [hilbert_envelope]
+# preprocessing_batch: [gain_changer]
+# preprocessing_batch: [gain_changer, add_white_noise]
+# preprocessing_batch: [FFT]
+# preprocessing_batch: [FFT_w_phase]
+preprocessing_batch: [FFT_w_phase, gain_changer, mult_white_noise]
+gain_std: 0.1
+white_noise_std: 0.02
+include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
+log_FFT: false
+# pad_FFT: -1
+# sample_cut: -1 # Done in batch preprocessing
+
+#? Model
+
+model: prototypical
+backbone: WDCNN
+kaiming_init: True
+embedding_len: 64
+# Lp-norm
+embedding_normalization_type: lp
+lp_norm: 2
+
+embedding_multiplier: 100
+
+#? Training
+
+epoch_len: 1
+max_epochs: 900
+patience: 400
+optimizer: AdamW
+lr: 0.01
+lr_scheduler: ExponentialLR
+sch_gamma: 0.99533
+momentum: 0.97624
+# Regularization
+weight_decay: 0.00019960
+cl_dropout: 0.0
+fc_dropout: 0.0
+
+# ? Other
+
+use_amp: false  

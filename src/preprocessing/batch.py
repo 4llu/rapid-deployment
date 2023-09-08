@@ -42,8 +42,8 @@ def FFT(support_query_set, config, device):
     support_query_set = torch.abs(support_query_set)
 
     # FIXME The fuck does this do?
-    if "sync_FFT" in config["preprocessing_batch"]:
-        support_query_set = support_query_set[:, :, : config["max_fft_len"]]
+    # if "sync_FFT" in config["preprocessing_batch"]:
+    #     support_query_set = support_query_set[:, :, : config["max_fft_len"]]
 
     if not config["include_FFT_DC"]:
         support_query_set = support_query_set[:, :, :, 1:]
@@ -222,8 +222,11 @@ def preprocess_batch(support_query_set, config, device):
 
     # FFT
     # ! Sync_FFT here works only if not mixing rpms
-    if "FFT" in config["preprocessing_batch"] or "sync_FFT" in config["preprocessing_batch"]:
+    if "FFT" in config["preprocessing_batch"]:
         support_query_set = FFT(support_query_set, config, device)
+    if "sync_FFT" in config["preprocessing_batch"]:
+        raise "NOT IN USE CURRENTLY!"
+        # support_query_set = FFT(support_query_set, config, device)
 
     if "FFT_w_phase" in config["preprocessing_batch"]:
         support_query_set = FFT_w_phase(support_query_set, config, device)

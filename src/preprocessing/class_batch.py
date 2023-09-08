@@ -120,6 +120,7 @@ rpm_rotation_lengths = {
 
 
 def length_increase_interpolation(class_support_query_set, config, idx, query_samples):
+    # FIXME Not checked for other datasets than ARotor
     new_class_support_query_set = []
 
     truncated_support_set = class_support_query_set[
@@ -170,6 +171,7 @@ def length_increase_interpolation(class_support_query_set, config, idx, query_sa
 
 
 def TSA(class_support_query_set, config, idx, query_samples):
+    # FIXME Not checked for other datasets than ARotor
     new_class_support_query_set = []
 
     # Remove unnecessary
@@ -260,7 +262,8 @@ def preprocess_class_batch(class_support_query_set, config, idx, query_samples):
         class_support_query_set = TSA(class_support_query_set, config, idx, query_samples)
 
     if "FFT" in config["preprocessing_class_batch"]:
-        class_support_query_set = FFT(class_support_query_set, config)
+        raise "SLOWER THAN `batch`-LEVEL IMPLEMENTATION! ARE YOU SURE YOU WANT TO USE THIS? IN THAT CASE COMMENT THIS `raise`"
+        # class_support_query_set = FFT(class_support_query_set, config)
 
     if "FFT_mean_std_channels" in config["preprocessing_class_batch"]:
         class_support_query_set = FFT_mean_std_channels(class_support_query_set, config, idx, query_samples)
