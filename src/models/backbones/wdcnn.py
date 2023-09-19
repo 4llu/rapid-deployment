@@ -46,22 +46,22 @@ class WDCNN(nn.Module):
         self.config = config
 
         # Convolutional layers
-        # self.cn_layer1 = ConvLayer(
-        #     2,
-        #     16,
-        #     kernel_size=3,
-        #     stride=1,
-        #     padding=0,
-        #     dropout=self.config["cl_dropout"],
-        # )
         self.cn_layer1 = ConvLayer(
             1,
             16,
-            kernel_size=64,
-            stride=8,
-            padding=24,
+            kernel_size=3,
+            stride=1,
+            padding=0,
             dropout=self.config["cl_dropout"],
         )
+        # self.cn_layer1 = ConvLayer(
+        #     1,
+        #     16,
+        #     kernel_size=64,
+        #     stride=16,
+        #     padding=24,
+        #     dropout=self.config["cl_dropout"],
+        # )
         self.cn_layer2 = ConvLayer(16, 32, dropout=self.config["cl_dropout"])
         self.cn_layer3 = ConvLayer(32, 64, dropout=self.config["cl_dropout"])
         self.cn_layer4 = ConvLayer(64, 64, dropout=self.config["cl_dropout"])
@@ -69,8 +69,10 @@ class WDCNN(nn.Module):
 
         # Classifier
         self.fc1 = nn.Linear(
-            # 64 * 66,
-            640,
+            64 * 66,
+            # 960,
+            # 640,
+            # 256,
             self.config["embedding_len"],
         )
 

@@ -13,9 +13,25 @@ from sklearn.metrics import confusion_matrix
 # Helpers
 #########
 
+ARotor_replication_fault_map = {
+    "baseline": 0,
+    "pitting": 1,
+    "wear": 2,
+    "micropitting": 3,
+    "tff": 4,
+}
+
 
 def target_converter(targets, config, device):
-    return targets.repeat_interleave(config["n_query"])
+    if config["data"] == "ARotor":
+        return torch.tensor(targets, device=device).repeat_interleave(config["n_query"])
+    elif config["data"] == "ARotor_replication":
+        if config["n_way"] != 5:
+            raise "`target_converter` for ARotor replication (probably) only works when all classes are in use"
+        targets = [ARotor_replication_fault_map[x] for x in targets]
+        return torch.tensor(targets, device=device).repeat_interleave(config["n_query"])
+    else:
+        raise "No `target_converter` configured for this dataset"
 
 
 # TRAINER
@@ -73,7 +89,8 @@ def train_function_wrapper(engine, batch, config, model, optimizer, loss_fn, dev
         samples = batch[0]  # * Already moved to device in collate_fn
         # Conversion because the labels are returned as a (class, rpm, sensor) tuple
         # and we only care about the class here
-        targets = torch.tensor(list(zip(*batch[1]))[0], device=device)
+        targets = list(zip(*batch[1]))[0]
+        # targets = torch.tensor(list(zip(*batch[1]))[0], device=device)
         # Original targets are episode classes, not including that there are n_query queries
         # per class
         targets = target_converter(targets, config, device)
@@ -192,7 +209,9 @@ def eval_function_wrapper(engine, batch, config, model, device, split):
         samples = batch[0]  # * Already moved to device in collate_fn
         # Conversion because the labels are returned as a (class, rpm, sensor) tuple
         # and we only care about the class here
-        targets = torch.tensor(list(zip(*batch[1]))[0], device=device)
+        # FIXME
+        targets = list(zip(*batch[1]))[0]
+        # targets = torch.tensor(list(zip(*batch[1]))[0], device=device)
         # Original targets are episode classes, not including that there are n_query queries
         # per class
         targets = target_converter(targets, config, device)

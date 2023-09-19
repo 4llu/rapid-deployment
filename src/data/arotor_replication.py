@@ -4,34 +4,46 @@ from functools import partial
 
 import numpy as np
 import pandas as pd
+import pyarrow.dataset as ds
 import torch
 from torch.utils.data import DataLoader, Dataset, Sampler
 
+from data.arotor import fewshot_collate
 from preprocessing.batch import preprocess_batch
 from preprocessing.class_batch import preprocess_class_batch
 from preprocessing.full import preprocess_full
 from preprocessing.sample import preprocess_sample
 
 
-def data_selection_baseline(data, sensors, rpm, torques, GPs):
-    selected_data = data.loc[:, sensors + ["rpm", "torque", "class"]]
-    selected_data = selected_data[
-        (selected_data["rpm"].isin(rpm))
-        & (selected_data["torque"].isin(torques))
-        & (selected_data["severity"].isin(GPs))  # * Severity == GP for baseline measurements
-    ]
+def data_selection_baseline(data_folder, sensors, GPs, rpms, torques):
+    dataset = ds.dataset(
+        os.path.join(data_folder, "processed", "arotor_replication_baseline_ds"), format="feather", partitioning="hive"
+    )
+    selected_data = dataset.to_table(
+        columns=sensors + ["severity", "rpm", "torque"],
+        filter=(ds.field("rpm").isin(rpms) & ds.field("torque").isin(torques) & ds.field("severity").isin(GPs)),
+    ).to_pandas()
+
+    # Needs to be added back, as it is not saved
+    selected_data["fault"] = "baseline"
 
     return selected_data
 
 
-def data_selection_faults(data, sensors, rpm, torques, faults, severities):
-    selected_data = data.loc[:, sensors + ["rpm", "torque", "class"]]
-    selected_data = selected_data[
-        (selected_data["rpm"].isin(rpm))
-        & (selected_data["torque"].isin(torques))
-        & (selected_data["damage"].isin(faults))
-        & (selected_data["severity"].isin(severities))
-    ]
+def data_selection_faults(data_folder, sensors, faults, severities, rpms, torques, installations):
+    dataset = ds.dataset(
+        os.path.join(data_folder, "processed", "arotor_replication_faults_ds"), format="feather", partitioning="hive"
+    )
+
+    selected_data = dataset.to_table(
+        columns=sensors + ["fault", "severity", "rpm", "torque"],
+        filter=(
+            ds.field("rpm").isin(rpms)
+            & ds.field("installation").isin(installations)
+            & ds.field("severity").isin(severities)
+            & ds.field("torque").isin(torques)
+        ),
+    ).to_pandas()
 
     return selected_data
 
@@ -54,7 +66,7 @@ class FewShotMixedDataset(Dataset):
         self.device = device  # * Here just in case, not currently used for anything
 
         # Use number of unique classes as length
-        self.length = len(df["faults"].unique())
+        self.length = len(df["fault"].unique())
 
         # FIXME Actual lengths
         # self.rotation_len_map = {
@@ -98,7 +110,7 @@ class FewShotMixedDataset(Dataset):
 
         # * Format data for easier sampling
         # Get the sensor columns
-        sensors = list(set(df.columns) - set(["rpm", "class"]))
+        sensors = list(set(df.columns) - set(["fault", "severity", "rpm", "torque"]))
         # Convert to long format to include sensor in groupby
         df_long = pd.melt(df, id_vars=["fault", "severity", "rpm", "torque"], value_vars=sensors, var_name="sensor")
         # Group
@@ -137,10 +149,17 @@ class FewShotMixedDataset(Dataset):
         # Determine severity sampling pattern for the query samples
         if self.config["mix_severities"]:
             unique_severities = df["severity"].unique()
+            unique_GPs = [x for x in unique_severities if isinstance(x, int)]
+            unique_severities = [x for x in unique_severities if isinstance(x, str)]
+            # Faults
             severity_repeats = self.config["n_query"] / len(unique_severities)
             assert severity_repeats % 1 == 0, "n_query needs to be divisible by the number of severities in the split!"
-
             self.severity_sampling_pattern = np.repeat(unique_severities, severity_repeats)
+
+            # Baseline
+            GP_repeats = self.config["n_query"] / len(unique_GPs)
+            assert GP_repeats % 1 == 0, "n_query needs to be divisible by the number of GPs in the split!"
+            self.GP_sampling_pattern = np.repeat(unique_GPs, GP_repeats)
 
         # Determine torque sampling pattern for the query samples
         if self.config["mix_torques"]:
@@ -194,12 +213,12 @@ class FewShotMixedDataset(Dataset):
             support_query_set.append(sample)
 
         # Query samples
-        # TODO Combination of the two. Requires changes to the sampling patterns defined in __init__.
+        # TODO Combinations of the four. Requires changes to the sampling patterns defined in __init__.
         query_sampling = []
         if self.config["mix_severities"]:
             query_sampling = zip(
                 sample_idxs[self.config["k_shot"] :],  # idx
-                self.severity_sampling_pattern,  # severity
+                self.GP_sampling_pattern if idx[0] == "baseline" else self.severity_sampling_pattern,  # severity
                 np.repeat(idx[2], self.config["n_query"]),  # rpm
                 np.repeat(idx[3], self.config["n_query"]),  # torque
                 np.repeat(idx[4], self.config["n_query"]),  # sensor
@@ -274,12 +293,13 @@ class FewShotMixedDataset(Dataset):
 
 
 class FewshotBatchSampler(Sampler):
-    def __init__(self, config, faults, severities, rpms, torques, sensors):
+    def __init__(self, config, faults, severities, GPs, rpms, torques, sensors):
         assert config["n_way"] <= len(faults), "n_way must be less than the total number of classes available!"
 
         self.config = config
         self.faults = faults
         self.severities = severities
+        self.GPs = GPs
         self.rpms = rpms
         self.torques = torques
         self.sensors = sensors
@@ -288,6 +308,7 @@ class FewshotBatchSampler(Sampler):
         self.seq_len = 200
         self.i = 0
         self.severity_seq = torch.randint(high=len(self.severities), size=(self.seq_len,))
+        self.GP_seq = torch.randint(high=len(self.GPs), size=(self.seq_len,))
         self.rpm_seq = torch.randint(high=len(self.rpms), size=(self.seq_len,))
         self.torque_seq = torch.randint(high=len(self.torques), size=(self.seq_len,))
         self.sensor_seq = torch.randint(high=len(self.sensors), size=(self.seq_len,))
@@ -306,15 +327,18 @@ class FewshotBatchSampler(Sampler):
 
         # Go through class permutation
         for j in range(math.floor(len(self.faults) / self.config["n_way"])):
-            class_batch = fault_perm[j * self.config["n_way"] : (j + 1) * self.config["n_way"]]
+            fault_batch = fault_perm[j * self.config["n_way"] : (j + 1) * self.config["n_way"]]
 
             batch = list(
                 zip(
-                    class_batch,
-                    [self.severities[self.severity_seq[self.i]] for _ in range(len(class_batch))],
-                    [self.rpms[self.rpm_seq[self.i]] for _ in range(len(class_batch))],
-                    [self.torques[self.torque_seq[self.i]] for _ in range(len(class_batch))],
-                    [self.sensors[self.sensor_seq[self.i]] for _ in range(len(class_batch))],
+                    fault_batch,
+                    [
+                        self.GPs[self.GP_seq[self.i]] if f == "baseline" else self.severities[self.severity_seq[self.i]]
+                        for f in fault_batch
+                    ],  # Baseline has GPs for severity instead of mild/severe
+                    [self.rpms[self.rpm_seq[self.i]] for _ in range(len(fault_batch))],
+                    [self.torques[self.torque_seq[self.i]] for _ in range(len(fault_batch))],
+                    [self.sensors[self.sensor_seq[self.i]] for _ in range(len(fault_batch))],
                 )
             )
 
@@ -325,7 +349,7 @@ class FewshotBatchSampler(Sampler):
             self.i += 1
             if self.i == self.seq_len:
                 self.i = 0
-                self.severity_seq = torch.randint(high=len(self.severitys), size=(self.seq_len,))
+                self.severity_seq = torch.randint(high=len(self.severities), size=(self.seq_len,))
                 self.rpm_seq = torch.randint(high=len(self.rpms), size=(self.seq_len,))
                 self.torque_seq = torch.randint(high=len(self.torques), size=(self.seq_len,))
                 self.sensor_seq = torch.randint(high=len(self.sensors), size=(self.seq_len,))
@@ -356,69 +380,79 @@ def get_arotor_replication_data(config, device):
     abs_path = os.path.dirname(__file__)
     data_folder = os.path.join(abs_path, os.pardir, os.pardir, "data")
 
-    data_baseline = pd.read_feather(os.path.join(data_folder, "processed", "arotor_replication_baseline.feather"))
-    data_faults = pd.read_feather(os.path.join(data_folder, "processed", "arotor_replication_faults.feather"))
-
     # Data selection
     ################
 
     print("Formatting data")
 
+    # Train
     train_data_faults = data_selection_faults(
-        data_faults,
+        data_folder,
         config["train_sensors"],
-        config["train_rpm"],
-        config["train_torques"],
         config["train_faults"],
         config["train_severities"],
+        config["train_rpm"],
+        config["train_torques"],
+        config["train_installations"],
     )
     if "baseline" in config["train_faults"]:
         train_data_baseline = data_selection_baseline(
-            data_baseline, config["train_sensors"], config["train_rpm"], config["train_torques"], config["train_GPs"]
+            data_folder,
+            config["train_sensors"],
+            config["train_baseline_GPs"],
+            config["train_rpm"],
+            config["train_torques"],
         )
         train_data = pd.concat([train_data_baseline, train_data_faults])
     else:
         train_data = train_data_faults
+    print("Train data loaded")
 
+    # Validation
     validation_data_faults = data_selection_faults(
-        data_faults,
+        data_folder,
         config["validation_sensors"],
-        config["validation_rpm"],
-        config["validation_torques"],
         config["validation_faults"],
         config["validation_severities"],
+        config["validation_rpm"],
+        config["validation_torques"],
+        config["validation_installations"],
     )
     if "baseline" in config["validation_faults"]:
         validation_data_baseline = data_selection_baseline(
-            data_baseline,
+            data_folder,
             config["validation_sensors"],
+            config["validation_baseline_GPs"],
             config["validation_rpm"],
             config["validation_torques"],
-            config["validation_GPs"],
         )
         validation_data = pd.concat([validation_data_baseline, validation_data_faults])
     else:
         validation_data = validation_data_faults
+    print("Validation data loaded")
 
+    # Test
     test_data_faults = data_selection_faults(
-        data_faults,
+        data_folder,
         config["test_sensors"],
-        config["test_rpm"],
-        config["test_torques"],
         config["test_faults"],
         config["test_severities"],
+        config["test_rpm"],
+        config["test_torques"],
+        config["test_installations"],
     )
     if "baseline" in config["test_faults"]:
         test_data_baseline = data_selection_baseline(
-            data_baseline,
+            data_folder,
             config["test_sensors"],
+            config["test_baseline_GPs"],
             config["test_rpm"],
             config["test_torques"],
-            config["test_GPs"],
         )
         test_data = pd.concat([test_data_baseline, test_data_faults])
     else:
         test_data = test_data_faults
+    print("Test data loaded")
 
     # Data preprocessing for full measurements
     ##########################################
@@ -440,6 +474,7 @@ def get_arotor_replication_data(config, device):
         config,
         config["train_faults"],
         config["train_severities"],
+        config["train_baseline_GPs"],
         config["train_rpm"],
         config["train_torques"],
         config["train_sensors"],
@@ -448,6 +483,7 @@ def get_arotor_replication_data(config, device):
         config,
         config["validation_faults"],
         config["validation_severities"],
+        config["validation_baseline_GPs"],
         config["validation_rpm"],
         config["validation_torques"],
         config["validation_sensors"],
@@ -456,6 +492,7 @@ def get_arotor_replication_data(config, device):
         config,
         config["test_faults"],
         config["test_severities"],
+        config["test_baseline_GPs"],
         config["test_rpm"],
         config["test_torques"],
         config["test_sensors"],
