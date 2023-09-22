@@ -20,20 +20,20 @@ separate_query_and_support: false
 #? Data
 
 data: ARotor_replication
-train_sensors: [en1speed]
-validation_sensors: [en1speed]
-test_sensors: [en1speed]
+train_sensors: [torque1]
+validation_sensors: [torque1]
+test_sensors: [torque1]
 
 train_rpm: [1000]
 validation_rpm: [1250]
-test_rpm: [500, 1500] # 500 rpm missing from baseline?
+test_rpm: [500, 1500]
 
 train_torques: [6]
-validation_torques: [6]
-test_torques: [6]
+validation_torques: [1]
+test_torques: [11]
 
 train_installations: [1]
-validation_installations: [1, 2]
+validation_installations: [1]
 test_installations: [2]
 
 train_baseline_GPs: [1, 2, 3]
@@ -57,6 +57,7 @@ window_overlap: 0.99
 preprocessing_full: []
 # preprocessing_full: [lowpass_filtering]
 # preprocessing_full: [lowpass_filtering, robust_scaling]
+# preprocessing_full: [robust_scaling]
 # lp_filter_cutoff: 200 #! lowpass doesn't use this currently!
 robust_scaling_low: 0.25
 robust_scaling_high: 0.75
@@ -64,8 +65,8 @@ preprocessing_sample: []
 # preprocessing_sample: [FFT]
 preprocessing_class_batch: []
 # preprocessing_class_batch: [FFT]
-# preprocessing_batch: []
-preprocessing_batch: [FFT]
+preprocessing_batch: []
+# preprocessing_batch: [FFT]
 # preprocessing_batch: [FFT_w_phase]
 # preprocessing_batch: [FFT_w_phase, gain_changer, mult_white_noise]
 # preprocessing_batch: [hilbert_envelope]

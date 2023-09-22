@@ -48,7 +48,6 @@ def data_selection_faults(data_folder, sensors, faults, severities, rpms, torque
     return selected_data
 
 
-# FIXME Remove this comment when done
 class FewShotMixedDataset(Dataset):
     """
     Sample the support and query sets for one class of an episode. Combine with other sets from other classes to create
@@ -205,6 +204,9 @@ class FewShotMixedDataset(Dataset):
             * self.window_stride  # * i corresponds to window index, not measurement samples, so it need to be multiplied by the stride
         )
 
+        # ? For debugging
+        # print(sample_idxs)
+
         support_query_set = []
 
         # Support samples
@@ -343,6 +345,8 @@ class FewshotBatchSampler(Sampler):
             )
 
             self.prev_batch = batch
+            # ? For debugging
+            # print(batch)
             yield batch
 
             # Replenish severity, rpm, torque, and sensor seqs if necessary

@@ -242,18 +242,18 @@ def eval_function_wrapper(engine, batch, config, model, device, split):
     plot_embeddings = False
     save_embeddings = False
 
-    if plot_samples:
+    if plot_samples and split == "test":
         print(split)
         print(samples.shape)
 
-        fig, axs = plt.subplots(4, 1, figsize=(20, 10))
+        fig, axs = plt.subplots(4, 1, figsize=(20, 10), sharey=True)
         axs = axs.flatten()
 
         # print(samples[9, 0, 0, :].cpu())
-        axs[0].plot(samples[9, 0, 0, :].cpu())
-        axs[1].plot(samples[9, 1, 0, :].cpu())
-        axs[2].plot(samples[9, -2, 0, :].cpu())
-        axs[3].plot(samples[9, -1, 0, :].cpu())
+        axs[0].plot(samples[1, 0, 0, :].cpu())
+        axs[1].plot(samples[1, -1, 0, :].cpu())
+        axs[2].plot(samples[3, 0, 0, :].cpu())
+        axs[3].plot(samples[3, -1, 0, :].cpu())
 
         plt.tight_layout()
         plt.show()
