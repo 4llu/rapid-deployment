@@ -24,6 +24,14 @@ def individual_min_max(support_query_set, config):
     return support_query_set
 
 
+def individual_centering(support_query_set, config):
+
+    print(support_query_set.shape)
+    support_query_set = support_query_set - support_query_set.mean(keepdim=True, dim=-1)
+
+    return support_query_set
+
+
 def FFT(support_query_set, config, device):
     # * This changes the sample length!!!
     # * Specifically, halves it
@@ -219,6 +227,9 @@ def preprocess_batch(support_query_set, config, device):
     # Individual min max
     if "individual_min_max" in config["preprocessing_batch"]:
         support_query_set = individual_min_max(support_query_set, config)
+
+    if "individual_centering" in config["preprocessing_batch"]:
+        support_query_set = individual_centering(support_query_set, config)
 
     # FFT
     # ! Sync_FFT here works only if not mixing rpms

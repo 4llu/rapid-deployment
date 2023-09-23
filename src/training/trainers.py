@@ -250,10 +250,10 @@ def eval_function_wrapper(engine, batch, config, model, device, split):
         axs = axs.flatten()
 
         # print(samples[9, 0, 0, :].cpu())
-        axs[0].plot(samples[1, 0, 0, :].cpu())
-        axs[1].plot(samples[1, -1, 0, :].cpu())
-        axs[2].plot(samples[3, 0, 0, :].cpu())
-        axs[3].plot(samples[3, -1, 0, :].cpu())
+        axs[0].plot(samples[0, 0, 0, :].cpu())
+        axs[1].plot(samples[0, -1, 0, :].cpu())
+        axs[2].plot(samples[4, 0, 0, :].cpu())
+        axs[3].plot(samples[4, -1, 0, :].cpu())
 
         plt.tight_layout()
         plt.show()
