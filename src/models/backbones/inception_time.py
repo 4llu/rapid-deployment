@@ -304,30 +304,32 @@ class InceptionTime(nn.Module):
         self.config = config
 
         # Layers
-        # self.stem_1 = nn.Sequential(
-        #     nn.Conv1d(1, 16, kernel_size=40, stride=2, padding=0, bias=False),
-        #     nn.BatchNorm1d(16, momentum=1, affine=True),
-        #     nn.ReLU(),
-        #     # nn.Hardswish(),
-        # )
+        self.stem_1 = nn.Sequential(
+            nn.Conv1d(1, 8, kernel_size=3, stride=1, padding=0, bias=False),
+            nn.BatchNorm1d(8, momentum=1, affine=True),
+            nn.ReLU(),
+            # nn.Hardswish(),
+        )
 
-        self.module_1_1 = ModdedInceptionModule(1, 2, use_bottleneck=False, use_skip_connection=True)
-        self.module_2_1 = ModdedInceptionModule(8, 2, use_skip_connection=True, use_sen=False)
+        # self.module_1_1 = ModdedInceptionModule(1, 2, use_bottleneck=False, use_skip_connection=True)
+        # self.module_2_1 = ModdedInceptionModule(8, 2, use_skip_connection=True, use_sen=False)
 
         self.reduction_1 = SimpleGridReductionModule(8, 8)
 
-        self.module_3_1 = ModdedInceptionModule(16, 4, use_skip_connection=True, use_sen=False)
+        # self.module_3_1 = ModdedInceptionModule(16, 4, use_skip_connection=True, use_sen=False)
         self.module_4_1 = ModdedInceptionModule(16, 4, use_skip_connection=True, use_sen=False)
 
         self.reduction_2 = SimpleGridReductionModule(16, 16)
 
-        self.module_5_1 = ModdedInceptionModule(32, 8, use_skip_connection=True, use_sen=False)
+        # self.module_5_1 = ModdedInceptionModule(32, 8, use_skip_connection=True, use_sen=False)
         self.module_6_1 = ModdedInceptionModule(32, 8, use_skip_connection=True, use_sen=False)
 
-        self.reduction_3 = SimpleGridReductionModule(32, 32)
+        # XXX
+        # self.reduction_3 = SimpleGridReductionModule(32, 32)
 
-        self.module_7_1 = ModdedInceptionModule(64, 16, use_skip_connection=True, use_sen=False)
-        self.module_8_1 = ModdedInceptionModule(64, 16, use_skip_connection=True, use_sen=False, activation=False)
+        # self.module_7_1 = ModdedInceptionModule(64, 16, use_skip_connection=True, use_sen=False)
+        # self.module_8_1 = ModdedInceptionModule(64, 16, use_skip_connection=True, use_sen=False, activation=False)
+        # XXX
 
         # self.GAP = nn.AvgPool1d(kernel_size=2969, ceil_mode=True)
         # self.stem_reduction_2 = SimpleGridReductionModule(32, 32)
@@ -344,6 +346,11 @@ class InceptionTime(nn.Module):
         # # self.module_3_reduction = SimpleGridReductionModule(128, 64)
         # # self.module_3_reduction = GridReductionModule(128, 64)
 
+        # self.fc = nn.Linear(
+        #     self.config["embedding_len"] * 2,
+        #     self.config["embedding_len"],
+        # )
+
     def forward(self, x):
         verbose = False
 
@@ -352,26 +359,25 @@ class InceptionTime(nn.Module):
 
         out = x
 
-        # out = self.stem_1(out)
+        out = self.stem_1(out)
+        if verbose:
+            print("Stem 1:", out.shape)
+
+        # out = self.module_1_1(out)
         # if verbose:
-        #     print("Stem 1:", out.shape)
+        #     print("Module 1.1:", out.shape)
 
-        out = self.module_1_1(out)
-        if verbose:
-            print("Module 1.1:", out.shape)
-
-        out = self.module_2_1(out)
-        if verbose:
-            print("Module 2.1:", out.shape)
+        # out = self.module_2_1(out)
+        # if verbose:
+        #     print("Module 2.1:", out.shape)
 
         out = self.reduction_1(out)
         if verbose:
             print("Reduction 1:", out.shape)
-        #
 
-        out = self.module_3_1(out)
-        if verbose:
-            print("Module 3.1:", out.shape)
+        # out = self.module_3_1(out)
+        # if verbose:
+        #     print("Module 3.1:", out.shape)
 
         out = self.module_4_1(out)
         if verbose:
@@ -380,33 +386,35 @@ class InceptionTime(nn.Module):
         out = self.reduction_2(out)
         if verbose:
             print("Reduction 2:", out.shape)
-        #
 
-        out = self.module_5_1(out)
-        if verbose:
-            print("Module 5.1:", out.shape)
+        # out = self.module_5_1(out)
+        # if verbose:
+        #     print("Module 5.1:", out.shape)
 
         out = self.module_6_1(out)
         if verbose:
             print("Module 6.1:", out.shape)
 
-        out = self.reduction_3(out)
-        if verbose:
-            print("Reduction 3:", out.shape)
-        #
+        # out = self.reduction_3(out)
+        # if verbose:
+        #     print("Reduction 3:", out.shape)
 
-        out = self.module_7_1(out)
-        if verbose:
-            print("Module 7.1:", out.shape)
+        # out = self.module_7_1(out)
+        # if verbose:
+        #     print("Module 7.1:", out.shape)
 
-        out = self.module_8_1(out)
-        if verbose:
-            print("Module 8.1:", out.shape)
-        #
+        # out = self.module_8_1(out)
+        # if verbose:
+        #     print("Module 8.1:", out.shape)
 
         out = F.avg_pool1d(out, kernel_size=out.shape[-1])
         if verbose:
             print("GAP:", out.shape)
+
+        # out = out.swapaxes(1, 2)
+        # out = self.fc(out)
+        # if verbose:
+        #     print("FC", out.shape)
 
         if verbose:
             quit()

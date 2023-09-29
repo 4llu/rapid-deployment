@@ -26,6 +26,7 @@ def data_selection_baseline(data_folder, sensors, GPs, rpms, torques):
 
     # Needs to be added back, as it is not saved
     selected_data["fault"] = "baseline"
+    selected_data["installation"] = 0
 
     return selected_data
 
@@ -36,7 +37,7 @@ def data_selection_faults(data_folder, sensors, faults, severities, rpms, torque
     )
 
     selected_data = dataset.to_table(
-        columns=sensors + ["fault", "severity", "rpm", "torque"],
+        columns=sensors + ["fault", "severity", "rpm", "torque", "installation"],
         filter=(
             ds.field("rpm").isin(rpms)
             & ds.field("installation").isin(installations)
@@ -109,11 +110,13 @@ class FewShotMixedDataset(Dataset):
 
         # * Format data for easier sampling
         # Get the sensor columns
-        sensors = list(set(df.columns) - set(["fault", "severity", "rpm", "torque"]))
+        sensors = list(set(df.columns) - set(["fault", "severity", "rpm", "torque", "installation"]))
         # Convert to long format to include sensor in groupby
-        df_long = pd.melt(df, id_vars=["fault", "severity", "rpm", "torque"], value_vars=sensors, var_name="sensor")
+        df_long = pd.melt(
+            df, id_vars=["fault", "severity", "rpm", "torque", "installation"], value_vars=sensors, var_name="sensor"
+        )
         # Group
-        self.data = df_long.groupby(["fault", "severity", "rpm", "torque", "sensor"])
+        self.data = df_long.groupby(["fault", "severity", "rpm", "torque", "installation", "sensor"])
         # Save the shortest measurement length here because it's the easiest place
         # Divided by two to separate support and query parts
         min_measurement_length = math.floor(min(self.data.size()) / 2)
@@ -132,6 +135,15 @@ class FewShotMixedDataset(Dataset):
         self.query_offset = min_measurement_length
 
         # Determine rpm sampling pattern for the query samples
+        if self.config["mix_installations"]:
+            unique_installations = list(set(df["installation"].unique()) - set([0]))  # Remove baseline installation "0"
+            installation_repeats = self.config["n_query"] / len(unique_installations)
+            assert (
+                installation_repeats % 1 == 0
+            ), "n_query needs to be divisible by the number of unique rpms in the split!"
+            self.installation_sampling_pattern = np.repeat(unique_installations, installation_repeats)
+
+        # Determine rpm sampling pattern for the query samples
         if self.config["mix_rpms"]:
             unique_rpms = df["rpm"].unique()
             rpm_repeats = self.config["n_query"] / len(unique_rpms)
@@ -147,18 +159,18 @@ class FewShotMixedDataset(Dataset):
 
         # Determine severity sampling pattern for the query samples
         if self.config["mix_severities"]:
-            unique_severities = df["severity"].unique()
-            unique_GPs = [x for x in unique_severities if isinstance(x, int)]
+            # unique_severities = df["severity"].unique()
+            # unique_GPs = [x for x in unique_severities if isinstance(x, int)]
             unique_severities = [x for x in unique_severities if isinstance(x, str)]
             # Faults
             severity_repeats = self.config["n_query"] / len(unique_severities)
             assert severity_repeats % 1 == 0, "n_query needs to be divisible by the number of severities in the split!"
             self.severity_sampling_pattern = np.repeat(unique_severities, severity_repeats)
 
-            # Baseline
-            GP_repeats = self.config["n_query"] / len(unique_GPs)
-            assert GP_repeats % 1 == 0, "n_query needs to be divisible by the number of GPs in the split!"
-            self.GP_sampling_pattern = np.repeat(unique_GPs, GP_repeats)
+            # # Baseline
+            # GP_repeats = self.config["n_query"] / len(unique_GPs)
+            # assert GP_repeats % 1 == 0, "n_query needs to be divisible by the number of GPs in the split!"
+            # self.GP_sampling_pattern = np.repeat(unique_GPs, GP_repeats)
 
         # Determine torque sampling pattern for the query samples
         if self.config["mix_torques"]:
@@ -167,6 +179,16 @@ class FewShotMixedDataset(Dataset):
             assert torque_repeats % 1 == 0, "n_query needs to be divisible by the number of torques in the split!"
 
             self.torque_sampling_pattern = np.repeat(unique_torques, torque_repeats)
+
+        # Baseline measurements use GPs for both severities and installations
+        if self.config["mix_installations"] or self.config["mix_severities"]:
+            unique_severities = df["severity"].unique()
+            unique_GPs = [x for x in unique_severities if isinstance(x, int)]
+
+            # Baseline
+            GP_repeats = self.config["n_query"] / len(unique_GPs)
+            assert GP_repeats % 1 == 0, "n_query needs to be divisible by the number of GPs in the split!"
+            self.GP_sampling_pattern = np.repeat(unique_GPs, GP_repeats)
 
     def __len__(self):
         return self.length
@@ -217,49 +239,117 @@ class FewShotMixedDataset(Dataset):
         # Query samples
         # TODO Combinations of the four. Requires changes to the sampling patterns defined in __init__.
         query_sampling = []
+        # XXX
+        # if self.config["mix_severities"]:
+        #     query_sampling = zip(
+        #         sample_idxs[self.config["k_shot"] :],  # idx
+        #         self.GP_sampling_pattern if idx[0] == "baseline" else self.severity_sampling_pattern,  # severity
+        #         np.repeat(idx[2], self.config["n_query"]),  # rpm
+        #         np.repeat(idx[3], self.config["n_query"]),  # torque
+        #         np.repeat(idx[4], self.config["n_query"]),  # installation
+        #         np.repeat(idx[5], self.config["n_query"]),  # sensor
+        #     )
+        # elif self.config["mix_rpms"]:
+        #     query_sampling = zip(
+        #         sample_idxs[self.config["k_shot"] :],  # idx
+        #         np.repeat(idx[1], self.config["n_query"]),  # severity
+        #         self.rpm_sampling_pattern,  # rpm
+        #         np.repeat(idx[3], self.config["n_query"]),  # torque
+        #         np.repeat(idx[4], self.config["n_query"]),  # installation
+        #         np.repeat(idx[5], self.config["n_query"]),  # sensor
+        #     )
+        # elif self.config["mix_torques"]:
+        #     query_sampling = zip(
+        #         sample_idxs[self.config["k_shot"] :],  # idx
+        #         np.repeat(idx[1], self.config["n_query"]),  # severity
+        #         np.repeat(idx[2], self.config["n_query"]),  # rpm
+        #         self.torque_sampling_pattern,  # torque
+        #         np.repeat(idx[4], self.config["n_query"]),  # installation
+        #         np.repeat(idx[5], self.config["n_query"]),  # sensor
+        #     )
+        # elif self.config["mix_installations"]:
+        #     query_sampling = zip(
+        #         sample_idxs[self.config["k_shot"] :],  # idx
+        #         self.GP_sampling_pattern
+        #         if idx[0] == "baseline"
+        #         else np.repeat(idx[1], self.config["n_query"]),  # severity
+        #         np.repeat(idx[2], self.config["n_query"]),  # rpm
+        #         np.repeat(idx[3], self.config["n_query"]),  # torque
+        #         np.repeat(0, self.config["n_query"])
+        #         if idx[0] == "baseline"
+        #         else self.installation_sampling_pattern,  # installation
+        #         np.repeat(idx[5], self.config["n_query"]),  # sensor
+        #     )
+        # elif self.config["mix_sensors"]:
+        #     query_sampling = zip(
+        #         sample_idxs[self.config["k_shot"] :],  # idx
+        #         np.repeat(idx[1], self.config["n_query"]),  # severity
+        #         np.repeat(idx[2], self.config["n_query"]),  # rpm
+        #         np.repeat(idx[3], self.config["n_query"]),  # torque
+        #         np.repeat(idx[4], self.config["n_query"]),  # installation
+        #         self.sensor_sampling_pattern,  # sensor
+        #     )
+        # else:
+        #     query_sampling = zip(
+        #         sample_idxs[self.config["k_shot"] :],
+        #         np.repeat(idx[1], self.config["n_query"]),
+        #         np.repeat(idx[2], self.config["n_query"]),
+        #         np.repeat(idx[3], self.config["n_query"]),
+        #         np.repeat(idx[4], self.config["n_query"]),
+        #         np.repeat(idx[5], self.config["n_query"]),
+        #     )
+        # query_sampling = list(query_sampling)
+        # XXX
+        # YYY
         if self.config["mix_severities"]:
-            query_sampling = zip(
-                sample_idxs[self.config["k_shot"] :],  # idx
-                self.GP_sampling_pattern if idx[0] == "baseline" else self.severity_sampling_pattern,  # severity
-                np.repeat(idx[2], self.config["n_query"]),  # rpm
-                np.repeat(idx[3], self.config["n_query"]),  # torque
-                np.repeat(idx[4], self.config["n_query"]),  # sensor
-            )
-        elif self.config["mix_rpms"]:
-            query_sampling = zip(
-                sample_idxs[self.config["k_shot"] :],  # idx
-                np.repeat(idx[1], self.config["n_query"]),  # severity
-                self.rpm_sampling_pattern,  # rpm
-                np.repeat(idx[3], self.config["n_query"]),  # torque
-                np.repeat(idx[4], self.config["n_query"]),  # sensor
-            )
-        elif self.config["mix_torques"]:
-            query_sampling = zip(
-                sample_idxs[self.config["k_shot"] :],  # idx
-                np.repeat(idx[1], self.config["n_query"]),  # severity
-                np.repeat(idx[2], self.config["n_query"]),  # rpm
-                self.torque_sampling_pattern,  # torque
-                np.repeat(idx[4], self.config["n_query"]),  # sensor
-            )
-        elif self.config["mix_sensors"]:
-            query_sampling = zip(
-                sample_idxs[self.config["k_shot"] :],  # idx
-                np.repeat(idx[1], self.config["n_query"]),  # severity
-                np.repeat(idx[2], self.config["n_query"]),  # rpm
-                np.repeat(idx[3], self.config["n_query"]),  # torque
-                self.sensor_sampling_pattern,  # sensor
+            current_severity_pattern = (
+                self.GP_sampling_pattern if idx[0] == "baseline" else self.severity_sampling_pattern
             )
         else:
-            query_sampling = zip(
-                sample_idxs[self.config["k_shot"] :],
-                np.repeat(idx[1], self.config["n_query"]),
-                np.repeat(idx[2], self.config["n_query"]),
-                np.repeat(idx[3], self.config["n_query"]),
-                np.repeat(idx[4], self.config["n_query"]),
-            )
-        query_sampling = list(query_sampling)
+            current_severity_pattern = np.repeat(idx[1], self.config["n_query"])
 
-        for sample_i, sample_severity, sample_rpm, sample_torque, sample_sensor in query_sampling:
+        if self.config["mix_rpms"]:
+            current_rpm_pattern = self.rpm_sampling_pattern
+        else:
+            current_rpm_pattern = np.repeat(idx[2], self.config["n_query"])
+
+        if self.config["mix_torques"]:
+            current_torque_pattern = self.torque_sampling_pattern
+        else:
+            current_torque_pattern = np.repeat(idx[3], self.config["n_query"])
+
+        if self.config["mix_installations"]:
+            current_installation_pattern = (
+                np.repeat(0, self.config["n_query"]) if idx[0] == "baseline" else self.installation_sampling_pattern
+            )
+        else:
+            current_installation_pattern = np.repeat(idx[4], self.config["n_query"])
+
+        if self.config["mix_sensors"]:
+            current_sensor_pattern = self.sensor_sampling_pattern
+        else:
+            current_sensor_pattern = np.repeat(idx[5], self.config["n_query"])
+
+        query_sampling = list(
+            zip(
+                sample_idxs[self.config["k_shot"] :],
+                current_severity_pattern,
+                current_rpm_pattern,
+                current_torque_pattern,
+                current_installation_pattern,
+                current_sensor_pattern,
+            )
+        )
+        # YYY
+
+        # ? For debugging
+        # print(">>>>>>>>><")
+        # print(idx)
+        # for x in query_sampling:
+        #     print(x)
+        # print(">>>>>>>>><")
+
+        for sample_i, sample_severity, sample_rpm, sample_torque, sample_installation, sample_sensor in query_sampling:
             # i corresponds to window index, not measurement samples, so it need to be multiplied by the stride
             # j = i[0] * self.window_stride # ? Done above
 
@@ -267,9 +357,9 @@ class FewShotMixedDataset(Dataset):
             # if "sync_FFT" in self.config["preprocessing_sample"] or "sync_FFT" in self.config["preprocessing_batch"]:
             #     window_width = self.rotation_len_map[sample_rpm] * self.config["sync_FFT_rotations"]
 
-            sample = self.data[(idx[0], sample_severity, sample_rpm, sample_torque, sample_sensor)][
-                self.query_offset + sample_i : self.query_offset + sample_i + window_width
-            ]
+            sample = self.data[
+                (idx[0], sample_severity, sample_rpm, sample_torque, sample_installation, sample_sensor)
+            ][self.query_offset + sample_i : self.query_offset + sample_i + window_width]
             support_query_set.append(sample)
 
         # Preprocess as individual samples
@@ -295,7 +385,7 @@ class FewShotMixedDataset(Dataset):
 
 
 class FewshotBatchSampler(Sampler):
-    def __init__(self, config, faults, severities, GPs, rpms, torques, sensors):
+    def __init__(self, config, faults, severities, GPs, rpms, torques, installations, sensors):
         assert config["n_way"] <= len(faults), "n_way must be less than the total number of classes available!"
 
         self.config = config
@@ -304,6 +394,7 @@ class FewshotBatchSampler(Sampler):
         self.GPs = GPs
         self.rpms = rpms
         self.torques = torques
+        self.installations = installations
         self.sensors = sensors
 
         # Generate `seq_len` at a time for efficiency
@@ -313,6 +404,7 @@ class FewshotBatchSampler(Sampler):
         self.GP_seq = torch.randint(high=len(self.GPs), size=(self.seq_len,))
         self.rpm_seq = torch.randint(high=len(self.rpms), size=(self.seq_len,))
         self.torque_seq = torch.randint(high=len(self.torques), size=(self.seq_len,))
+        self.installation_seq = torch.randint(high=len(self.installations), size=(self.seq_len,))
         self.sensor_seq = torch.randint(high=len(self.sensors), size=(self.seq_len,))
 
         # Meant to be accessed from outside the class to find out what the last batch contained
@@ -340,6 +432,8 @@ class FewshotBatchSampler(Sampler):
                     ],  # Baseline has GPs for severity instead of mild/severe
                     [self.rpms[self.rpm_seq[self.i]] for _ in range(len(fault_batch))],
                     [self.torques[self.torque_seq[self.i]] for _ in range(len(fault_batch))],
+                    # [self.installations[self.installation_seq[self.i]] for _ in range(len(fault_batch))],
+                    [0 if f == "baseline" else self.installations[self.installation_seq[self.i]] for f in fault_batch],
                     [self.sensors[self.sensor_seq[self.i]] for _ in range(len(fault_batch))],
                 )
             )
@@ -356,6 +450,7 @@ class FewshotBatchSampler(Sampler):
                 self.severity_seq = torch.randint(high=len(self.severities), size=(self.seq_len,))
                 self.rpm_seq = torch.randint(high=len(self.rpms), size=(self.seq_len,))
                 self.torque_seq = torch.randint(high=len(self.torques), size=(self.seq_len,))
+                self.installation_seq = torch.randint(high=len(self.installations), size=(self.seq_len,))
                 self.sensor_seq = torch.randint(high=len(self.sensors), size=(self.seq_len,))
 
 
@@ -481,6 +576,7 @@ def get_arotor_replication_data(config, device):
         config["train_baseline_GPs"],
         config["train_rpm"],
         config["train_torques"],
+        config["train_installations"],
         config["train_sensors"],
     )
     validation_sampler = FewshotBatchSampler(
@@ -490,6 +586,7 @@ def get_arotor_replication_data(config, device):
         config["validation_baseline_GPs"],
         config["validation_rpm"],
         config["validation_torques"],
+        config["validation_installations"],
         config["validation_sensors"],
     )
     test_sampler = FewshotBatchSampler(
@@ -499,6 +596,7 @@ def get_arotor_replication_data(config, device):
         config["test_baseline_GPs"],
         config["test_rpm"],
         config["test_torques"],
+        config["test_installations"],
         config["test_sensors"],
     )
 

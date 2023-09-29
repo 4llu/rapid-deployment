@@ -61,15 +61,12 @@ def main():
         )
         config["weight_decay"] = trial.suggest_float("weight_decay", 0.00001, 0.001, log=True)
         config["sch_gamma"] = trial.suggest_float("sch_gamma", 0.95, 0.99998, log=True)
-        config["gain_std"] = trial.suggest_float("gain_std", 0.0, 0.4)
-        config["white_noise_std"] = trial.suggest_float("white_noise_std", 0.0, 0.4)
+        config["gain_std"] = trial.suggest_float("gain_std", 0.0, 0.4, step=0.1)
+        config["white_noise_std"] = trial.suggest_float("white_noise_std", 0.0, 0.4, step=0.1)
         # config["cl_dropout"] = trial.suggest_float("cl_dropout", 0.0, 0.6, step=0.1)
         # config["fc_dropout"] = trial.suggest_float("fc_dropout", 0.0, 0.6, step=0.1)
-        # config["embedding_multiplier"] = trial.suggest_categorical(
-        #     "embedding_multiplier",
-        #     [100, 1000]
-        #     # "embedding_multiplier", [1, 10, 100, 1000, 10000]
-        # )
+        # config["log_FFT"] = trial.suggest_categorical("log_FFT", [True, False])
+        # config["include_FFT_DC"] = trial.suggest_categorical("log_FFT", [True, False])
 
         # Repeat training with same set of hyperparameters for validity
         # NOTE This doesn't really work with pruning

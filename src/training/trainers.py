@@ -18,6 +18,7 @@ ARotor_replication_fault_map = {
     "pitting": 1,
     "wear": 2,
     "micropitting": 3,
+    # "tff": 3,
     "tff": 4,
 }
 

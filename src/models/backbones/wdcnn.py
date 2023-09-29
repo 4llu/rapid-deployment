@@ -72,8 +72,9 @@ class WDCNN(nn.Module):
             # 64 * 66,
             # 960,
             # 640,
-            448,
+            # 448,
             # 256,
+            192,
             self.config["embedding_len"],
         )
 
