@@ -201,8 +201,8 @@ class FewShotMixedDataset(Dataset):
         split.
 
         Parameters:
-            idx : tuple(int, int, string)
-                tuple of fault, severity, rpm, torque, and sensor
+            idx : tuple(int, int, int, int, string)
+                tuple of fault, severity, rpm, torque, installation, and sensor
 
         Returns:
             support_query_set : tensor[support + query, 1, sample_len]
@@ -319,9 +319,19 @@ class FewShotMixedDataset(Dataset):
             current_torque_pattern = np.repeat(idx[3], self.config["n_query"])
 
         if self.config["mix_installations"]:
-            current_installation_pattern = (
-                np.repeat(0, self.config["n_query"]) if idx[0] == "baseline" else self.installation_sampling_pattern
-            )
+            # current_installation_pattern = (
+            #     np.repeat(0, self.config["n_query"]) if idx[0] == "baseline" else self.installation_sampling_pattern
+            # )
+            if idx[0] == "baseline":
+                current_installation_pattern = np.repeat(0, self.config["n_query"])
+            elif 1 in self.installation_sampling_pattern and 2 in self.installation_sampling_pattern:
+                if idx[4] == 1:
+                    current_installation_pattern = np.repeat(2, self.config["n_query"])
+                else:
+                    current_installation_pattern = np.repeat(1, self.config["n_query"])
+            else:
+                current_installation_pattern = self.installation_sampling_pattern
+
         else:
             current_installation_pattern = np.repeat(idx[4], self.config["n_query"])
 
