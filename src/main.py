@@ -89,7 +89,7 @@ def run_training(
     elif config["model"] == "relation":
         loss_fn = torch.nn.MSELoss()
     else:
-        raise "WAT"
+        raise Exception("WAT")
 
     loss_fn = loss_fn.to(device=device)
 
@@ -116,7 +116,7 @@ def run_training(
                 device=device,
             )
         else:
-            raise "WAT"
+            raise Exception("WAT")
 
         # Define tracked metrics
         metrics = {
@@ -140,6 +140,7 @@ def run_training(
     # Setup logging
     train_logger = setup_logging(config, "trainer")
     train_logger.info("Configuration: \n%s", pformat(config))
+    train_logger.info("Model: \n%s", str(model))
     trainer.logger = train_logger
     evaluator.logger = setup_logging(config, "evaluator")
     evaluator_test.logger = setup_logging(config, "test")
@@ -205,14 +206,13 @@ def run_training(
         print()
 
     # Print train metrics every epoch
-    # FIXME Change into same format as the other handlers
     trainer.add_event_handler(
         Events.EPOCH_COMPLETED(every=1),
         log_metrics,
         tag="train",
     )
 
-    # Run validation evaluation every second epoch
+    # Run validation evaluation
     @trainer.on(Events.EPOCH_COMPLETED(every=config["eval_freq"]))
     def _():
         # Run validation evaluation

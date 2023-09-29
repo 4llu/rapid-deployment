@@ -26,12 +26,15 @@ def target_converter(targets, config, device):
     if config["data"] == "ARotor":
         return torch.tensor(targets, device=device).repeat_interleave(config["n_query"])
     elif config["data"] == "ARotor_replication":
-        if config["n_way"] != 5:
-            raise "`target_converter` for ARotor replication (probably) only works when all classes are in use"
+        # if config["n_way"] != 4:
+        if config["n_way"] != len(ARotor_replication_fault_map.keys()):
+            raise Exception(
+                "`target_converter` for ARotor replication (probably) only works when all classes are in use"
+            )
         targets = [ARotor_replication_fault_map[x] for x in targets]
         return torch.tensor(targets, device=device).repeat_interleave(config["n_query"])
     else:
-        raise "No `target_converter` configured for this dataset"
+        raise Exception("No `target_converter` configured for this dataset")
 
 
 # TRAINER
@@ -52,7 +55,7 @@ def relation_train_function_wrapper(engine, batch, config, model, optimizer, los
     # Forward pass and loss calculation
     #! No AMP support
     if config["use_amp"]:
-        raise "No AMP support!"
+        raise Exception("No AMP support!")
 
     outputs = model(samples)
 
@@ -151,7 +154,7 @@ def setup_trainer(
     elif config["model"] == "relation":
         train_function_ = relation_train_function_wrapper
     else:
-        raise "WAT"
+        raise Exception("WAT")
 
     train_function = partial(
         train_function_,
@@ -185,7 +188,7 @@ def relation_eval_function_wrapper(engine, batch, config, model, device, split):
     # Forward pass and loss calculation
     #! No AMP support
     if config["use_amp"]:
-        raise "No AMP support!"
+        raise Exception("No AMP support!")
 
     outputs = model(samples)
 

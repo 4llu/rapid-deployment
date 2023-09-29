@@ -52,10 +52,10 @@ def preprocess_sample(sample_list, config):
 
     # RPM synced FFT
     if "sync_FFT" in config["preprocessing_sample"]:
-        raise " NOT IN USE CURRENTLY!"
+        raise Exception("NOT IN USE CURRENTLY!")
         # sample_list = sync_FFT(sample_list, config)
     if "FFT" in config["preprocessing_sample"]:
-        raise "SLOW! ARE YOU SURE YOU WANT TO USE THIS? IN THAT CASE COMMENT THIS `raise`"
+        raise Exception("SLOW! ARE YOU SURE YOU WANT TO USE THIS? IN THAT CASE COMMENT THIS `raise`")
         # sample_list = FFT(sample_list, config)
 
     return sample_list

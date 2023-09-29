@@ -262,7 +262,9 @@ def preprocess_class_batch(class_support_query_set, config, idx, query_samples):
         class_support_query_set = TSA(class_support_query_set, config, idx, query_samples)
 
     if "FFT" in config["preprocessing_class_batch"]:
-        raise "SLOWER THAN `batch`-LEVEL IMPLEMENTATION! ARE YOU SURE YOU WANT TO USE THIS? IN THAT CASE COMMENT THIS `raise`"
+        raise Exception(
+            "SLOWER THAN `batch`-LEVEL IMPLEMENTATION! ARE YOU SURE YOU WANT TO USE THIS? IN THAT CASE COMMENT THIS `raise`"
+        )
         # class_support_query_set = FFT(class_support_query_set, config)
 
     if "FFT_mean_std_channels" in config["preprocessing_class_batch"]:

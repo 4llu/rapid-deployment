@@ -143,7 +143,7 @@ def robust_scaling(train_data, validation_data, test_data, config):
         new_validation_data = mixed_query_normalization_helper_arotor_replication(validation_data, config, "validation")
         new_test_data = mixed_query_normalization_helper_arotor_replication(test_data, config, "test")
     else:
-        raise "Not yet implemented for this dataset!"
+        raise Exception("Not yet implemented for this dataset!")
 
     return new_train_data, new_validation_data, new_test_data
 

@@ -25,8 +25,6 @@ def individual_min_max(support_query_set, config):
 
 
 def individual_centering(support_query_set, config):
-
-    print(support_query_set.shape)
     support_query_set = support_query_set - support_query_set.mean(keepdim=True, dim=-1)
 
     return support_query_set
@@ -236,7 +234,7 @@ def preprocess_batch(support_query_set, config, device):
     if "FFT" in config["preprocessing_batch"]:
         support_query_set = FFT(support_query_set, config, device)
     if "sync_FFT" in config["preprocessing_batch"]:
-        raise "NOT IN USE CURRENTLY!"
+        raise Exception("NOT IN USE CURRENTLY!")
         # support_query_set = FFT(support_query_set, config, device)
 
     if "FFT_w_phase" in config["preprocessing_batch"]:
