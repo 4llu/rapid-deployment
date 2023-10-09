@@ -57,7 +57,8 @@ class WDCNN(nn.Module):
         self.cn_layer1 = ConvLayer(
             1,
             16,
-            kernel_size=64,
+            kernel_size=41,
+            # kernel_size=64,
             stride=16,
             padding=24,
             dropout=self.config["cl_dropout"],
@@ -72,9 +73,9 @@ class WDCNN(nn.Module):
             # 64 * 66,
             # 960,
             # 640,
-            # 448,
+            448,
             # 256,
-            192,
+            # 192,
             self.config["embedding_len"],
         )
 

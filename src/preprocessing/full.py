@@ -16,7 +16,7 @@ def lowpass_filtering(train_data, validation_data, test_data, config):
 
         def filter_group(group_data):
             # if True:
-            cutoff = group_data["rpm"].iloc[0] / 60 / 3 * 50 + 30  # Up to 50x harmonics + 30 Hz
+            cutoff = group_data["rpm"].iloc[0] / 60 / 3 * 100 + 30  # Up to 50x harmonics + 30 Hz
             # cutoff = group_data["rpm"].iloc[0] / 60 / 3 * 15 + 30 # Up to 15x harmonics + 30 Hz
             # print(">", group_data["rpm"].iloc[0], cutoff)
             sos = butter(4, cutoff, "lowpass", analog=False, output="sos", fs=3012)

@@ -78,7 +78,7 @@ def setup_model(config, device):
         raise Exception(f"No such model name as: {config['model']}!")
 
     # Print here so model details can be seen in logs
-    print(model)
+    # print(model)
     # Move model to correct device
     model = model.to(device)
 

@@ -77,13 +77,13 @@ def main():
             print(f"REPETITION {j + 1} OF TRIAL {i + 1}")
             print("############################")
             print()
-            val_accuracy = run_training(
+            val_accuracy, _, _ = run_training(
                 train_loader,
                 validation_loader,
                 test_loader,
                 config,
                 device=device,
-                trial=True,
+                run_type="trial",
             )
             accuracies.append(val_accuracy)
 

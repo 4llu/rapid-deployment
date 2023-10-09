@@ -5,13 +5,15 @@ __pycache__
 .vscode/
 
 # Repo specific
+configs/arotor_replication/result_generation/*
 data/RAW/*
 data/processed/*
-torch_downloads/*
 reports/raw/logs/*
 reports/raw/logs_tb/*
 reports/raw/optuna_studies/*
+reports/raw/NoML/*
 reports/**/*.pkl
+torch_downloads/*
 
 # Exceptions
 !/**/.gitkeep

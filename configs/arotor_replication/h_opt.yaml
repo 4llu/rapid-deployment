@@ -12,7 +12,7 @@ n_way: 5
 n_query: 36
 mix_severities: false # * Baseline measurements use GPs
 mix_rpms: false
-mix_torques: true
+mix_torques: false
 mix_installations: true # * Baseline measurements use GPs
 mix_sensors: false
 separate_query_and_support: false
@@ -27,21 +27,20 @@ test_sensors: [acc3]
 # validation_sensors: [en3speed]
 # test_sensors: [en4speed]
 
-train_rpm: [1000]
-# train_rpm: [750, 1000, 1250]
-validation_rpm: [500, 750, 1250, 1500]
-test_rpm: [1250]
+train_rpm: [750, 1250]
+validation_rpm: [500, 1500]
+test_rpm: [500, 1500]
 
-train_torques: [1, 6, 11]
-validation_torques: [6]
-test_torques: [6]
+train_torques: [1, 6]
+validation_torques: [11]
+test_torques: [11]
 
 train_installations: [1]
 validation_installations: [1, 2]
 test_installations: [1, 2]
 
-train_baseline_GPs: [1, 2, 3, 4]
-validation_baseline_GPs: [5, 6, 7, 8]
+train_baseline_GPs: [1, 2, 3]
+validation_baseline_GPs: [4, 5]
 test_baseline_GPs: [6, 7, 8, 9]
 
 train_severities: [severe]
@@ -79,7 +78,8 @@ preprocessing_class_batch: []
 # preprocessing_batch: [individual_centering, FFT]
 # preprocessing_batch: [FFT_w_phase]
 # preprocessing_batch: [FFT, gain_changer, mult_white_noise]
-preprocessing_batch: [gain_changer, mult_white_noise]
+preprocessing_batch: [gain_changer, add_white_noise]
+# preprocessing_batch: [gain_changer, mult_white_noise]
 # preprocessing_batch: [hilbert_envelope]
 # preprocessing_batch: [individual_centering, gain_changer, add_white_noise]
 # preprocessing_batch: [gain_changer]
@@ -95,9 +95,10 @@ sample_cut: -1 # Done in batch preprocessing
 #? Model
 
 model: prototypical
-backbone: InceptionTime
+backbone: WDCNN
+# backbone: InceptionTime
 kaiming_init: True
-embedding_len: 32
+embedding_len: 64
 # Lp-norm
 embedding_normalization_type: lp
 lp_norm: 2
@@ -108,7 +109,7 @@ embedding_multiplier: 10
 
 epoch_len: 1
 max_epochs: 200
-patience: 100
+patience: 50
 optimizer: AdamW
 lr: 0.01
 lr_scheduler: ExponentialLR

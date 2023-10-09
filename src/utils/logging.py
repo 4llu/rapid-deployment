@@ -32,9 +32,8 @@ def setup_logging(config, phase):
 def log_metrics(engine, tag):
     metrics = {}
     for k, v in engine.state.metrics.items():
-        metrics[k] = "{:.5g}".format(v)
+        if k != "test_confusion_matrices":
+            metrics[k] = "{:.5g}".format(v)
 
-    metrics_format = "{0} [{1}/{2}]: {3}".format(
-        tag, engine.state.epoch, engine.state.iteration, metrics
-    )
+    metrics_format = "{0} [{1}/{2}]: {3}".format(tag, engine.state.epoch, engine.state.iteration, metrics)
     engine.logger.info(metrics_format)

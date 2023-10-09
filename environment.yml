@@ -1,0 +1,26 @@
+name: torch
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - plotly
+  - pyarrow
+  - seaborn
+  - scipy
+  - matplotlib
+  - librosa
+  - optuna
+  - jupyter
+  - scikit-learn
+  - pylint
+  - black
+  - ruamel.yaml
+  - numpy
+  - pandas
+  - umap-learn
+  - pytorch
+  - torchvision
+  - torchaudio
+prefix: /Users/hamalaa14/opt/miniconda3/envs/torch

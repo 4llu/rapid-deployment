@@ -89,7 +89,6 @@ class FewShotMixedDataset(Dataset):
         #     #! Completely new value added to config!
         #     self.config["max_fft_len"] = len(torch.fft.rfft(torch.arange(min_window_len)))
 
-        # HERE
         # Max window width to calculate stride and max index that can be sampled
         # ! Remember to not use `self.config["window_width"]` after this point
         self.max_window_width = self.config["window_width"]
@@ -201,7 +200,7 @@ class FewShotMixedDataset(Dataset):
         split.
 
         Parameters:
-            idx : tuple(int, int, int, int, string)
+            idx : tuple(string, int, int, int, int, string)
                 tuple of fault, severity, rpm, torque, installation, and sensor
 
         Returns:
@@ -233,6 +232,22 @@ class FewShotMixedDataset(Dataset):
 
         # Support samples
         for sample_i in sample_idxs[: self.config["k_shot"]]:
+            # # FIXME TODO HERE XXX vvvv Multi-sensor input
+            # sample1 = self.data[idx[:-1] + ("acc1",)][
+            #     self.support_offset + sample_i : self.support_offset + sample_i + window_width
+            # ]
+            # sample2 = self.data[idx[:-1] + ("acc2",)][
+            #     self.support_offset + sample_i : self.support_offset + sample_i + window_width
+            # ]
+            # sample3 = self.data[idx[:-1] + ("acc3",)][
+            #     self.support_offset + sample_i : self.support_offset + sample_i + window_width
+            # ]
+            # sample4 = self.data[idx[:-1] + ("acc4",)][
+            #     self.support_offset + sample_i : self.support_offset + sample_i + window_width
+            # ]
+            # sample = torch.stack([sample1, sample2, sample3, sample4])
+            # # FIXME TODO HERE XXX ^^^
+
             sample = self.data[idx][self.support_offset + sample_i : self.support_offset + sample_i + window_width]
             support_query_set.append(sample)
 
@@ -337,6 +352,13 @@ class FewShotMixedDataset(Dataset):
 
         if self.config["mix_sensors"]:
             current_sensor_pattern = self.sensor_sampling_pattern
+            # if "en4speed" in self.sensor_sampling_pattern and "en3speed" in self.sensor_sampling_pattern:
+            #     if idx[5] == "en4speed":
+            #         current_sensor_pattern = np.repeat("en3speed", self.config["n_query"])
+            #     else:
+            #         current_sensor_pattern = np.repeat("en4speed", self.config["n_query"])
+            # else:
+            #     current_sensor_pattern = np.repeat(idx[5], self.config["n_query"])
         else:
             current_sensor_pattern = np.repeat(idx[5], self.config["n_query"])
 
@@ -366,6 +388,22 @@ class FewShotMixedDataset(Dataset):
             # # Use rpm specific window_width for each sample if using synced FFT
             # if "sync_FFT" in self.config["preprocessing_sample"] or "sync_FFT" in self.config["preprocessing_batch"]:
             #     window_width = self.rotation_len_map[sample_rpm] * self.config["sync_FFT_rotations"]
+
+            # # FIXME TODO HERE XXX vvvvv Multi-sensor input
+            # sample1 = self.data[(idx[0], sample_severity, sample_rpm, sample_torque, sample_installation, "acc1")][
+            #     self.query_offset + sample_i : self.query_offset + sample_i + window_width
+            # ]
+            # sample2 = self.data[(idx[0], sample_severity, sample_rpm, sample_torque, sample_installation, "acc2")][
+            #     self.query_offset + sample_i : self.query_offset + sample_i + window_width
+            # ]
+            # sample3 = self.data[(idx[0], sample_severity, sample_rpm, sample_torque, sample_installation, "acc3")][
+            #     self.query_offset + sample_i : self.query_offset + sample_i + window_width
+            # ]
+            # sample4 = self.data[(idx[0], sample_severity, sample_rpm, sample_torque, sample_installation, "acc4")][
+            #     self.query_offset + sample_i : self.query_offset + sample_i + window_width
+            # ]
+            # sample = torch.stack([sample1, sample2, sample3, sample4])
+            # # FIXME TODO HERE XXX ^^^^
 
             sample = self.data[
                 (idx[0], sample_severity, sample_rpm, sample_torque, sample_installation, sample_sensor)

@@ -4,7 +4,7 @@ log: true
 save: false # TODO
 eval_freq: 1 # * Decrease for hyper opt and final testing
 # eval_episodes: 1 # * Increase for hyper opt and final testing
-eval_episodes: 20 # * Increase for hyper opt and final testing
+eval_episodes: 50 # * Increase for hyper opt and final testing
 # eval_episodes: 4 # * Increase for hyper opt and final testing
 
 #? Fewshot setup
@@ -30,25 +30,25 @@ test_sensors: [acc3]
 # validation_sensors: [en3speed]
 # test_sensors: [en4speed]
 
-train_rpm: [750]
-validation_rpm: [500, 1250, 1500]
-test_rpm: [500, 1250, 1500]
-# train_rpm: [750, 1000]
-# validation_rpm: [500, 1250, 1500]
-# test_rpm: [500, 1250, 1500]
+# train_rpm: [500, 1500]
+# validation_rpm: [750, 1250]
+# test_rpm: [750, 1250]
+train_rpm: [750, 1250]
+validation_rpm: [500, 1500]
+test_rpm: [500, 1500]
 
 # train_torques: [1]
-train_torques: [1, 6, 11]
-validation_torques: [6]
-test_torques: [11]
+train_torques: [1, 11]
+validation_torques: [11]
+test_torques: [6]
 
 train_installations: [1]
 validation_installations: [1, 2]
 test_installations: [1, 2]
 
 train_baseline_GPs: [1, 2, 3]
-validation_baseline_GPs: [4, 5, 6]
-test_baseline_GPs: [7, 8, 9]
+validation_baseline_GPs: [4, 5]
+test_baseline_GPs: [6, 7, 8, 9]
 
 train_severities: [severe]
 validation_severities: [mild]
@@ -79,7 +79,7 @@ preprocessing_sample: []
 # preprocessing_sample: [FFT]
 preprocessing_class_batch: []
 # preprocessing_class_batch: [FFT]
-# preprocessing_batch: []
+preprocessing_batch: []
 # preprocessing_batch: [individual_centering]
 # preprocessing_batch: [FFT]
 # preprocessing_batch: [individual_centering, FFT]
@@ -88,7 +88,7 @@ preprocessing_class_batch: []
 # preprocessing_batch: [hilbert_envelope]
 # preprocessing_batch: [individual_centering, gain_changer, add_white_noise]
 # preprocessing_batch: [gain_changer]
-preprocessing_batch: [gain_changer, add_white_noise]
+# preprocessing_batch: [gain_changer, add_white_noise]
 gain_std: 0.1
 white_noise_std: 0.02
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
@@ -101,8 +101,9 @@ sample_cut: -1 # Done in batch preprocessing
 
 model: prototypical
 backbone: InceptionTime
+# backbone: WDCNN
 kaiming_init: True
-embedding_len: 32
+embedding_len: 64
 # Lp-norm
 embedding_normalization_type: lp
 lp_norm: 2

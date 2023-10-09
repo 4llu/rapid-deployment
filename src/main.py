@@ -15,7 +15,7 @@ from models.models import setup_model
 from training.trainers import setup_evaluator, setup_trainer
 from utils.config import setup_config
 from utils.logging import log_metrics, setup_logging
-from utils.custom_metrics import RNFSAccuracy
+from utils.custom_metrics import RNFSAccuracy, Confusion_matrices
 
 
 def run_training(
@@ -24,7 +24,7 @@ def run_training(
     test_loader,
     config,
     device=None,
-    trial=False,
+    run_type="normal",
 ):
     # * Use this to run a single training
 
@@ -130,10 +130,13 @@ def run_training(
         # Attach to trainers
         for name, metric in metrics.items():
             metric.attach(ev, name, usage=runWiseUsage)
+    # * Confusion matrices only for test evaluator
+    Confusion_matrices().attach(evaluator_test, "test_confusion_matrices", usage=runWiseUsage)
 
     # Global metrics
     best_accuracy = 0
     best_test_accuracy = 0
+    best_test_cf = []
     best_epoch = 0
     patience_counter = 0  # FIXME Could patience be done with Ignite?
 
@@ -147,8 +150,8 @@ def run_training(
 
     # Tensorboard logger
 
-    # Only if logging turned on (make extra sure turned of for Optuna trials)
-    if not trial and config["log"]:
+    # Only if logging turned on (make extra sure turned of for Optuna trials and result generation)
+    if run_type == "normal" and config["log"]:
         abs_path = os.path.dirname(__file__)
         time = datetime.now().strftime("%m-%d_%H-%M-%S")
 
@@ -224,6 +227,7 @@ def run_training(
         # * The `nonlocal` is a bit of a hack, but it's the easiest way I found
         nonlocal best_accuracy
         nonlocal best_test_accuracy
+        nonlocal best_test_cf
         nonlocal best_epoch
         nonlocal patience_counter
 
@@ -237,24 +241,25 @@ def run_training(
             patience_counter = 0
 
             # Run test evaluation only if validation accuracy has improved and not an Optuna trial
-            if not trial:
+            if not run_type == "trial":
                 evaluator_test.run(test_loader, epoch_length=config["eval_episodes"])
                 log_metrics(evaluator_test, "test")
                 best_test_accuracy = evaluator_test.state.metrics["test_accuracy"]
+                best_test_cf = evaluator_test.state.metrics["test_confusion_matrices"]
         # If not best
         else:
             # Increment early stopping counter if over warmup period
             if trainer.state.epoch > 50:
-                patience_counter += 2
-            # Early stopping if validation sscore has stopped improving
+                patience_counter += config["eval_freq"]
+            # Early stopping if validation score has stopped improving
             if patience_counter >= config["patience"]:
                 trainer.terminate()
 
     # Run test evaluation every once in a while in addition to when new best validation score is achieved
     @trainer.on(Events.EPOCH_COMPLETED(every=12))
     def _():
-        # * Skip for trials because the test metrics aren't used for anything there
-        if not trial:
+        # * Skip for trials and result generation
+        if run_type == "normal":
             evaluator_test.run(test_loader, epoch_length=config["eval_episodes"])
             # Print results
             log_metrics(evaluator_test, "test")
@@ -276,7 +281,7 @@ def run_training(
 
     # Only used by Optuna for hyperparameter optimization
     # Specifically, validation accuracy
-    return best_accuracy
+    return best_accuracy, best_test_accuracy, best_test_cf
 
 
 def setup_device():
@@ -290,7 +295,7 @@ def setup_device():
     device_type = "cpu"
     if torch.cuda.is_available():
         device_type = "cuda"
-    elif torch.has_mps:
+    elif torch.backends.mps.is_built():
         device_type = "mps"
         # device_type = "cpu"
 

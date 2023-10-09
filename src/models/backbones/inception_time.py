@@ -317,17 +317,17 @@ class InceptionTime(nn.Module):
         self.reduction_1 = SimpleGridReductionModule(8, 8)
 
         # self.module_3_1 = ModdedInceptionModule(16, 4, use_skip_connection=True, use_sen=False)
-        self.module_4_1 = ModdedInceptionModule(16, 4, use_skip_connection=True, use_sen=False)
+        self.module_4_1 = ModdedInceptionModule(16, 4, use_skip_connection=False, use_sen=False)
 
         self.reduction_2 = SimpleGridReductionModule(16, 16)
 
         # self.module_5_1 = ModdedInceptionModule(32, 8, use_skip_connection=True, use_sen=False)
-        self.module_6_1 = ModdedInceptionModule(32, 8, use_skip_connection=True, use_sen=False)
+        self.module_6_1 = ModdedInceptionModule(32, 8, use_skip_connection=False, use_sen=False)
 
         # XXX
-        # self.reduction_3 = SimpleGridReductionModule(32, 32)
+        self.reduction_3 = SimpleGridReductionModule(32, 32)
 
-        # self.module_7_1 = ModdedInceptionModule(64, 16, use_skip_connection=True, use_sen=False)
+        self.module_7_1 = ModdedInceptionModule(64, 16, use_skip_connection=True, use_sen=False)
         # self.module_8_1 = ModdedInceptionModule(64, 16, use_skip_connection=True, use_sen=False, activation=False)
         # XXX
 
@@ -395,13 +395,13 @@ class InceptionTime(nn.Module):
         if verbose:
             print("Module 6.1:", out.shape)
 
-        # out = self.reduction_3(out)
-        # if verbose:
-        #     print("Reduction 3:", out.shape)
+        out = self.reduction_3(out)
+        if verbose:
+            print("Reduction 3:", out.shape)
 
-        # out = self.module_7_1(out)
-        # if verbose:
-        #     print("Module 7.1:", out.shape)
+        out = self.module_7_1(out)
+        if verbose:
+            print("Module 7.1:", out.shape)
 
         # out = self.module_8_1(out)
         # if verbose:
