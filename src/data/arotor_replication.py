@@ -654,22 +654,25 @@ def get_arotor_replication_data(config, device):
         train_dataset,
         batch_sampler=train_sampler,
         collate_fn=partial(fewshot_collate, config=config, device=device),
-        pin_memory=False,
-        num_workers=0,
+        pin_memory=True,
+        # num_workers=0,
+        # prefetch_factor=4,
     )
     validation_loader = DataLoader(
         validation_dataset,
         batch_sampler=validation_sampler,
         collate_fn=partial(fewshot_collate, config=config, device=device),
-        pin_memory=False,
-        num_workers=0,
+        pin_memory=True,
+        # num_workers=0,
+        # prefetch_factor=4,
     )
     test_loader = DataLoader(
         test_dataset,
         batch_sampler=test_sampler,
         collate_fn=partial(fewshot_collate, config=config, device=device),
-        pin_memory=False,
-        num_workers=0,
+        pin_memory=True,
+        # num_workers=0,
+        # prefetch_factor=4,
     )
 
     return train_loader, validation_loader, test_loader

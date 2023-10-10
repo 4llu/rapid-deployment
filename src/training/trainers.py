@@ -49,7 +49,7 @@ def relation_train_function_wrapper(engine, batch, config, model, optimizer, los
 
     # Non-blocking probably has no effect here,
     # because model(samples) is an immediate sync point
-    samples = batch[0]  # * Already moved to device in collate_fn
+    samples = batch[0].to(device, non_blocking=True)  # * Already moved to device in collate_fn
     # Ignore actual class labels. Can be used to map episode labels to actual classes if necessary
     targets = torch.diag(torch.ones(10, device=device)).repeat_interleave(config["n_query"], dim=0)
 
@@ -80,24 +80,17 @@ def train_function_wrapper(engine, batch, config, model, optimizer, loss_fn, dev
     model.train()
     optimizer.zero_grad(set_to_none=True)
 
-    # Legacy
-    if config["data"] == "ARotor_old":
-        samples = batch.to(device)
-        targets = torch.arange(0, config["n_way"], dtype=torch.long, device=device)
-        targets = targets.repeat_interleave(config["n_query"])
-    # Currently important implementation
-    else:
-        # Non-blocking probably has no effect here,
-        # because model(samples) is an immediate sync point
-        # TODO Move preprocessing here?
-        samples = batch[0]  # * Already moved to device in collate_fn
-        # Conversion because the labels are returned as a (class, rpm, sensor) tuple
-        # and we only care about the class here
-        targets = list(zip(*batch[1]))[0]
-        # targets = torch.tensor(list(zip(*batch[1]))[0], device=device)
-        # Original targets are episode classes, not including that there are n_query queries
-        # per class
-        targets = target_converter(targets, config, device)
+    # Non-blocking probably doesn't have much effect here,
+    # because model(samples) is an immediate sync point
+    # TODO Move preprocessing here?
+    samples = batch[0].to(device, non_blocking=True)
+    # Conversion because the labels are returned as a (class, rpm, sensor) tuple
+    # and we only care about the class here
+    targets = list(zip(*batch[1]))[0]
+    # targets = torch.tensor(list(zip(*batch[1]))[0], device=device)
+    # Original targets are episode classes, not including that there are n_query queries
+    # per class
+    targets = target_converter(targets, config, device)
 
     # Forward pass and loss calculation
 
@@ -182,7 +175,7 @@ def relation_eval_function_wrapper(engine, batch, config, model, device, split):
 
     # Non-blocking probably has no effect here,
     # because model(samples) is an immediate sync point
-    samples = batch[0]  # * Already moved to device in collate_fn
+    samples = batch[0].to(device, non_blocking=True)  # * Already moved to device in collate_fn
     #
     targets = torch.diag(torch.ones(10, device=device)).repeat_interleave(config["n_query"], dim=0)
 
@@ -200,25 +193,18 @@ def relation_eval_function_wrapper(engine, batch, config, model, device, split):
 def eval_function_wrapper(engine, batch, config, model, device, split):
     model.eval()
 
-    # Legacy
-    if config["data"] == "ARotor_old":
-        samples = batch.to(device)
-        targets = torch.arange(0, config["n_way"], dtype=torch.long, device=device)
-        targets = targets.repeat_interleave(config["n_query"])
-    # Currently important implementation
-    else:
-        # Non-blocking probably has no effect here,
-        # because model(samples) is an immediate sync point
-        # TODO Move preprocessing here?
-        samples = batch[0]  # * Already moved to device in collate_fn
-        # Conversion because the labels are returned as a (class, rpm, sensor) tuple
-        # and we only care about the class here
-        # FIXME
-        targets = list(zip(*batch[1]))[0]
-        # targets = torch.tensor(list(zip(*batch[1]))[0], device=device)
-        # Original targets are episode classes, not including that there are n_query queries
-        # per class
-        targets = target_converter(targets, config, device)
+    # Non-blocking probably has no effect here,
+    # because model(samples) is an immediate sync point
+    # TODO Move preprocessing here?
+    samples = batch[0].to(device, non_blocking=True)  # * Already moved to device in collate_fn
+    # Conversion because the labels are returned as a (class, rpm, sensor) tuple
+    # and we only care about the class here
+    # FIXME
+    targets = list(zip(*batch[1]))[0]
+    # targets = torch.tensor(list(zip(*batch[1]))[0], device=device)
+    # Original targets are episode classes, not including that there are n_query queries
+    # per class
+    targets = target_converter(targets, config, device)
 
     # Forward pass and loss calculation
 

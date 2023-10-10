@@ -2,8 +2,9 @@
 name: BASE
 log: false
 save: false # TODO
-eval_freq: 5 # * Decrease for hyper opt and final testing
-eval_episodes: 100 # * Increase for hyper opt and final testing
+eval_freq: 3 # * Decrease for hyper opt and final testing
+eval_episodes: 50 # * Increase for hyper opt and final testing
+test_episodes: 150
 
 #? Fewshot setup
 

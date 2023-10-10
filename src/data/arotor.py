@@ -294,23 +294,25 @@ def fewshot_collate(batch, config=None, device=None):
     samples, labels = list(zip(*batch))
     samples = torch.stack(samples)
 
+    samples = preprocess_batch(samples, config, device)
+
     # * For all other devices except mps, move to device here,
     # * because most preprocessing operations are faster on GPU.
     # * However, some operations (e.g. FFT) don't work on MPS yet,
     # * so operate on cpu here
-    if str(device) != "mps":
-        # Non-blocking probably has no effect here,
-        # because model(samples) is an immediate sync point
-        samples = samples.to(device, non_blocking=True)
+    # if str(device) != "mps":
+    #     # Non-blocking probably has no effect here,
+    #     # because model(samples) is an immediate sync point
+    #     samples = samples.to(device, non_blocking=True)
 
-    if len(config["preprocessing_batch"]) > 0:
-        samples = preprocess_batch(samples, config, device)
+    # if len(config["preprocessing_batch"]) > 0:
+    #     samples = preprocess_batch(samples, config, device)
 
-    # Move samples to MPS
-    if str(device) == "mps":
-        # Non-blocking probably has no effect here,
-        # because model(samples) is an immediate sync point
-        samples = samples.to(device, non_blocking=True)
+    # # Move samples to MPS
+    # if str(device) == "mps":
+    #     # Non-blocking probably has no effect here,
+    #     # because model(samples) is an immediate sync point
+    #     samples = samples.to(device, non_blocking=True)
 
     return samples, labels
 

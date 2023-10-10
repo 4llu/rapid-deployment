@@ -1,20 +1,17 @@
 import os
 from argparse import ArgumentParser
 from datetime import datetime
-from pprint import pformat
+from pathlib import Path
 
 import joblib
-import numpy as np
-import optuna
-from optuna.trial import TrialState
 
-from main import setup_data, setup_device, run_training
+from main import run_training, setup_data, setup_device
 from utils.config import setup_config
 
 
 def main():
     # INIT
-    #######
+    ######
 
     device = setup_device()
 
@@ -25,14 +22,24 @@ def main():
     parser.add_argument(f"--array_task_id", default=1, type=type(1))
     parser.add_argument(f"--block_size", default=1, type=type(1))
     parser.add_argument(f"--repetitions", default=1, type=type(1))
+    parser.add_argument(f"--job_id", type=type("a"))
 
     # Parse args
     args = parser.parse_args()
 
-    # Setup result directory
-    time = datetime.now().strftime("%m-%d_%H-%M-%S")
-    folder_path = os.path.join("reports", "RAW", "result_generation", time)
-    os.mkdir(folder_path)
+    # Determine result directory
+    folder_path = None
+    if args.job_id is None:
+        time = datetime.now().strftime("%m-%d_%H-%M-%S")
+        folder_path = os.path.join("reports", "RAW", "result_generation", time)
+    else:
+        folder_path = os.path.join("reports", "RAW", "result_generation", args.job_id)
+
+    # Setup result directory (if it doesn't exist)
+    Path(folder_path).mkdir(parents=True, exist_ok=True)
+
+    # CCONFIG RUNS
+    ##############
 
     for j in range(args.block_size):
         run_config_id = (args.array_task_id - 1) * args.block_size + j
@@ -57,13 +64,12 @@ def main():
         # Initialize data
         train_loader, validation_loader, test_loader = setup_data(config, device)
 
-        # RUN
-        #####
-
         accuracies = []  # * Not actually necessary, but convenient
         cfs = []
 
-        # Run through all repetitions
+        # REPETITION RUNS
+        #################
+
         for i in range(args.repetitions):
             print()
             print("############################")
@@ -81,8 +87,8 @@ def main():
             accuracies.append(test_accuracy)
             cfs.append(test_cf)
 
-            # SAVE RESULTS
-            ############
+        # SAVE RESULTS
+        ##############
 
         joblib.dump(
             {"accuracies": accuracies, "cfs": cfs},

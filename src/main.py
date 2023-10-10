@@ -27,7 +27,8 @@ def run_training(
     run_type="normal",
 ):
     # * Use this to run a single training
-
+    # FIXME HERE PROBLEM XXX Could this be moved to higher level?
+    # Requires finding out how to reinitialize model weights
     # INITIALIZE MODEL
     ##################
 
@@ -143,6 +144,7 @@ def run_training(
     # Setup logging
     train_logger = setup_logging(config, "trainer")
     train_logger.info("Configuration: \n%s", pformat(config))
+    train_logger.info("Device: \n%s", str(device))
     train_logger.info("Model: \n%s", str(model))
     trainer.logger = train_logger
     evaluator.logger = setup_logging(config, "evaluator")
@@ -242,7 +244,7 @@ def run_training(
 
             # Run test evaluation only if validation accuracy has improved and not an Optuna trial
             if not run_type == "trial":
-                evaluator_test.run(test_loader, epoch_length=config["eval_episodes"])
+                evaluator_test.run(test_loader, epoch_length=config["test_episodes"])
                 log_metrics(evaluator_test, "test")
                 best_test_accuracy = evaluator_test.state.metrics["test_accuracy"]
                 best_test_cf = evaluator_test.state.metrics["test_confusion_matrices"]
@@ -260,7 +262,7 @@ def run_training(
     def _():
         # * Skip for trials and result generation
         if run_type == "normal":
-            evaluator_test.run(test_loader, epoch_length=config["eval_episodes"])
+            evaluator_test.run(test_loader, epoch_length=config["test_episodes"])
             # Print results
             log_metrics(evaluator_test, "test")
 
@@ -295,6 +297,7 @@ def setup_device():
     device_type = "cpu"
     if torch.cuda.is_available():
         device_type = "cuda"
+        torch.set_float32_matmul_precision("high")
     elif torch.backends.mps.is_built():
         device_type = "mps"
         # device_type = "cpu"

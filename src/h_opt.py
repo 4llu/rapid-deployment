@@ -95,7 +95,7 @@ def main():
     ############
 
     # Save study
-    joblib.dump(study, os.path.join("reports", "raw", "optuna_studies", f"{study_name}.pkl"))
+    joblib.dump(study, os.path.join("reports", "RAW", "optuna_studies", f"{study_name}.pkl"))
 
     # Print results
 

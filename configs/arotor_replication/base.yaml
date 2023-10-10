@@ -6,6 +6,7 @@ eval_freq: 1 # * Decrease for hyper opt and final testing
 # eval_episodes: 1 # * Increase for hyper opt and final testing
 eval_episodes: 50 # * Increase for hyper opt and final testing
 # eval_episodes: 4 # * Increase for hyper opt and final testing
+test_episodes: 50
 
 #? Fewshot setup
 

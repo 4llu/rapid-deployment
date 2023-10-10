@@ -21,7 +21,7 @@ def setup_logging(config, phase):
             os.pardir,
             os.pardir,
             "reports",
-            "raw",
+            "RAW",
             "logs",
             f"{time}-training-info.log",
         ),

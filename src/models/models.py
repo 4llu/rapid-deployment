@@ -84,6 +84,11 @@ def setup_model(config, device):
 
     # * torch.compile doesn't work on windows currently
     if device.type == "cuda" and platform.system() != "Windows":
+        print()
+        print("#####################")
+        print("Using torch.compile()")
+        print("#####################")
+        print()
         model = torch.compile(model)
 
     # Print model
