@@ -15,7 +15,7 @@ n_query: 36
 mix_severities: false # * Baseline measurements use GPs
 mix_rpms: false
 mix_torques: false
-mix_installations: true # * Baseline measurements use GPs
+mix_installations: false # * Baseline measurements use GPs
 mix_sensors: false
 separate_query_and_support: false
 
@@ -103,8 +103,8 @@ embedding_multiplier: 100
 #? Training
 
 epoch_len: 1
-max_epochs: 50
-patience: 100
+max_epochs: 100
+patience: 50
 optimizer: AdamW
 lr: 0.00627755041240667
 # lr: 0.01

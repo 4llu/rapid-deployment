@@ -22,18 +22,18 @@ def main():
     parser.add_argument(f"--array_task_id", default=1, type=type(1))
     parser.add_argument(f"--block_size", default=1, type=type(1))
     parser.add_argument(f"--repetitions", default=1, type=type(1))
-    parser.add_argument(f"--job_id", type=type("a"))
+    parser.add_argument(f"--job_name", type=type("a"))
 
     # Parse args
     args = parser.parse_args()
 
     # Determine result directory
     folder_path = None
-    if args.job_id is None:
+    if args.job_name is None:
         time = datetime.now().strftime("%m-%d_%H-%M-%S")
         folder_path = os.path.join("reports", "RAW", "result_generation", time)
     else:
-        folder_path = os.path.join("reports", "RAW", "result_generation", args.job_id)
+        folder_path = os.path.join("reports", "RAW", "result_generation", args.job_name)
 
     # Setup result directory (if it doesn't exist)
     Path(folder_path).mkdir(parents=True, exist_ok=True)

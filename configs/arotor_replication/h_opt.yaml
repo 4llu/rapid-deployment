@@ -1,9 +1,10 @@
 #? Creation
-name: ARotor_replication_h_opt
+name: h_opt
 log: false
 save: false # TODO
 eval_freq: 5 # * Decrease for hyper opt and final testing
 eval_episodes: 20 # * Increase for hyper opt and final testing
+# test_episodes: 150 # * Not used in h_opt
 
 #? Fewshot setup
 
@@ -13,7 +14,7 @@ n_query: 36
 mix_severities: false # * Baseline measurements use GPs
 mix_rpms: false
 mix_torques: false
-mix_installations: true # * Baseline measurements use GPs
+mix_installations: false # * Baseline measurements use GPs
 mix_sensors: false
 separate_query_and_support: false
 
@@ -27,24 +28,26 @@ test_sensors: [acc3]
 # validation_sensors: [en3speed]
 # test_sensors: [en4speed]
 
-train_rpm: [750, 1250]
-validation_rpm: [500, 1500]
-test_rpm: [500, 1500]
+# BELOW config_override_0
 
-train_torques: [1, 6]
-validation_torques: [11]
-test_torques: [11]
+train_rpm: [500, 1500]
+validation_rpm: [750]
+test_rpm: [1250]
+
+train_torques: [6, 11]
+validation_torques: [1]
+test_torques: [1]
 
 train_installations: [1]
-validation_installations: [1, 2]
-test_installations: [1, 2]
+validation_installations: [2]
+test_installations: [1]
 
 train_baseline_GPs: [1, 2, 3]
 validation_baseline_GPs: [4, 5]
 test_baseline_GPs: [6, 7, 8, 9]
 
 train_severities: [severe]
-validation_severities: [mild]
+validation_severities: [severe]
 test_severities: [mild]
 
 # train_faults: [baseline, pitting, wear, tff]
@@ -95,7 +98,7 @@ sample_cut: -1 # Done in batch preprocessing
 #? Model
 
 model: prototypical
-backbone: WDCNN
+backbone: InceptionTime
 # backbone: InceptionTime
 kaiming_init: True
 embedding_len: 64
@@ -103,12 +106,12 @@ embedding_len: 64
 embedding_normalization_type: lp
 lp_norm: 2
 
-embedding_multiplier: 10
+embedding_multiplier: 100
 
 #? Training
 
 epoch_len: 1
-max_epochs: 200
+max_epochs: 100
 patience: 50
 optimizer: AdamW
 lr: 0.01
