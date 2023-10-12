@@ -1,5 +1,5 @@
 #? Creation
-name: BASE
+name: result_generation
 log: false
 save: false # TODO
 eval_freq: 3 # * Decrease for hyper opt and final testing

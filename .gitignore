@@ -13,9 +13,11 @@ data/processed/*
 reports/RAW/logs/*
 reports/RAW/logs_tb/*
 reports/RAW/optuna_studies/*
+reports/RAW/result_generation/*
 reports/RAW/NoML/*
 reports/**/*.pkl
 torch_downloads/*
+slurm-*.out
 
 # Exceptions
 !/**/.gitkeep

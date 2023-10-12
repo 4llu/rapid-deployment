@@ -1,5 +1,5 @@
 #? Creation
-name: BASE
+name: result_generation
 log: false
 save: false # TODO
 eval_freq: 3 # * Decrease for hyper opt and final testing
@@ -69,7 +69,7 @@ preprocessing_sample: []
 # preprocessing_sample: [FFT]
 preprocessing_class_batch: []
 # preprocessing_class_batch: [FFT]
-preprocessing_batch: []
+# preprocessing_batch: []
 # preprocessing_batch: [individual_centering]
 # preprocessing_batch: [FFT]
 # preprocessing_batch: [individual_centering, FFT]
@@ -77,10 +77,11 @@ preprocessing_batch: []
 # preprocessing_batch: [FFT, gain_changer, mult_white_noise]
 # preprocessing_batch: [hilbert_envelope]
 # preprocessing_batch: [individual_centering, gain_changer, add_white_noise]
+preprocessing_batch: [add_white_noise]
 # preprocessing_batch: [gain_changer]
 # preprocessing_batch: [gain_changer, add_white_noise]
-gain_std: 0.1
-white_noise_std: 0.02
+gain_std: 0.0
+white_noise_std: 0.4
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 # log_FFT: true
 log_FFT: false
@@ -106,13 +107,13 @@ epoch_len: 1
 max_epochs: 100
 patience: 50
 optimizer: AdamW
-lr: 0.00627755041240667
+lr: 0.12752578749576718
 # lr: 0.01
 lr_scheduler: ExponentialLR
-sch_gamma: 0.9685069357986219
-momentum: 0.9854767111829658
+sch_gamma: 0.9938194438417739
+momentum: 0.9032501850383928
 # Regularization
-weight_decay: 0.00004845181
+weight_decay: 0.00014838054065187422
 cl_dropout: 0.0
 fc_dropout: 0.0
 
