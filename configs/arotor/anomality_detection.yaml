@@ -1,7 +1,7 @@
 #? Creation
-name: anomality_detection_h_opt
+name: anomality_detection
 log: false
-save: false # TODO
+save: true # TODO
 eval_freq: 5 # * Decrease for hyper opt and final testing
 eval_episodes: 20 # * Increase for hyper opt and final testing
 # test_episodes: 150
@@ -41,9 +41,10 @@ robust_scaling_low: 0.25
 robust_scaling_high: 0.75
 preprocessing_sample: []
 preprocessing_class_batch: []
-preprocessing_batch: []
-gain_std: 0.1
-white_noise_std: 0.02
+# preprocessing_batch: []
+preprocessing_batch: [add_white_noise]
+gain_std: 0.0
+white_noise_std: 0.2
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 log_FFT: false
 pad_FFT: -1
@@ -65,15 +66,16 @@ embedding_multiplier: 100
 #? Training
 
 epoch_len: 1
-max_epochs: 150 # FIXME?
-patience: 50
+max_epochs: 200 # FIXME?
+patience: 100
 optimizer: AdamW
-lr: 0.00627755041240667
+# FIXME BELOW
+lr: 0.0029527578662923502
 lr_scheduler: ExponentialLR
-sch_gamma: 0.9685069357986219
-momentum: 0.9854767111829658
+sch_gamma: 0.9616006788597983
+momentum: 0.9575208310016572
 # Regularization
-weight_decay: 0.00004845181
+weight_decay: 0.00003319404762312105
 cl_dropout: 0.0
 fc_dropout: 0.0
 

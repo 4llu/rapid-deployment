@@ -1,7 +1,7 @@
 #? Creation
 name: anomality_detection
-log: true
-save: false # TODO
+log: false
+save: true # TODO
 eval_freq: 1 # * Decrease for hyper opt and final testing
 # eval_episodes: 1 # * Increase for hyper opt and final testing
 eval_episodes: 50 # * Increase for hyper opt and final testing

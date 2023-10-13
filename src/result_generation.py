@@ -76,13 +76,13 @@ def main():
             print(f"REPETITION {i + 1} OF CONFIG ID {run_config_id}")
             print("############################")
             print()
-            _, test_accuracy, test_cf = run_training(  # FIXME Return values
+            _, test_accuracy, test_cf = run_training(
                 train_loader,
                 validation_loader,
                 test_loader,
                 config,
                 device=device,
-                run_type="normal",
+                run_type="trial",
             )
             accuracies.append(test_accuracy)
             cfs.append(test_cf)

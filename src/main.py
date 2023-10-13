@@ -1,12 +1,12 @@
 import os
 from argparse import ArgumentParser
 from datetime import datetime
-from functools import partial
 from pprint import pformat
 
 import torch
 from ignite.contrib.handlers.tensorboard_logger import *
 from ignite.engine import Events
+from ignite.handlers import ModelCheckpoint
 from ignite.metrics import Accuracy, Loss
 from ignite.metrics.metric import MetricUsage
 
@@ -14,8 +14,8 @@ from data.data import setup_data
 from models.models import setup_model
 from training.trainers import setup_evaluator, setup_trainer
 from utils.config import setup_config
+from utils.custom_metrics import Confusion_matrices, RNFSAccuracy
 from utils.logging import log_metrics, setup_logging
-from utils.custom_metrics import RNFSAccuracy, Confusion_matrices
 
 
 def run_training(
@@ -275,6 +275,22 @@ def run_training(
         print()
         print("Respective test accuracy: {}".format(best_test_accuracy))
         print()
+
+    # Checkpoint system
+    if config["save"]:
+        base_dir_name = f"{config['name']}_{config['data']}_{config['job_id']}"
+        checkpointer = ModelCheckpoint(
+            dirname=f"./model_weights/{base_dir_name}/{config.get('i', 0)}_{datetime.now().strftime('%m-%d_%H-%M-%S')}",
+            create_dir=True,
+            n_saved=5,  # TODO Could use this for ensembles
+            # filename_prefix="best",
+            score_name="val_accuracy",
+            global_step_transform=global_step_from_engine(trainer),
+            filename_pattern="model_{score}.pth",
+            require_empty=False,
+            greater_or_equal=False,
+        )
+        evaluator.add_event_handler(Events.COMPLETED, checkpointer, {"model": model})
 
     # TODO Checkpoint system
     # TODO Optuna pruning (This hasn't been working)
