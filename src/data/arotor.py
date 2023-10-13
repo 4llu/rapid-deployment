@@ -346,9 +346,9 @@ def get_arotor_data(config, device):
     data_folder = os.path.join(abs_path, os.pardir, os.pardir, "data")
 
     # XXX HUOM! V2 version in use
-    data = pd.read_feather(os.path.join(data_folder, "processed", "arotor_V2.feather"))
+    # data = pd.read_feather(os.path.join(data_folder, "processed", "arotor_V2.feather"))
     # data = pd.read_feather(os.path.join(data_folder, "processed", "arotor_enc_angle_02_res_PCHIP_V2.feather"))
-    # data = pd.read_feather(os.path.join(data_folder, "processed", "arotor.feather"))
+    data = pd.read_feather(os.path.join(data_folder, "processed", "arotor.feather"))
 
     # Data selection
     ################

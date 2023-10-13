@@ -1,0 +1,133 @@
+#? Creation
+name: anomality_detection_h_opt
+log: false
+save: false # TODO
+eval_freq: 5 # * Decrease for hyper opt and final testing
+# eval_episodes: 1 # * Increase for hyper opt and final testing
+eval_episodes: 20 # * Increase for hyper opt and final testing
+# eval_episodes: 4 # * Increase for hyper opt and final testing
+# test_episodes: 50
+
+#? Fewshot setup
+
+k_shot: 1
+# n_way: 4
+n_way: 5
+n_query: 36
+mix_severities: false # * Baseline measurements use GPs
+mix_rpms: false
+mix_torques: false
+mix_installations: false # * Baseline measurements use GPs
+mix_sensors: false
+separate_query_and_support: false
+
+#? Data
+
+data: ARotor_replication
+train_sensors: [acc3]
+validation_sensors: [acc3]
+test_sensors: [acc3]
+# train_sensors: [en3speed]
+# validation_sensors: [en3speed]
+# test_sensors: [en4speed]
+
+# train_rpm: [500, 1500]
+# validation_rpm: [750, 1250]
+# test_rpm: [750, 1250]
+train_rpm: [500, 750, 1250, 1500]
+validation_rpm: [500, 1500]
+test_rpm: [500, 1500]
+
+# train_torques: [1]
+train_torques: [1, 6, 11]
+validation_torques: [11]
+test_torques: [6]
+
+train_installations: [1, 2]
+validation_installations: [1, 2]
+test_installations: [1, 2]
+
+train_baseline_GPs: [1, 2, 3]
+validation_baseline_GPs: [4, 5]
+test_baseline_GPs: [6, 7, 8, 9]
+
+train_severities: [severe]
+validation_severities: [mild]
+test_severities: [mild]
+
+# train_faults: [baseline, pitting, wear, tff]
+# validation_faults: [baseline, pitting, wear, tff]
+# test_faults: [baseline, pitting, wear, tff]
+train_faults: [baseline, pitting, wear, micropitting, tff]
+validation_faults: [baseline, pitting, wear, micropitting, tff]
+test_faults: [baseline, pitting, wear, micropitting, tff]
+
+# window_width: 6000
+window_width: 4328
+# window_width: 3000
+window_overlap: 0.99
+
+#? Preprocessing
+
+preprocessing_full: []
+# preprocessing_full: [lowpass_filtering]
+# preprocessing_full: [lowpass_filtering, robust_scaling]
+# preprocessing_full: [robust_scaling]
+# lp_filter_cutoff: 200 #! lowpass doesn't use this currently!
+robust_scaling_low: 0.25
+robust_scaling_high: 0.75
+preprocessing_sample: []
+# preprocessing_sample: [FFT]
+preprocessing_class_batch: []
+# preprocessing_class_batch: [FFT]
+# preprocessing_batch: []
+# preprocessing_batch: [individual_centering]
+# preprocessing_batch: [FFT]
+# preprocessing_batch: [individual_centering, FFT]
+# preprocessing_batch: [FFT_w_phase]
+# preprocessing_batch: [FFT, gain_changer, mult_white_noise]
+# preprocessing_batch: [hilbert_envelope]
+preprocessing_batch: [gain_changer, add_white_noise]
+# preprocessing_batch: [individual_centering, gain_changer, add_white_noise]
+# preprocessing_batch: [gain_changer]
+# preprocessing_batch: [gain_changer, add_white_noise]
+gain_std: 0.1
+white_noise_std: 0.02
+include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
+# log_FFT: true
+log_FFT: false
+pad_FFT: -1
+sample_cut: -1 # Done in batch preprocessing
+
+#? Model
+
+model: prototypical
+backbone: InceptionTime
+# backbone: WDCNN
+kaiming_init: True
+embedding_len: 64
+# Lp-norm
+embedding_normalization_type: lp
+lp_norm: 2
+
+embedding_multiplier: 100
+
+#? Training
+
+epoch_len: 1
+max_epochs: 200
+patience: 100
+optimizer: AdamW
+lr: 0.00627755041240667
+# lr: 0.01
+lr_scheduler: ExponentialLR
+sch_gamma: 0.9685069357986219
+momentum: 0.9854767111829658
+# Regularization
+weight_decay: 0.00004845181
+cl_dropout: 0.0
+fc_dropout: 0.0
+
+# ? Other
+
+use_amp: false  
