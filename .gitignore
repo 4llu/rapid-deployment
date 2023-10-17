@@ -11,6 +11,7 @@ configs/arotor/result_generation/*
 data/RAW/*
 data/processed/*
 model_weights/*
+reports/RAW/embedding_databases/*
 reports/RAW/logs/*
 reports/RAW/logs_tb/*
 reports/RAW/optuna_studies/*

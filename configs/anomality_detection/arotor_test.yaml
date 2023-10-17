@@ -1,0 +1,33 @@
+#? Creation
+name: anomality_detection_arotor
+
+#? Data
+
+data: ARotor
+
+
+# ! Only single sensor support
+support_sensors: [acc3]
+query_sensors: [acc3]
+
+support_rpm: [500, 750, 1250, 1500]
+query_rpm: [500, 750, 1250, 1500]
+
+support_classes: [0]
+query_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+window_width: 4328
+
+#? Model
+
+model: prototypical
+backbone: InceptionTime
+model_weight_dir: anomality_detection_ARotor
+kaiming_init: True
+embedding_len: 64
+# Lp-norm
+# embedding_normalization_type: lp # * Normalization doesn't affect anything
+# lp_norm: 2
+
+embedding_multiplier: 100 # * This might matter because of numerical accuracy
+

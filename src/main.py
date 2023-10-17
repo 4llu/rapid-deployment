@@ -346,15 +346,6 @@ def run(config):
     # Initialize data
     train_loader, validation_loader, test_loader = setup_data(config, device)
 
-    # To check batches
-    # for i, batch in enumerate(train_loader):
-    #     print("----")
-    #     print(batch[0].shape)
-    #     for x in batch[1]:
-    #         print(x)
-    #     if i > 3:
-    #         break
-
     # TRAIN
     #######
 
@@ -370,7 +361,7 @@ def run(config):
 if __name__ == "__main__":
     # Init arguments
     parser = ArgumentParser()
-    parser.add_argument(f"--config", default="simulated/base", type=type("a"))
+    parser.add_argument(f"--config", default="arotor_replication/base", type=type("a"))
 
     # Parse args
     args = parser.parse_args()

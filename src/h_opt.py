@@ -8,7 +8,8 @@ import numpy as np
 import optuna
 from optuna.trial import TrialState
 
-from main import setup_data, setup_device, run_training
+from main import setup_device, run_training
+from data.data import setup_data
 from utils.config import setup_config
 
 
