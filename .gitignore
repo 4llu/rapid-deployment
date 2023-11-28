@@ -11,6 +11,7 @@ configs/arotor/result_generation/*
 data/RAW/*
 data/processed/*
 model_weights/*
+reports/processed/grad_cam_figures/*
 reports/RAW/embedding_databases/*
 reports/RAW/logs/*
 reports/RAW/logs_tb/*

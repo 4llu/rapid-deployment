@@ -37,6 +37,11 @@ class ConvLayer(nn.Module):
 
         return out
 
+    # GRAD-CAM
+    def get_act_grads(self):
+        # print(self.conv.weight)
+        return self.conv.weight.grad
+
 
 # * Modified version of WDCNN for use as fewshot backbone
 class WDCNN(nn.Module):
@@ -57,24 +62,27 @@ class WDCNN(nn.Module):
         self.cn_layer1 = ConvLayer(
             1,
             16,
-            kernel_size=41,
+            kernel_size=3,
+            # kernel_size=12,
+            # kernel_size=41,
             # kernel_size=64,
-            stride=16,
-            padding=24,
+            stride=1,
+            # stride=4,
+            # stride=16,
+            padding=0,
+            # padding=24,
             dropout=self.config["cl_dropout"],
         )
         self.cn_layer2 = ConvLayer(16, 32, dropout=self.config["cl_dropout"])
         self.cn_layer3 = ConvLayer(32, 64, dropout=self.config["cl_dropout"])
         self.cn_layer4 = ConvLayer(64, 64, dropout=self.config["cl_dropout"])
-        self.cn_layer5 = ConvLayer(64, 64, padding=0, dropout=self.config["fc_dropout"])  # * Note the fc dropout here!
+        # self.cn_layer5 = ConvLayer(64, 64, padding=0, dropout=self.config["fc_dropout"])  # * Note the fc dropout here!
 
         # Classifier
         self.fc1 = nn.Linear(
-            # 64 * 66,
+            # 1024,
             # 960,
-            # 640,
-            448,
-            # 256,
+            384,
             # 192,
             self.config["embedding_len"],
         )
@@ -117,9 +125,9 @@ class WDCNN(nn.Module):
         if verbose:
             print(out.shape)
 
-        out = self.cn_layer5(out)
-        if verbose:
-            print(out.shape)
+        # out = self.cn_layer5(out)
+        # if verbose:
+        #     print(out.shape)
 
         # Flatten channels
         out = out.view(out.shape[0], -1)
@@ -135,6 +143,10 @@ class WDCNN(nn.Module):
             quit()
 
         return out
+
+    # GRAD-CAM
+    def get_act_grads(self):
+        return self.cn_layer2.get_act_grads()
 
 
 # * Original WDCNN

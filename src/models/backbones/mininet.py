@@ -10,10 +10,10 @@ class mininet(nn.Module):
 
         # Classifier
         self.fc1 = nn.Linear(
-            # 722,
-            3000,
+            # 2164,
+            # 215,
+            110,
             config["embedding_len"],
-            # 256,
         )
 
         # self.fc2 = nn.Linear(
@@ -46,3 +46,7 @@ class mininet(nn.Module):
         #     print(out.shape)
 
         return out
+
+    # GRAD-CAM
+    def get_act_grads(self):
+        return self.fc1.weight.grad

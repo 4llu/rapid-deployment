@@ -1,0 +1,97 @@
+#? Creation
+name: Base
+log: true
+save: false
+eval_freq: 10 # * Decrease for hyper opt and final testing
+eval_episodes: 10 # * Increase for hyper opt and final testing
+test_episodes: 10
+
+#? Fewshot setup
+
+k_shot: 1
+# n_way: 4
+n_way: 10
+n_query: 24
+mix_rpms: false
+mix_sensors: false
+separate_query_and_support: True
+
+#? Data
+
+data: ARotor
+
+train_sensors: [torque1]
+validation_sensors: [torque1]
+test_sensors: [torque1]
+
+train_rpm: [500]
+# train_rpm: [250, 750, 1000, 1250, 1500]
+validation_rpm: [500]
+test_rpm: [500]
+
+# train_classes: [0, 7, 8, 9]
+# validation_classes: [0, 7, 8, 9]
+# test_classes: [0, 7, 8, 9]
+train_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+validation_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+test_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+grad_cam_class: [0, 7, 8, 9]
+window_width: 6492
+
+# window_width: 2048
+# window_width: 4328
+window_overlap: 0.83333333
+# window_overlap: 0.99
+
+#? Preprocessing
+
+preprocessing_full: []
+preprocessing_sample: []
+preprocessing_batch: []
+# preprocessing_batch: [FFT]
+preprocessing_class_batch: [order_tracking]
+TSA_rotations: 1
+TSA_cycles: 6
+# preprocessing_class_batch: []
+include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
+log_FFT: false
+pad_FFT: -1
+# sample_cut: -1 # Done in batch preprocessing
+# sample_cut: 215 # Done in batch preprocessing
+sample_cut: 110 # Done in batch preprocessing
+
+#? Model
+
+model: prototypical
+backbone: WDCNN
+# backbone: mininet
+kaiming_init: true
+embedding_len: 16
+# embedding_len: 64
+# Lp-norm
+embedding_normalization_type: lp
+lp_norm: 2
+
+embedding_multiplier: 100
+
+#? Training
+
+epoch_len: 1
+max_epochs: 70
+# max_epochs: 200
+patience: 100
+optimizer: AdamW
+lr: 0.003
+lr_scheduler: ExponentialLR
+# sch_gamma: 0.9999999
+sch_gamma: 0.97
+momentum: 0.965
+# Regularization
+weight_decay: 0.0001
+# weight_decay: 0.0001
+cl_dropout: 0.0
+fc_dropout: 0.0
+
+# ? Other
+
+use_amp: false
