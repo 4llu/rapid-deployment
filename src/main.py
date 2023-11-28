@@ -278,7 +278,9 @@ def run_training(
 
     # Checkpoint system
     if config["save"]:
-        base_dir_name = f"{config['name']}_{config['data']}_{config['job_id']}"
+        base_dir_name = (
+            f"{config['name']}_{config['data']}_{config.get('job_id', datetime.now().strftime('%m-%d_%H-%M-%S'))}"
+        )
         checkpointer = ModelCheckpoint(
             dirname=f"./model_weights/{base_dir_name}/{config.get('i', 0)}_{datetime.now().strftime('%m-%d_%H-%M-%S')}",
             create_dir=True,

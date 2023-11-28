@@ -41,7 +41,8 @@ robust_scaling_low: 0.25
 robust_scaling_high: 0.75
 preprocessing_sample: []
 preprocessing_class_batch: []
-preprocessing_batch: []
+preprocessing_batch: [individual_centering, gain_changer, add_white_noise]
+# preprocessing_batch: []
 gain_std: 0.1
 white_noise_std: 0.02
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form

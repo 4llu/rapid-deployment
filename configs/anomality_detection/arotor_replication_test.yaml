@@ -34,7 +34,7 @@ window_width: 4328
 
 model: prototypical
 backbone: InceptionTime
-model_weight_dir: anomality_detection_ARotor
+model_weight_dir: anomality_detection_ARotor_0000
 kaiming_init: True
 embedding_len: 64
 # Lp-norm

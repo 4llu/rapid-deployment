@@ -194,7 +194,7 @@ def main():
         files.sort()
 
         # TODO History ensemble support
-        if not "model_" in files[-1]:
+        if len(files) < 1 or not "model_" in files[-1]:
             continue
 
         # Load weights
@@ -205,7 +205,7 @@ def main():
 
         new_model_weights = {}
         for k in model_weights.keys():
-            new_model_weights[k.replace("_orig_mod.backbone.", "")] = model_weights[k]
+            new_model_weights[k.replace("_orig_mod.", "").replace("backbone.", "")] = model_weights[k]
         model.load_state_dict(new_model_weights)
         model.eval()
 

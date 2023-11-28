@@ -226,9 +226,6 @@ def preprocess_batch(support_query_set, config, device):
     if "individual_min_max" in config["preprocessing_batch"]:
         support_query_set = individual_min_max(support_query_set, config)
 
-    if "individual_centering" in config["preprocessing_batch"]:
-        support_query_set = individual_centering(support_query_set, config)
-
     # FFT
     # ! Sync_FFT here works only if not mixing rpms
     if "FFT" in config["preprocessing_batch"]:
@@ -266,5 +263,8 @@ def preprocess_batch(support_query_set, config, device):
 
     if "hilbert_envelope" in config["preprocessing_batch"]:
         support_query_set = hilbert_envelope(support_query_set, config, device)
+
+    if "individual_centering" in config["preprocessing_batch"]:
+        support_query_set = individual_centering(support_query_set, config)
 
     return support_query_set
