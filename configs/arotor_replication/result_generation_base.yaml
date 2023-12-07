@@ -1,7 +1,7 @@
 #? Creation
 name: result_generation
 log: false
-save: false # TODO
+save: false
 eval_freq: 3 # * Decrease for hyper opt and final testing
 eval_episodes: 50 # * Increase for hyper opt and final testing
 test_episodes: 150

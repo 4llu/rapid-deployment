@@ -42,16 +42,22 @@ def target_converter(targets, config, device):
 #########
 
 
-def relation_train_function_wrapper(engine, batch, config, model, optimizer, loss_fn, device, scaler):
+def relation_train_function_wrapper(
+    engine, batch, config, model, optimizer, loss_fn, device, scaler
+):
     # Reset
     model.train()
     optimizer.zero_grad(set_to_none=True)
 
     # Non-blocking probably has no effect here,
     # because model(samples) is an immediate sync point
-    samples = batch[0].to(device, non_blocking=True)  # * Already moved to device in collate_fn
+    samples = batch[0].to(
+        device, non_blocking=True
+    )  # * Already moved to device in collate_fn
     # Ignore actual class labels. Can be used to map episode labels to actual classes if necessary
-    targets = torch.diag(torch.ones(10, device=device)).repeat_interleave(config["n_query"], dim=0)
+    targets = torch.diag(torch.ones(10, device=device)).repeat_interleave(
+        config["n_query"], dim=0
+    )
 
     # Forward pass and loss calculation
     #! No AMP support
@@ -75,7 +81,9 @@ def relation_train_function_wrapper(engine, batch, config, model, optimizer, los
     return {"train_loss": train_loss}
 
 
-def train_function_wrapper(engine, batch, config, model, optimizer, loss_fn, device, scaler):
+def train_function_wrapper(
+    engine, batch, config, model, optimizer, loss_fn, device, scaler
+):
     # Reset
     model.train()
     optimizer.zero_grad(set_to_none=True)
@@ -175,9 +183,13 @@ def relation_eval_function_wrapper(engine, batch, config, model, device, split):
 
     # Non-blocking probably has no effect here,
     # because model(samples) is an immediate sync point
-    samples = batch[0].to(device, non_blocking=True)  # * Already moved to device in collate_fn
+    samples = batch[0].to(
+        device, non_blocking=True
+    )  # * Already moved to device in collate_fn
     #
-    targets = torch.diag(torch.ones(10, device=device)).repeat_interleave(config["n_query"], dim=0)
+    targets = torch.diag(torch.ones(10, device=device)).repeat_interleave(
+        config["n_query"], dim=0
+    )
 
     # Forward pass and loss calculation
     #! No AMP support
@@ -196,7 +208,9 @@ def eval_function_wrapper(engine, batch, config, model, device, split):
     # Non-blocking probably has no effect here,
     # because model(samples) is an immediate sync point
     # TODO Move preprocessing here?
-    samples = batch[0].to(device, non_blocking=True)  # * Already moved to device in collate_fn
+    samples = batch[0].to(
+        device, non_blocking=True
+    )  # * Already moved to device in collate_fn
     # Conversion because the labels are returned as a (class, rpm, sensor) tuple
     # and we only care about the class here
     # FIXME
@@ -258,13 +272,19 @@ def eval_function_wrapper(engine, batch, config, model, device, split):
         # print(prototypes.shape)
         # print(query_embeddings.shape)
         # quit()
-        all_embeddings = torch.cat([prototypes.cpu().unsquueze(1), query_embeddings.cpu()], dim=0)
-        tsne_embeddings = TSNE(n_components=2, learning_rate="auto", init="random", perplexity=20).fit_transform(
-            all_embeddings
+        all_embeddings = torch.cat(
+            [prototypes.cpu().unsquueze(1), query_embeddings.cpu()], dim=0
         )
+        tsne_embeddings = TSNE(
+            n_components=2, learning_rate="auto", init="random", perplexity=20
+        ).fit_transform(all_embeddings)
 
-        tsne_prototypes = pd.DataFrame(tsne_embeddings[: config["n_way"]], columns=["x", "y"])
-        tsne_queries = pd.DataFrame(tsne_embeddings[config["n_way"] :], columns=["x", "y"])
+        tsne_prototypes = pd.DataFrame(
+            tsne_embeddings[: config["n_way"]], columns=["x", "y"]
+        )
+        tsne_queries = pd.DataFrame(
+            tsne_embeddings[config["n_way"] :], columns=["x", "y"]
+        )
 
         proto_targets = np.arange(config["n_way"])
         query_targets = np.arange(config["n_way"]).repeat(config["n_query"])
@@ -272,8 +292,26 @@ def eval_function_wrapper(engine, batch, config, model, device, split):
         plt.figure(figsize=(20, 10))
         palette = sns.color_palette()
 
-        sns.scatterplot(tsne_prototypes, x="x", y="y", s=40, hue=proto_targets, palette=palette, alpha=1.0, legend=True)
-        sns.scatterplot(tsne_queries, x="x", y="y", s=10, hue=query_targets, palette=palette, alpha=0.8, legend=False)
+        sns.scatterplot(
+            tsne_prototypes,
+            x="x",
+            y="y",
+            s=40,
+            hue=proto_targets,
+            palette=palette,
+            alpha=1.0,
+            legend=True,
+        )
+        sns.scatterplot(
+            tsne_queries,
+            x="x",
+            y="y",
+            s=10,
+            hue=query_targets,
+            palette=palette,
+            alpha=0.8,
+            legend=False,
+        )
 
         plt.tight_layout()
         plt.show()
@@ -293,7 +331,6 @@ def eval_function_wrapper(engine, batch, config, model, device, split):
 
 
 def setup_evaluator(config, model, device, split):
-
     if config["model"] == "prototypical":
         eval_function_ = eval_function_wrapper
 

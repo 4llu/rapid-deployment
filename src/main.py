@@ -251,7 +251,7 @@ def run_training(
         # If not best
         else:
             # Increment early stopping counter if over warmup period
-            if trainer.state.epoch > 50:
+            if trainer.state.epoch > 20:
                 patience_counter += config["eval_freq"]
             # Early stopping if validation score has stopped improving
             if patience_counter >= config["patience"]:

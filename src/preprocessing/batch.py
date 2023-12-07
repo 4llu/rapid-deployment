@@ -200,7 +200,8 @@ def gain_changer(support_query_set, config, device):
 
 def hilbert_envelope(support_query_set, config, device):
     mean = support_query_set.mean(dim=-1, keepdim=True)
-    support_query_set = torch.tensor(np.abs(hilbert(support_query_set - mean))) + mean
+    envelope = torch.tensor(np.abs(hilbert(support_query_set - mean))) + mean
+    support_query_set = torch.cat([support_query_set, envelope], dim=2)
 
     return support_query_set
 
@@ -237,7 +238,7 @@ def preprocess_batch(support_query_set, config, device):
     if "FFT_w_phase" in config["preprocessing_batch"]:
         support_query_set = FFT_w_phase(support_query_set, config, device)
 
-    if "additive_white_noise" in config["preprocessing_batch"]:
+    if "add_white_noise" in config["preprocessing_batch"]:
         support_query_set = additive_white_noise(support_query_set, config, device)
 
     if "mult_white_noise" in config["preprocessing_batch"]:

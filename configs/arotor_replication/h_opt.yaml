@@ -1,9 +1,9 @@
 #? Creation
 name: h_opt
 log: false
-save: false # TODO
+save: false
 eval_freq: 5 # * Decrease for hyper opt and final testing
-eval_episodes: 20 # * Increase for hyper opt and final testing
+eval_episodes: 50 # * Increase for hyper opt and final testing
 # test_episodes: 150 # * Not used in h_opt
 
 #? Fewshot setup
@@ -21,9 +21,12 @@ separate_query_and_support: false
 #? Data
 
 data: ARotor_replication
-train_sensors: [acc3]
-validation_sensors: [acc3]
-test_sensors: [acc3]
+train_sensors: [torque1]
+validation_sensors: [torque1]
+test_sensors: [torque1]
+# train_sensors: [acc3]
+# validation_sensors: [acc3]
+# test_sensors: [acc3]
 # train_sensors: [en3speed]
 # validation_sensors: [en3speed]
 # test_sensors: [en4speed]
@@ -34,20 +37,23 @@ train_rpm: [500, 1500]
 validation_rpm: [750]
 test_rpm: [1250]
 
-train_torques: [6, 11]
+# train_torques: [1]
+# validation_torques: [1]
+# test_torques: [1]
+train_torques: [1]
 validation_torques: [1]
-test_torques: [1]
+test_torques: [6]
 
 train_installations: [1]
-validation_installations: [2]
+validation_installations: [1, 2]
 test_installations: [1]
 
 train_baseline_GPs: [1, 2, 3]
-validation_baseline_GPs: [4, 5]
-test_baseline_GPs: [6, 7, 8, 9]
+validation_baseline_GPs: [4, 5, 6]
+test_baseline_GPs: [7, 8, 9]
 
 train_severities: [severe]
-validation_severities: [severe]
+validation_severities: [mild, severe]
 test_severities: [mild]
 
 # train_faults: [baseline, pitting, wear, tff]
@@ -101,7 +107,8 @@ model: prototypical
 backbone: InceptionTime
 # backbone: InceptionTime
 kaiming_init: True
-embedding_len: 64
+# embedding_len: 64
+embedding_len: 16
 # Lp-norm
 embedding_normalization_type: lp
 lp_norm: 2

@@ -19,7 +19,9 @@ class EmbeddingLpNormalizer(nn.Module):
 
         def lp_norm(x):
             # ||x||_p = (x_1^p + ... + x_n^p)^(1/p)
-            norm = x.abs().pow(self.config["lp_norm"]).sum(dim=-1, keepdim=True) ** (1.0 / self.config["lp_norm"])
+            norm = x.abs().pow(self.config["lp_norm"]).sum(dim=-1, keepdim=True) ** (
+                1.0 / self.config["lp_norm"]
+            )
             return x / norm
 
         self.normalizer = lp_norm
@@ -61,7 +63,9 @@ class Prototypical(nn.Module):
         # elif self.config["embedding_normalization_type"] == "mahalanobis":
         #   self.embedding_normalizer = TODO
         elif self.config["embedding_normalization_type"]:  # If not false
-            raise Exception(f"No such embedding normalization as {self.config['embedding_normalize']}")
+            raise Exception(
+                f"No such embedding normalization as {self.config['embedding_normalize']}"
+            )
 
     def forward(self, support_query):
         # Starts as [n_way, k_shot + n_query, window_length]

@@ -47,7 +47,9 @@ class InceptionModule(nn.Module):
             bias=False,
         )
 
-        self.maxpool = nn.MaxPool1d(3, stride=1, padding=1)  # Padding depends on stride size
+        self.maxpool = nn.MaxPool1d(
+            3, stride=1, padding=1
+        )  # Padding depends on stride size
         self.conv_maxpool = nn.Conv1d(
             in_channels,
             out_channels,
@@ -86,6 +88,7 @@ class ModdedInceptionModule(nn.Module):
         use_skip_connection=False,
         use_sen=False,
         activation=True,
+        sigmoid=False,
     ):
         super(ModdedInceptionModule, self).__init__()
 
@@ -93,17 +96,24 @@ class ModdedInceptionModule(nn.Module):
         self.use_skip_connection = use_skip_connection
         self.use_sen = use_sen
         self.activation = activation
+        self.sigmoid = sigmoid
 
         self.fc_sen_1 = None
         self.fc_sen_2 = None
         if self.use_sen:
-            assert in_channels == reduced_channels * 4, "Input and output channels must match for SEN connection!"
-            self.fc_sen_1 = nn.Linear(in_channels, in_channels // 4)  # * Using reduction factor 4
+            assert (
+                in_channels == reduced_channels * 4
+            ), "Input and output channels must match for SEN connection!"
+            self.fc_sen_1 = nn.Linear(
+                in_channels, in_channels // 4
+            )  # * Using reduction factor 4
             self.fc_sen_2 = nn.Linear(in_channels // 4, in_channels)
 
         self.conv_skip = None
         if self.use_skip_connection and in_channels != reduced_channels * 4:
-            self.conv_skip = nn.Conv1d(in_channels, reduced_channels * 4, kernel_size=1, stride=1)  # , bias=False)
+            self.conv_skip = nn.Conv1d(
+                in_channels, reduced_channels * 4, kernel_size=1, stride=1
+            )  # , bias=False)
 
         self.bottleneck = nn.Conv1d(
             in_channels,
@@ -117,8 +127,8 @@ class ModdedInceptionModule(nn.Module):
         self.conv_s = nn.Conv1d(
             reduced_channels if self.use_bottleneck else in_channels,
             reduced_channels,
-            kernel_size=3,
-            # kernel_size=10,
+            # kernel_size=3,
+            kernel_size=10,
             stride=1,
             padding="same",
             bias=False,
@@ -127,7 +137,7 @@ class ModdedInceptionModule(nn.Module):
             reduced_channels if self.use_bottleneck else in_channels,
             reduced_channels,
             # kernel_size=11,
-            kernel_size=16,
+            kernel_size=20,
             stride=1,
             padding="same",
             bias=False,
@@ -136,13 +146,14 @@ class ModdedInceptionModule(nn.Module):
             reduced_channels if self.use_bottleneck else in_channels,
             reduced_channels,
             # kernel_size=41,
-            kernel_size=64,
+            kernel_size=40,
             stride=1,
             padding="same",
             bias=False,
         )
 
-        self.maxpool = nn.MaxPool1d(3, stride=1, padding=1)  # Padding depends on stride size
+        self.maxpoolpad = nn.ReplicationPad1d((1, 1))
+        self.maxpool = nn.MaxPool1d(3, stride=1, padding=0)
         self.conv_maxpool = nn.Conv1d(
             in_channels,
             reduced_channels,
@@ -165,7 +176,7 @@ class ModdedInceptionModule(nn.Module):
         z1 = self.conv_s(z_bottleneck)
         z2 = self.conv_m(z_bottleneck)
         z3 = self.conv_l(z_bottleneck)
-        z4 = self.conv_maxpool(z_maxpool)
+        z4 = self.conv_maxpool(self.maxpoolpad(z_maxpool))
 
         z = torch.concatenate([z1, z2, z3, z4], dim=1)
 
@@ -190,11 +201,14 @@ class ModdedInceptionModule(nn.Module):
 
         if self.activation:
             z = self.bn(z)
-            z = F.relu(z)
-            # z = F.hardswish(z)  # TODO Try
-        else:
-            z = self.bn(z)
-            z = F.sigmoid(z)
+
+            if self.sigmoid:
+                z = F.sigmoid(z)
+            else:
+                z = F.relu(z)
+        # else:
+        #     z = self.bn(z)
+        #     z = F.sigmoid(z)
 
         return z
 
@@ -233,7 +247,9 @@ class GridReductionModule(nn.Module):
             bias=False,
         )
 
-        self.maxpool = nn.MaxPool1d(2, stride=2, padding=0)  # Padding depends on stride size
+        self.maxpool = nn.MaxPool1d(
+            2, stride=2, padding=0
+        )  # Padding depends on stride size
 
         self.bn = nn.BatchNorm1d(reduced_channels * 2 + in_channels)
 
@@ -288,33 +304,36 @@ class SimpleGridReductionModule(nn.Module):
 
 
 class Explicit_skip_connection(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, sigmoid=False):
         super(Explicit_skip_connection, self).__init__()
 
+        self.sigmoid = sigmoid
         self.conv = None
         if in_channels != out_channels:
             self.conv = nn.Conv1d(
                 in_channels,
                 out_channels,
-                kernel_size=3,
+                kernel_size=1,
                 stride=1,
-                padding=1,
+                padding=0,
                 bias=False,
             )
 
-            self.bn = nn.BatchNorm1d(out_channels)
+        self.bn = nn.BatchNorm1d(out_channels)
 
     def forward(self, x, x_shortcut):
         z_shortcut = x_shortcut
 
         if self.conv is not None:
             z_shortcut = self.conv(x_shortcut)
-            z_shortcut = self.bn(z_shortcut)
+            # z_shortcut = self.bn(z_shortcut)
 
         z = x + z_shortcut
-        z = F.relu(z)
+        z = self.bn(z)
 
-        return z
+        if self.sigmoid:
+            return F.sigmoid(z)
+        return F.relu(z)
 
 
 # class SkipConnection(nn.Module):
@@ -334,11 +353,16 @@ class InceptionTime(nn.Module):
         self.config = config
 
         # Layers
+        # self.stem_1 = nn.Sequential(
+        #     nn.Conv1d(1, 16, kernel_size=3, stride=2, padding=0, bias=False),
+        #     nn.BatchNorm1d(16, momentum=1, affine=True),
+        #     nn.ReLU(),
+        # )
         self.stem_1 = nn.Sequential(
-            nn.Conv1d(1, 16, kernel_size=3, stride=2, padding=0, bias=False),
+            nn.Conv1d(1, 16, kernel_size=20, stride=1, padding=0, bias=False),
             nn.BatchNorm1d(16, momentum=1, affine=True),
             nn.ReLU(),
-            # nn.Hardswish(),
+            # nn.MaxPool1d(10, stride=2, padding=0),
         )
 
         # self.module_1_1 = ModdedInceptionModule(1, 2, use_bottleneck=False, use_skip_connection=True)
@@ -346,17 +370,25 @@ class InceptionTime(nn.Module):
 
         # self.reduction_1 = SimpleGridReductionModule(8, 8)
 
-        self.shortcut_1 = Explicit_skip_connection(16, 64)
-        self.module_3_1 = ModdedInceptionModule(16, 16, use_bottleneck=False, use_skip_connection=False, use_sen=False)
-        self.module_4_1 = ModdedInceptionModule(64, 16, use_skip_connection=False, use_sen=False)
-        self.module_5_1 = ModdedInceptionModule(64, 16, use_skip_connection=False, use_sen=False)
+        self.module_3_1 = ModdedInceptionModule(16, 4, use_bottleneck=True)
+        self.module_4_1 = ModdedInceptionModule(16, 4)
+        self.module_5_1 = ModdedInceptionModule(16, 4, activation=False)
+        self.shortcut_1 = Explicit_skip_connection(16, 16)
+        # self.module_3_1 = ModdedInceptionModule(8, 16, use_bottleneck=False)
+        # self.module_4_1 = ModdedInceptionModule(64, 16)
+        # self.module_5_1 = ModdedInceptionModule(64, 16, activation=False)
+        # self.shortcut_1 = Explicit_skip_connection(8, 64)
 
         # self.reduction_2 = SimpleGridReductionModule(16, 16)  # XXX
 
-        self.shortcut_2 = Explicit_skip_connection(64, 64)
-        self.module_6_1 = ModdedInceptionModule(64, 16, use_skip_connection=False, use_sen=False)
-        self.module_7_1 = ModdedInceptionModule(64, 16, use_skip_connection=False, use_sen=False)
-        self.module_8_1 = ModdedInceptionModule(64, 16, use_skip_connection=False, use_sen=False, activation=False)
+        self.module_6_1 = ModdedInceptionModule(16, 4)
+        self.module_7_1 = ModdedInceptionModule(16, 4)
+        self.module_8_1 = ModdedInceptionModule(16, 4, activation=False)
+        self.shortcut_2 = Explicit_skip_connection(16, 16, sigmoid=False)
+        # self.module_6_1 = ModdedInceptionModule(64, 16)
+        # self.module_7_1 = ModdedInceptionModule(64, 16)
+        # self.module_8_1 = ModdedInceptionModule(64, 16, activation=False)
+        # self.shortcut_2 = Explicit_skip_connection(64, 64, sigmoid=True)
 
         # self.reduction_3 = SimpleGridReductionModule(32, 32)  # XXX
 
@@ -570,7 +602,9 @@ class InceptionTime_old(nn.Module):
         # self.module_3 = InceptionModule(32 * 4, 64)
 
         # Global average pooling
-        self.globalAvgPool = nn.AvgPool1d(kernel_size=722)  # FIXME Kernel size (Depends on input length)
+        self.globalAvgPool = nn.AvgPool1d(
+            kernel_size=722
+        )  # FIXME Kernel size (Depends on input length)
 
         # Classifier
         # self.fc1 = nn.Linear(

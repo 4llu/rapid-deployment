@@ -1,12 +1,12 @@
 #? Creation
 name: BASE
 log: true
-save: false # TODO
-eval_freq: 1 # * Decrease for hyper opt and final testing
+save: false
+eval_freq: 3 # * Decrease for hyper opt and final testing
 # eval_episodes: 1 # * Increase for hyper opt and final testing
-eval_episodes: 50 # * Increase for hyper opt and final testing
+eval_episodes: 40 # * Increase for hyper opt and final testing
 # eval_episodes: 4 # * Increase for hyper opt and final testing
-test_episodes: 50
+test_episodes: 40
 
 #? Fewshot setup
 
@@ -17,34 +17,40 @@ n_query: 36
 mix_severities: false # * Baseline measurements use GPs
 mix_rpms: false
 mix_torques: false
-mix_installations: true # * Baseline measurements use GPs
+mix_installations: false # * Baseline measurements use GPs
+# mix_installations: true # * Baseline measurements use GPs
 mix_sensors: false
 separate_query_and_support: false
 
 #? Data
 
 data: ARotor_replication
-train_sensors: [acc3]
-validation_sensors: [acc3]
-test_sensors: [acc3]
+# train_sensors: [acc3]
+# validation_sensors: [acc3]
+# test_sensors: [acc3]
+train_sensors: [torque1]
+validation_sensors: [torque1]
+test_sensors: [torque1]
 # train_sensors: [en3speed]
 # validation_sensors: [en3speed]
-# test_sensors: [en4speed]
+# test_sensors: [en3speed]
 
-# train_rpm: [500, 1500]
-# validation_rpm: [750, 1250]
-# test_rpm: [750, 1250]
-train_rpm: [750, 1250]
-validation_rpm: [500, 1500]
-test_rpm: [500, 1500]
+# train_rpm: [750, 1000]
+# validation_rpm: [1500]
+# test_rpm: [500]
+train_rpm: [500, 1500]
+validation_rpm: [750]
+test_rpm: [1250]
 
 # train_torques: [1]
-train_torques: [1, 11]
+# validation_torques: [1]
+# test_torques: [1]
+train_torques: [6]
 validation_torques: [11]
-test_torques: [6]
+test_torques: [1]
 
 train_installations: [1]
-validation_installations: [1, 2]
+validation_installations: [1]
 test_installations: [1, 2]
 
 train_baseline_GPs: [1, 2, 3]
@@ -62,9 +68,7 @@ train_faults: [baseline, pitting, wear, micropitting, tff]
 validation_faults: [baseline, pitting, wear, micropitting, tff]
 test_faults: [baseline, pitting, wear, micropitting, tff]
 
-# window_width: 6000
 window_width: 4328
-# window_width: 3000
 window_overlap: 0.99
 
 #? Preprocessing
@@ -80,7 +84,7 @@ preprocessing_sample: []
 # preprocessing_sample: [FFT]
 preprocessing_class_batch: []
 # preprocessing_class_batch: [FFT]
-preprocessing_batch: []
+preprocessing_batch: [gain_changer, add_white_noise]
 # preprocessing_batch: [individual_centering]
 # preprocessing_batch: [FFT]
 # preprocessing_batch: [individual_centering, FFT]
@@ -90,8 +94,8 @@ preprocessing_batch: []
 # preprocessing_batch: [individual_centering, gain_changer, add_white_noise]
 # preprocessing_batch: [gain_changer]
 # preprocessing_batch: [gain_changer, add_white_noise]
-gain_std: 0.1
-white_noise_std: 0.02
+gain_std: 0.4
+white_noise_std: 0.3
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 # log_FFT: true
 log_FFT: false
@@ -104,7 +108,8 @@ model: prototypical
 backbone: InceptionTime
 # backbone: WDCNN
 kaiming_init: True
-embedding_len: 64
+# embedding_len: 64
+embedding_len: 16
 # Lp-norm
 embedding_normalization_type: lp
 lp_norm: 2
@@ -114,16 +119,18 @@ embedding_multiplier: 100
 #? Training
 
 epoch_len: 1
-max_epochs: 50
-patience: 100
+max_epochs: 75
+patience: 50
 optimizer: AdamW
-lr: 0.00627755041240667
+# lr: 0.00627755041240667
+lr: 0.00010945600111447057
 # lr: 0.01
 lr_scheduler: ExponentialLR
-sch_gamma: 0.9685069357986219
-momentum: 0.9854767111829658
+sch_gamma: 0.9627959161980851
+# momentum: 0.9854767111829658
+momentum: 0.9665162306184115
 # Regularization
-weight_decay: 0.00004845181
+weight_decay: 2.7339657582442447e-05
 cl_dropout: 0.0
 fc_dropout: 0.0
 
