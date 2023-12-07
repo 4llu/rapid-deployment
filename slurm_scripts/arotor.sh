@@ -7,4 +7,4 @@
 module restore torch
 source activate env/
 
-srun python src/result_generation.py --config arotor/result_generation_base --config_override_base arotor/result_generation/config_override --array_task_id $SLURM_ARRAY_TASK_ID --block_size 3 --repetitions 10 --job_name "arotor-$SLURM_ARRAY_JOB_ID"
+srun python src/result_generation.py --config arotor/result_generation_base --config_override_base arotor/result_generation/config_override --array_task_id $SLURM_ARRAY_TASK_ID --block_size 3 --repetitions 9 --job_name "arotor-$SLURM_ARRAY_JOB_ID"

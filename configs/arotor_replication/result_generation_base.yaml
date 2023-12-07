@@ -4,7 +4,7 @@ log: false
 save: false
 eval_freq: 7 # * Decrease for hyper opt and final testing
 eval_episodes: 50 # * Increase for hyper opt and final testing
-test_episodes: 150
+test_episodes: 100
 
 #? Fewshot setup
 

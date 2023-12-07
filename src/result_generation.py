@@ -85,7 +85,7 @@ def main():
                 test_loader,
                 config,
                 device=device,
-                run_type="trial",
+                run_type="result",
             )
             accuracies.append(test_accuracy)
             cfs.append(test_cf)
