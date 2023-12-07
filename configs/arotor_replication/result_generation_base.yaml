@@ -2,7 +2,7 @@
 name: result_generation
 log: false
 save: false
-eval_freq: 3 # * Decrease for hyper opt and final testing
+eval_freq: 7 # * Decrease for hyper opt and final testing
 eval_episodes: 50 # * Increase for hyper opt and final testing
 test_episodes: 150
 
@@ -22,9 +22,12 @@ separate_query_and_support: false
 #? Data
 
 data: ARotor_replication
-train_sensors: [acc3]
-validation_sensors: [acc3]
-test_sensors: [acc3]
+train_sensors: [torque1]
+validation_sensors: [torque1]
+test_sensors: [torque1]
+# train_sensors: [acc3]
+# validation_sensors: [acc3]
+# test_sensors: [acc3]
 
 # Overriden
 # train_rpm: [750, 1250]
@@ -77,11 +80,11 @@ preprocessing_class_batch: []
 # preprocessing_batch: [FFT, gain_changer, mult_white_noise]
 # preprocessing_batch: [hilbert_envelope]
 # preprocessing_batch: [individual_centering, gain_changer, add_white_noise]
-preprocessing_batch: [add_white_noise]
+preprocessing_batch: [gain_changer]
 # preprocessing_batch: [gain_changer]
 # preprocessing_batch: [gain_changer, add_white_noise]
-gain_std: 0.0
-white_noise_std: 0.4
+gain_std: 0.1
+white_noise_std: 0.0
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 # log_FFT: true
 log_FFT: false
@@ -94,7 +97,7 @@ model: prototypical
 backbone: InceptionTime
 # backbone: WDCNN
 kaiming_init: True
-embedding_len: 64
+embedding_len: 16
 # Lp-norm
 embedding_normalization_type: lp
 lp_norm: 2
@@ -104,16 +107,16 @@ embedding_multiplier: 100
 #? Training
 
 epoch_len: 1
-max_epochs: 100
-patience: 50
+max_epochs: 85
+patience: 30
 optimizer: AdamW
-lr: 0.12752578749576718
+lr: 0.0007135455068281224
 # lr: 0.01
 lr_scheduler: ExponentialLR
-sch_gamma: 0.9938194438417739
-momentum: 0.9032501850383928
+sch_gamma: 0.9817180494391025
+momentum: 0.9668295517798724
 # Regularization
-weight_decay: 0.00014838054065187422
+weight_decay: 4.369037681626528e-05
 cl_dropout: 0.0
 fc_dropout: 0.0
 

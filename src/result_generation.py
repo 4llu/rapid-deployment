@@ -38,7 +38,7 @@ def main():
     # Setup result directory (if it doesn't exist)
     Path(folder_path).mkdir(parents=True, exist_ok=True)
 
-    # CCONFIG RUNS
+    # CONFIG RUNS
     ##############
 
     for j in range(args.block_size):
@@ -59,7 +59,10 @@ def main():
             quit()
 
         # Read config
-        config = setup_config(args.config, config_override_name=f"{args.config_override_base}_{run_config_id}")
+        config = setup_config(
+            args.config,
+            config_override_name=f"{args.config_override_base}_{run_config_id}",
+        )
 
         # Initialize data
         train_loader, validation_loader, test_loader = setup_data(config, device)

@@ -7,7 +7,6 @@ from sklearn.metrics import confusion_matrix
 
 class RNFSAccuracy(Metric):
     def __init__(self, device):
-
         # self.n_way = n_way
         self.device = device
 
@@ -34,7 +33,9 @@ class RNFSAccuracy(Metric):
 
     def compute(self):
         if self.N == 0:
-            raise NotComputableError("FSAccuracy must have at least one example before it can be computed.")
+            raise NotComputableError(
+                "FSAccuracy must have at least one example before it can be computed."
+            )
 
         return self.TPTN.item() / self.N
 
@@ -62,8 +63,11 @@ class Confusion_matrices(Metric):
 
     def compute(self):
         if len(self.y) == 0:
-            raise NotComputableError("Confusion_matrices must have at least one example before it can be computed.")
+            raise NotComputableError(
+                "Confusion_matrices must have at least one example before it can be computed."
+            )
 
-        cf = confusion_matrix(self.y, self.y_pred)
+        return self.y, self.y_pred
 
-        return confusion_matrix(self.y, self.y_pred)
+        # cf = confusion_matrix(self.y, self.y_pred)
+        # return confusion_matrix(self.y, self.y_pred)

@@ -2,7 +2,7 @@
 name: BASE
 log: true
 save: false
-eval_freq: 3 # * Decrease for hyper opt and final testing
+eval_freq: 7 # * Decrease for hyper opt and final testing
 # eval_episodes: 1 # * Increase for hyper opt and final testing
 eval_episodes: 40 # * Increase for hyper opt and final testing
 # eval_episodes: 4 # * Increase for hyper opt and final testing
@@ -38,15 +38,15 @@ test_sensors: [torque1]
 # train_rpm: [750, 1000]
 # validation_rpm: [1500]
 # test_rpm: [500]
-train_rpm: [500, 1500]
-validation_rpm: [750]
-test_rpm: [1250]
+train_rpm: [750, 1250]
+validation_rpm: [500]
+test_rpm: [1500]
 
 # train_torques: [1]
 # validation_torques: [1]
 # test_torques: [1]
 train_torques: [6]
-validation_torques: [11]
+validation_torques: [6]
 test_torques: [1]
 
 train_installations: [1]
@@ -58,8 +58,8 @@ validation_baseline_GPs: [4, 5]
 test_baseline_GPs: [6, 7, 8, 9]
 
 train_severities: [severe]
-validation_severities: [mild]
-test_severities: [mild]
+validation_severities: [severe]
+test_severities: [mild, severe]
 
 # train_faults: [baseline, pitting, wear, tff]
 # validation_faults: [baseline, pitting, wear, tff]
@@ -94,8 +94,8 @@ preprocessing_batch: [gain_changer, add_white_noise]
 # preprocessing_batch: [individual_centering, gain_changer, add_white_noise]
 # preprocessing_batch: [gain_changer]
 # preprocessing_batch: [gain_changer, add_white_noise]
-gain_std: 0.4
-white_noise_std: 0.3
+gain_std: 0.1
+white_noise_std: 0.0
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 # log_FFT: true
 log_FFT: false
@@ -119,18 +119,18 @@ embedding_multiplier: 100
 #? Training
 
 epoch_len: 1
-max_epochs: 75
-patience: 50
+max_epochs: 150
+patience: 100
 optimizer: AdamW
 # lr: 0.00627755041240667
-lr: 0.00010945600111447057
+lr: 0.0007135455068281224
 # lr: 0.01
 lr_scheduler: ExponentialLR
-sch_gamma: 0.9627959161980851
+sch_gamma: 0.9817180494391025
 # momentum: 0.9854767111829658
-momentum: 0.9665162306184115
+momentum: 0.9668295517798724
 # Regularization
-weight_decay: 2.7339657582442447e-05
+weight_decay: 4.369037681626528e-05
 cl_dropout: 0.0
 fc_dropout: 0.0
 

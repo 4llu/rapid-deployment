@@ -103,7 +103,9 @@ def run_training(
     evaluator_test = setup_evaluator(config, model, device, "test")  # Testing
 
     # Enable the use of multiple episodes for the final metrics of evaluation and testing
-    runWiseUsage = MetricUsage(Events.STARTED, Events.COMPLETED, Events.ITERATION_COMPLETED)
+    runWiseUsage = MetricUsage(
+        Events.STARTED, Events.COMPLETED, Events.ITERATION_COMPLETED
+    )
 
     # Setup metric tracking for validation and testing
     for ev, label in [(evaluator, "val"), (evaluator_test, "test")]:
@@ -132,7 +134,9 @@ def run_training(
         for name, metric in metrics.items():
             metric.attach(ev, name, usage=runWiseUsage)
     # * Confusion matrices only for test evaluator
-    Confusion_matrices().attach(evaluator_test, "test_confusion_matrices", usage=runWiseUsage)
+    Confusion_matrices().attach(
+        evaluator_test, "test_confusion_matrices", usage=runWiseUsage
+    )
 
     # Global metrics
     best_accuracy = 0
@@ -271,16 +275,16 @@ def run_training(
     def _():
         # Print global results
         print()
-        print("Best validation accuracy: {} @ epoch {}".format(best_accuracy, best_epoch))
+        print(
+            "Best validation accuracy: {} @ epoch {}".format(best_accuracy, best_epoch)
+        )
         print()
         print("Respective test accuracy: {}".format(best_test_accuracy))
         print()
 
     # Checkpoint system
     if config["save"]:
-        base_dir_name = (
-            f"{config['name']}_{config['data']}_{config.get('job_id', datetime.now().strftime('%m-%d_%H-%M-%S'))}"
-        )
+        base_dir_name = f"{config['name']}_{config['data']}_{config.get('job_id', datetime.now().strftime('%m-%d_%H-%M-%S'))}"
         checkpointer = ModelCheckpoint(
             dirname=f"./model_weights/{base_dir_name}/{config.get('i', 0)}_{datetime.now().strftime('%m-%d_%H-%M-%S')}",
             create_dir=True,
@@ -297,10 +301,11 @@ def run_training(
     # TODO Checkpoint system
     # TODO Optuna pruning (This hasn't been working)
     # Start training
-    trainer.run(train_loader, max_epochs=config["max_epochs"], epoch_length=config["epoch_len"])
+    trainer.run(
+        train_loader, max_epochs=config["max_epochs"], epoch_length=config["epoch_len"]
+    )
 
-    # Only used by Optuna for hyperparameter optimization
-    # Specifically, validation accuracy
+    # Used by optuna (best_accuracy) and result generation (best_test_accuracy, best_test_cf)
     return best_accuracy, best_test_accuracy, best_test_cf
 
 

@@ -118,7 +118,7 @@ embedding_multiplier: 100
 #? Training
 
 epoch_len: 1
-max_epochs: 100
+max_epochs: 75
 patience: 50
 optimizer: AdamW
 lr: 0.01
