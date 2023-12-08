@@ -67,7 +67,5 @@ class Confusion_matrices(Metric):
                 "Confusion_matrices must have at least one example before it can be computed."
             )
 
-        return self.y, self.y_pred
-
-        # cf = confusion_matrix(self.y, self.y_pred)
-        # return confusion_matrix(self.y, self.y_pred)
+        cf = confusion_matrix(self.y, self.y_pred)
+        return confusion_matrix(self.y, self.y_pred)

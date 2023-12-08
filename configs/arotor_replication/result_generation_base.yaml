@@ -4,7 +4,7 @@ log: false
 save: false
 eval_freq: 7 # * Decrease for hyper opt and final testing
 eval_episodes: 50 # * Increase for hyper opt and final testing
-test_episodes: 100
+test_episodes: 50
 
 #? Fewshot setup
 
@@ -61,10 +61,10 @@ window_overlap: 0.99
 
 #? Preprocessing
 
-preprocessing_full: []
+# preprocessing_full: []
 # preprocessing_full: [lowpass_filtering]
 # preprocessing_full: [lowpass_filtering, robust_scaling]
-# preprocessing_full: [robust_scaling]
+preprocessing_full: [robust_scaling]
 # lp_filter_cutoff: 200 #! lowpass doesn't use this currently!
 robust_scaling_low: 0.25
 robust_scaling_high: 0.75
@@ -80,11 +80,11 @@ preprocessing_class_batch: []
 # preprocessing_batch: [FFT, gain_changer, mult_white_noise]
 # preprocessing_batch: [hilbert_envelope]
 # preprocessing_batch: [individual_centering, gain_changer, add_white_noise]
-preprocessing_batch: [gain_changer]
 # preprocessing_batch: [gain_changer]
-# preprocessing_batch: [gain_changer, add_white_noise]
-gain_std: 0.1
-white_noise_std: 0.0
+# preprocessing_batch: [gain_changer]
+preprocessing_batch: [gain_changer, add_white_noise]
+gain_std: 0.2
+white_noise_std: 0.1
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 # log_FFT: true
 log_FFT: false
@@ -110,13 +110,13 @@ epoch_len: 1
 max_epochs: 85
 patience: 30
 optimizer: AdamW
-lr: 0.0007135455068281224
+lr: 0.00010444770250560782
 # lr: 0.01
 lr_scheduler: ExponentialLR
-sch_gamma: 0.9817180494391025
-momentum: 0.9668295517798724
+sch_gamma: 0.9795420305461936
+momentum: 0.9238502764710679
 # Regularization
-weight_decay: 4.369037681626528e-05
+weight_decay: 0.00024792612671914406
 cl_dropout: 0.0
 fc_dropout: 0.0
 

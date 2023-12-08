@@ -273,7 +273,7 @@ def eval_function_wrapper(engine, batch, config, model, device, split):
         # print(query_embeddings.shape)
         # quit()
         all_embeddings = torch.cat(
-            [prototypes.cpu().unsquueze(1), query_embeddings.cpu()], dim=0
+            [prototypes.cpu().unsqueeze(1), query_embeddings.cpu()], dim=0
         )
         tsne_embeddings = TSNE(
             n_components=2, learning_rate="auto", init="random", perplexity=20

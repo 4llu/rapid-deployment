@@ -142,6 +142,7 @@ def run_training(
     best_accuracy = 0
     best_test_accuracy = 0
     best_test_cf = []
+    best_weights = {}
     best_epoch = 0
     patience_counter = 0  # FIXME Could patience be done with Ignite?
 
@@ -156,7 +157,7 @@ def run_training(
 
     # Tensorboard logger
 
-    # Only if logging turned on (make extra sure turned of for Optuna trials and result generation)
+    # Only if logging turned on (make extra sure turned off for Optuna trials and result generation)
     if run_type == "normal" and config["log"]:
         abs_path = os.path.dirname(__file__)
         time = datetime.now().strftime("%m-%d_%H-%M-%S")
@@ -234,6 +235,7 @@ def run_training(
         nonlocal best_accuracy
         nonlocal best_test_accuracy
         nonlocal best_test_cf
+        nonlocal best_weights
         nonlocal best_epoch
         nonlocal patience_counter
 
@@ -252,6 +254,13 @@ def run_training(
                 log_metrics(evaluator_test, "test")
                 best_test_accuracy = evaluator_test.state.metrics["test_accuracy"]
                 best_test_cf = evaluator_test.state.metrics["test_confusion_matrices"]
+
+                if run_type == "result":
+                    best_weights = model.state_dict()
+
+            # No sense in continuing if validation accuracy 100%
+            if evaluator.state.metrics["val_accuracy"] == 1:
+                trainer.terminate()
         # If not best
         else:
             # Increment early stopping counter if over warmup period
@@ -306,7 +315,7 @@ def run_training(
     )
 
     # Used by optuna (best_accuracy) and result generation (best_test_accuracy, best_test_cf)
-    return best_accuracy, best_test_accuracy, best_test_cf
+    return best_accuracy, best_test_accuracy, best_test_cf, best_weights
 
 
 def setup_device():
