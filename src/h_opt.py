@@ -73,7 +73,7 @@ def main():
             "white_noise_std", 0.0, 0.4, step=0.1
         )
         config["label_smoothing"] = trial.suggest_float(
-            "label_smoothing", 0.0, 0.4, step=0.05
+            "label_smoothing", 0.0, 0.6, step=0.05
         )
         # config["cl_dropout"] = trial.suggest_float("cl_dropout", 0.0, 0.6, step=0.1)
         # config["fc_dropout"] = trial.suggest_float("fc_dropout", 0.0, 0.6, step=0.1)

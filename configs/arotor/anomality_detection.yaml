@@ -2,9 +2,9 @@
 name: anomality_detection
 log: false
 save: true # TODO
-eval_freq: 5 # * Decrease for hyper opt and final testing
-eval_episodes: 20 # * Increase for hyper opt and final testing
-# test_episodes: 150
+eval_freq: 7 # * Decrease for hyper opt and final testing
+eval_episodes: 50 # * Increase for hyper opt and final testing
+test_episodes: 50
 
 #? Fewshot setup
 
@@ -19,9 +19,9 @@ separate_query_and_support: false
 #? Data
 
 data: ARotor
-train_sensors: [acc3]
-validation_sensors: [acc3]
-test_sensors: [acc3]
+train_sensors: [torque1]
+validation_sensors: [torque1]
+test_sensors: [torque1]
 
 train_rpm: [250, 500, 750, 1250, 1500]
 validation_rpm: [500, 1500]
@@ -42,9 +42,9 @@ robust_scaling_high: 0.75
 preprocessing_sample: []
 preprocessing_class_batch: []
 # preprocessing_batch: []
-preprocessing_batch: [add_white_noise]
-gain_std: 0.0
-white_noise_std: 0.2
+preprocessing_batch: [gain_changer, add_white_noise]
+gain_std: 0.1
+white_noise_std: 0.3
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 log_FFT: false
 pad_FFT: -1
@@ -56,7 +56,7 @@ model: prototypical
 backbone: InceptionTime
 # backbone: WDCNN
 kaiming_init: true
-embedding_len: 64
+embedding_len: 16
 # Lp-norm
 embedding_normalization_type: lp
 lp_norm: 2
@@ -66,16 +66,17 @@ embedding_multiplier: 100
 #? Training
 
 epoch_len: 1
-max_epochs: 200 # FIXME?
-patience: 100
+max_epochs: 85 # FIXME?
+patience: 30
 optimizer: AdamW
 # FIXME BELOW
-lr: 0.0029527578662923502
+lr: 0.0009433133116074685
 lr_scheduler: ExponentialLR
-sch_gamma: 0.9616006788597983
-momentum: 0.9575208310016572
+sch_gamma: 0.9615924517063309
+momentum: 0.9398561347815982
 # Regularization
-weight_decay: 0.00003319404762312105
+weight_decay: 8.663970448642659e-05
+label_smoothing: 0.2
 cl_dropout: 0.0
 fc_dropout: 0.0
 

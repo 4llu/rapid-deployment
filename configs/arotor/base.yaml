@@ -2,7 +2,7 @@
 name: Base
 log: true
 save: false
-eval_freq: 3 # * Decrease for hyper opt and final testing
+eval_freq: 7 # * Decrease for hyper opt and final testing
 eval_episodes: 40 # * Increase for hyper opt and final testing
 test_episodes: 40
 
@@ -35,15 +35,18 @@ data: ARotor
 # train_sensors: [en1acc]
 # validation_sensors: [en2acc]
 # test_sensors: [en3acc, en4acc, en5acc]
-train_sensors: [acc3]
-validation_sensors: [acc3]
-test_sensors: [acc3]
+train_sensors: [torque1]
+validation_sensors: [torque1]
+test_sensors: [torque1]
+# train_sensors: [acc3]
+# validation_sensors: [acc3]
+# test_sensors: [acc3]
 # train_sensors: [en1acc_grad]
 # validation_sensors: [en2acc_grad]
 # test_sensors: [en3acc_grad, en4acc_grad, en5acc_grad]
-train_rpm: [750]
-validation_rpm: [1000]
-test_rpm: [250, 500, 1250, 1500]
+train_rpm: [500, 1000, 1500]
+validation_rpm: [250]
+test_rpm: [1250]
 
 train_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 validation_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -53,16 +56,20 @@ window_overlap: 0.99
 
 #? Preprocessing
 
-preprocessing_full: []
+# preprocessing_full: []
+preprocessing_full: [robust_scaling]
+robust_scaling_low: 0.25
+robust_scaling_high: 0.75
 preprocessing_sample: []
 # preprocessing_sample: [sync_FFT] # ! Slow, always prefer the other two if possible
+preprocessing_class_batch: []
 sync_FFT_rotations: 4 # How many rotations to include for synced FFT. Only used if sync_FFT on.
 # preprocessing_batch: []
-preprocessing_batch: [add_white_noise]
+preprocessing_batch: [gain_changer, add_white_noise]
 # preprocessing_batch: [sync_FFT]
 # preprocessing_batch: [FFT]
-gain_std: 0.0
-white_noise_std: 0.4
+gain_std: 0.1
+white_noise_std: 0.0
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 log_FFT: false
 pad_FFT: -1
@@ -79,7 +86,7 @@ sample_cut: -1 # Done in batch preprocessing
 model: prototypical
 backbone: InceptionTime
 kaiming_init: true
-embedding_len: 64
+embedding_len: 16
 # embedding_normalization_type: False
 # Legacy
 # embedding_normalization_type: old
@@ -92,16 +99,17 @@ embedding_multiplier: 100
 #? Training
 
 epoch_len: 1
-max_epochs: 300
+max_epochs: 150
 patience: 100
 optimizer: AdamW
-lr: 0.12752578749576718
+lr: 0.0007135455068281224
 # lr: 0.01
 lr_scheduler: ExponentialLR
-sch_gamma: 0.9938194438417739
-momentum: 0.9032501850383928
+sch_gamma: 0.9817180494391025
+momentum: 0.9668295517798724
 # Regularization
-weight_decay: 0.00014838054065187422
+weight_decay: 4.369037681626528e-05
+label_smoothing: 0.1
 cl_dropout: 0.0
 fc_dropout: 0.0
 

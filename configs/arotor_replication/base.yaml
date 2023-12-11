@@ -17,8 +17,8 @@ n_query: 36
 mix_severities: false # * Baseline measurements use GPs
 mix_rpms: false
 mix_torques: false
-mix_installations: false # * Baseline measurements use GPs
-# mix_installations: true # * Baseline measurements use GPs
+# mix_installations: false # * Baseline measurements use GPs
+mix_installations: true # * Baseline measurements use GPs
 mix_sensors: false
 separate_query_and_support: false
 

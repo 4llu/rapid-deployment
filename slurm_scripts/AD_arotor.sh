@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --gres=gpu:1
-#SBATCH --time=02:55:00
+#SBATCH --time=00:55:00
 #SBATCH --mem=8G
 
 module restore torch

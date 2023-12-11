@@ -2,9 +2,9 @@
 name: anomality_detection_h_opt
 log: false
 save: false # TODO
-eval_freq: 5 # * Decrease for hyper opt and final testing
+eval_freq: 7 # * Decrease for hyper opt and final testing
 # eval_episodes: 1 # * Increase for hyper opt and final testing
-eval_episodes: 20 # * Increase for hyper opt and final testing
+eval_episodes: 50 # * Increase for hyper opt and final testing
 # eval_episodes: 4 # * Increase for hyper opt and final testing
 # test_episodes: 50
 
@@ -24,9 +24,9 @@ separate_query_and_support: false
 #? Data
 
 data: ARotor_replication
-train_sensors: [acc3]
-validation_sensors: [acc3]
-test_sensors: [acc3]
+train_sensors: [torque1]
+validation_sensors: [torque1]
+test_sensors: [torque1]
 # train_sensors: [en3speed]
 # validation_sensors: [en3speed]
 # test_sensors: [en4speed]
@@ -40,15 +40,15 @@ test_rpm: [500, 1500]
 
 # train_torques: [1]
 train_torques: [1, 6, 11]
-validation_torques: [11]
+validation_torques: [6]
 test_torques: [6]
 
 train_installations: [1, 2]
 validation_installations: [1, 2]
 test_installations: [1, 2]
 
-train_baseline_GPs: [1, 2, 3]
-validation_baseline_GPs: [4, 5]
+train_baseline_GPs: [1, 2, 3, 4, 5]
+validation_baseline_GPs: [6, 7, 8, 9]
 test_baseline_GPs: [6, 7, 8, 9]
 
 train_severities: [severe]
@@ -69,10 +69,10 @@ window_overlap: 0.99
 
 #? Preprocessing
 
-preprocessing_full: []
+# preprocessing_full: []
 # preprocessing_full: [lowpass_filtering]
 # preprocessing_full: [lowpass_filtering, robust_scaling]
-# preprocessing_full: [robust_scaling]
+preprocessing_full: [robust_scaling]
 # lp_filter_cutoff: 200 #! lowpass doesn't use this currently!
 robust_scaling_low: 0.25
 robust_scaling_high: 0.75
@@ -105,7 +105,7 @@ model: prototypical
 backbone: InceptionTime
 # backbone: WDCNN
 kaiming_init: True
-embedding_len: 64
+embedding_len: 16
 # Lp-norm
 embedding_normalization_type: lp
 lp_norm: 2
@@ -115,8 +115,8 @@ embedding_multiplier: 100
 #? Training
 
 epoch_len: 1
-max_epochs: 200
-patience: 100
+max_epochs: 85
+patience: 30
 optimizer: AdamW
 lr: 0.00627755041240667
 # lr: 0.01
@@ -125,6 +125,7 @@ sch_gamma: 0.9685069357986219
 momentum: 0.9854767111829658
 # Regularization
 weight_decay: 0.00004845181
+label_smoothing: 0.4
 cl_dropout: 0.0
 fc_dropout: 0.0
 

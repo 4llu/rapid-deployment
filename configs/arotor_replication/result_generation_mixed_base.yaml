@@ -8,7 +8,7 @@ test_episodes: 50
 
 #? Fewshot setup
 
-k_shot: 1
+k_shot: 5
 # n_way: 4
 n_way: 5
 n_query: 36
@@ -78,10 +78,10 @@ preprocessing_class_batch: []
 # preprocessing_batch: [hilbert_envelope]
 # preprocessing_batch: [individual_centering, gain_changer, add_white_noise]
 # preprocessing_batch: [add_white_noise]
-# preprocessing_batch: [gain_changer]
-preprocessing_batch: [gain_changer, add_white_noise]
+preprocessing_batch: [gain_changer]
+# preprocessing_batch: [gain_changer, add_white_noise]
 gain_std: 0.1
-white_noise_std: 0.3
+white_noise_std: 0.0
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 # log_FFT: true
 log_FFT: false
@@ -107,14 +107,14 @@ epoch_len: 1
 max_epochs: 85
 patience: 30
 optimizer: AdamW
-lr: 0.003907433354707094
+lr: 0.0056922475633756275
 # lr: 0.01
 lr_scheduler: ExponentialLR
-sch_gamma: 0.9641747510892336
-momentum: 0.9240022073188917
+sch_gamma: 0.9801053702249376
+momentum: 0.9398875814636758
 # Regularization
-weight_decay: 7.990658751345191e-05
-label_smoothing: 0.2
+weight_decay: 0.0009218476197436273
+label_smoothing: 0.3
 cl_dropout: 0.0
 fc_dropout: 0.0
 

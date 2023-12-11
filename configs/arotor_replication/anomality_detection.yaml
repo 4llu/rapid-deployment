@@ -1,8 +1,8 @@
 #? Creation
 name: anomality_detection
 log: false
-save: true # TODO
-eval_freq: 1 # * Decrease for hyper opt and final testing
+save: true
+eval_freq: 7 # * Decrease for hyper opt and final testing
 # eval_episodes: 1 # * Increase for hyper opt and final testing
 eval_episodes: 50 # * Increase for hyper opt and final testing
 # eval_episodes: 4 # * Increase for hyper opt and final testing
@@ -24,9 +24,9 @@ separate_query_and_support: false
 #? Data
 
 data: ARotor_replication
-train_sensors: [acc3]
-validation_sensors: [acc3]
-test_sensors: [acc3]
+train_sensors: [torque1]
+validation_sensors: [torque1]
+test_sensors: [torque1]
 # train_sensors: [en3speed]
 # validation_sensors: [en3speed]
 # test_sensors: [en4speed]
@@ -40,15 +40,15 @@ test_rpm: [500, 1500]
 
 # train_torques: [1]
 train_torques: [1, 6, 11]
-validation_torques: [11]
+validation_torques: [6]
 test_torques: [6]
 
 train_installations: [1, 2]
 validation_installations: [1, 2]
 test_installations: [1, 2]
 
-train_baseline_GPs: [1, 2, 3]
-validation_baseline_GPs: [4, 5]
+train_baseline_GPs: [1, 2, 3, 4, 5]
+validation_baseline_GPs: [6, 7, 8, 9]
 test_baseline_GPs: [6, 7, 8, 9]
 
 train_severities: [severe]
@@ -87,12 +87,12 @@ preprocessing_class_batch: []
 # preprocessing_batch: [FFT_w_phase]
 # preprocessing_batch: [FFT, gain_changer, mult_white_noise]
 # preprocessing_batch: [hilbert_envelope]
-preprocessing_batch: [individual_centering, add_white_noise]
+# preprocessing_batch: [individual_centering, add_white_noise]
 # preprocessing_batch: [individual_centering, gain_changer, add_white_noise]
-# preprocessing_batch: [gain_changer]
+preprocessing_batch: [gain_changer]
 # preprocessing_batch: [gain_changer, add_white_noise]
-gain_std: 0.0
-white_noise_std: 0.4
+gain_std: 0.1
+white_noise_std: 0.0
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 # log_FFT: true
 log_FFT: false
@@ -105,7 +105,7 @@ model: prototypical
 backbone: InceptionTime
 # backbone: WDCNN
 kaiming_init: True
-embedding_len: 64
+embedding_len: 16
 # Lp-norm
 embedding_normalization_type: lp
 lp_norm: 2
@@ -115,16 +115,17 @@ embedding_multiplier: 100
 #? Training
 
 epoch_len: 1
-max_epochs: 200
-patience: 100
+max_epochs: 85
+patience: 30
 optimizer: AdamW
-lr: 0.001606159125320321
+lr: 0.0006646103034739049
 # lr: 0.01
 lr_scheduler: ExponentialLR
-sch_gamma: 0.9701936699418547
-momentum: 0.9052695594529453
+sch_gamma: 0.9925402243965936
+momentum: 0.9464435211576275
 # Regularization
-weight_decay: 1.706761719800272e-05
+weight_decay: 0.0003506469221063148
+label_smoothing: 0.1
 cl_dropout: 0.0
 fc_dropout: 0.0
 
