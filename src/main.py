@@ -86,7 +86,7 @@ def run_training(
     # Loss function
     # ? Moved to trainer
     if config["model"] == "prototypical":
-        loss_fn = torch.nn.CrossEntropyLoss()
+        loss_fn = torch.nn.CrossEntropyLoss(label_smoothing=config["label_smoothing"])
     elif config["model"] == "relation":
         loss_fn = torch.nn.MSELoss()
     else:

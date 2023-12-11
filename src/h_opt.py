@@ -39,10 +39,14 @@ def main():
     # SETUP STUDY
     #############
 
-    study_name = f"{config['name']}_{config['data']}_{datetime.now().strftime('%m-%d_%H-%M-%S')}"
+    study_name = (
+        f"{config['name']}_{config['data']}_{datetime.now().strftime('%m-%d_%H-%M-%S')}"
+    )
     pruner = optuna.pruners.MedianPruner()
 
-    study = optuna.create_study(study_name=study_name, direction="maximize", pruner=pruner)
+    study = optuna.create_study(
+        study_name=study_name, direction="maximize", pruner=pruner
+    )
 
     # RUN
     #####
@@ -60,10 +64,17 @@ def main():
             0.9,
             0.99,
         )
-        config["weight_decay"] = trial.suggest_float("weight_decay", 0.00001, 0.001, log=True)
+        config["weight_decay"] = trial.suggest_float(
+            "weight_decay", 0.00001, 0.001, log=True
+        )
         config["sch_gamma"] = trial.suggest_float("sch_gamma", 0.95, 0.99998, log=True)
         config["gain_std"] = trial.suggest_float("gain_std", 0.0, 0.4, step=0.1)
-        config["white_noise_std"] = trial.suggest_float("white_noise_std", 0.0, 0.4, step=0.1)
+        config["white_noise_std"] = trial.suggest_float(
+            "white_noise_std", 0.0, 0.4, step=0.1
+        )
+        config["label_smoothing"] = trial.suggest_float(
+            "label_smoothing", 0.0, 0.4, step=0.05
+        )
         # config["cl_dropout"] = trial.suggest_float("cl_dropout", 0.0, 0.6, step=0.1)
         # config["fc_dropout"] = trial.suggest_float("fc_dropout", 0.0, 0.6, step=0.1)
         # config["log_FFT"] = trial.suggest_categorical("log_FFT", [True, False])
@@ -78,7 +89,7 @@ def main():
             print(f"REPETITION {j + 1} OF TRIAL {i + 1}")
             print("############################")
             print()
-            val_accuracy, _, _ = run_training(
+            val_accuracy, _, _, _ = run_training(
                 train_loader,
                 validation_loader,
                 test_loader,
@@ -96,7 +107,9 @@ def main():
     ############
 
     # Save study
-    joblib.dump(study, os.path.join("reports", "RAW", "optuna_studies", f"{study_name}.pkl"))
+    joblib.dump(
+        study, os.path.join("reports", "RAW", "optuna_studies", f"{study_name}.pkl")
+    )
 
     # Print results
 

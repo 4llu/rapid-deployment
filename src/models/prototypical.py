@@ -111,6 +111,7 @@ class Prototypical(nn.Module):
 
         # Calculate distances from each query embedding to each prototype
         # -1 because we wan't shorter distance to be better (bigger prob. after softmax)
+        # out = 1 / (torch.cdist(query_embeddings, prototypes, p=2.0) + 0.00001)
         out = -1 * torch.cdist(query_embeddings, prototypes, p=2.0)
 
         return out, support_embeddings, prototypes, self._prev_query_embeddings

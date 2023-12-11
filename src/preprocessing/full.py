@@ -16,19 +16,27 @@ def lowpass_filtering(train_data, validation_data, test_data, config):
 
         def filter_group(group_data):
             # if True:
-            cutoff = group_data["rpm"].iloc[0] / 60 / 3 * 100 + 30  # Up to 50x harmonics + 30 Hz
+            cutoff = (
+                group_data["rpm"].iloc[0] / 60 / 3 * 100 + 30
+            )  # Up to 50x harmonics + 30 Hz
             # cutoff = group_data["rpm"].iloc[0] / 60 / 3 * 15 + 30 # Up to 15x harmonics + 30 Hz
             # print(">", group_data["rpm"].iloc[0], cutoff)
             sos = butter(4, cutoff, "lowpass", analog=False, output="sos", fs=3012)
 
-            group_data[sensors] = sosfilt(sos, group_data[sensors].values, axis=0).astype("float32")
+            group_data[sensors] = sosfilt(
+                sos, group_data[sensors].values, axis=0
+            ).astype("float32")
             # print(group_data)
             # quit()
 
             return group_data
 
         if config["data"] == "ARotor":
-            data = data.groupby(["class", "rpm"], group_keys=True).apply(filter_group).reset_index(drop=True)
+            data = (
+                data.groupby(["class", "rpm"], group_keys=True)
+                .apply(filter_group)
+                .reset_index(drop=True)
+            )
         elif config["data"] == "ARotor_replication":
             data = (
                 data.groupby(["rpm", "torque", "severity", "fault"], group_keys=True)
@@ -50,7 +58,7 @@ def mixed_query_normalization_helper_arotor(data, config, split):
 
     sensors = config[f"{split}_sensors"]
 
-    data_grouped = data.groupby(["class", "rpm"])
+    data_grouped = data.groupby(["class", "rpm"], sort=False, group_keys=False)
 
     # Separate head (to be used for scaling, etc.) from measurements to be used for training/validation/testing (tail)
     # * Take the same amount away from fault measurements too, to keep class balance
@@ -66,12 +74,16 @@ def mixed_query_normalization_helper_arotor(data, config, split):
 
     # Get scales
     scale = {}
-    data_head_grouped = data_head.groupby(["class", "rpm"], group_keys=False)
+    data_head_grouped = data_head.groupby(
+        ["class", "rpm"], group_keys=False, sort=False
+    )
     for n, g in data_head_grouped:
         # Scale for the healthy state of each rpm
         p25 = g[sensors].quantile(config["robust_scaling_low"])
         p75 = g[sensors].quantile(config["robust_scaling_high"])
-        scale[n[1]] = (p75 - p25).astype("float32")  # * config["mixed_query_normalization_scale"]
+        scale[n[1]] = (p75 - p25).astype(
+            "float32"
+        )  # * config["mixed_query_normalization_scale"]
 
     # Scaling helper
     def scale_group(group_data):
@@ -84,10 +96,12 @@ def mixed_query_normalization_helper_arotor(data, config, split):
     # data_head = data_head_grouped.apply(scale_group)
 
     # Scale tail
-    if config["data"] == "ARotor":
-        data_tail = data_tail.groupby(["class", "rpm"], group_keys=False).apply(scale_group)
-    elif config["data"] == "ARotor_replication":
-        data_tail = data_tail.groupby(["rpm", "torque", "severity", "fault"], group_keys=False).apply(scale_group)
+    # if config["data"] == "ARotor":
+    data_tail = data_tail.groupby(["class", "rpm"], group_keys=False).apply(scale_group)
+    # elif config["data"] == "ARotor_replication":
+    #     data_tail = data_tail.groupby(
+    #         ["rpm", "torque", "severity", "fault"], group_keys=False
+    #     ).apply(scale_group)
 
     return data_tail
 
@@ -96,7 +110,9 @@ def mixed_query_normalization_helper_arotor_replication(data, config, split):
     head_len = 3012 * 6
     sensors = config[f"{split}_sensors"]
 
-    data_grouped = data.groupby(["rpm", "torque", "severity", "fault"], sort=False, group_keys=False)
+    data_grouped = data.groupby(
+        ["rpm", "torque", "severity", "fault"], sort=False, group_keys=False
+    )
 
     # Separate head (to be used for scaling, etc.) from measurements to be used for training/validation/testing (tail)
     # * Take the same amount away from fault measurements too, to keep class balance
@@ -104,7 +120,8 @@ def mixed_query_normalization_helper_arotor_replication(data, config, split):
     # Scaling and masks are only computed from healthy samples, so other classes are useless here
     # In addition, only use the first GP of each split
     data_head = data_head[
-        (data_head["fault"] == "baseline") & (data_head["severity"] == config[f"{split}_baseline_GPs"][0])
+        (data_head["fault"] == "baseline")
+        & (data_head["severity"] == config[f"{split}_baseline_GPs"][0])
     ]
     # Tail needs all classes for scaling
     data_tail = data_grouped.apply(lambda x: x.iloc[head_len:])
@@ -115,20 +132,28 @@ def mixed_query_normalization_helper_arotor_replication(data, config, split):
 
     # Get scales
     scale = {}
-    data_head_grouped = data_head.groupby(["rpm", "torque", "severity", "fault"], group_keys=False, sort=False)
+    data_head_grouped = data_head.groupby(
+        ["rpm", "torque", "severity", "fault"], group_keys=False, sort=False
+    )
     for n, g in data_head_grouped:
         # Scale for the healthy state of each rpm
         p25 = g[sensors].quantile(config["robust_scaling_low"])
         p75 = g[sensors].quantile(config["robust_scaling_high"])
-        scale[(n[0], n[1])] = (p75 - p25).astype("float32")  # * config["mixed_query_normalization_scale"]
+        scale[(n[0], n[1])] = (p75 - p25).astype(
+            "float32"
+        )  # * config["mixed_query_normalization_scale"]
 
     # Scaling helper
     def scale_group(group_data):
-        group_data[sensors] = group_data[sensors] / scale[(group_data.name[0], group_data.name[1])]
+        group_data[sensors] = (
+            group_data[sensors] / scale[(group_data.name[0], group_data.name[1])]
+        )
 
         return group_data
 
-    data_tail = data_tail.groupby(["rpm", "torque", "severity", "fault"], group_keys=False).apply(scale_group)
+    data_tail = data_tail.groupby(
+        ["rpm", "torque", "severity", "fault"], group_keys=False
+    ).apply(scale_group)
 
     return data_tail
 
@@ -136,13 +161,25 @@ def mixed_query_normalization_helper_arotor_replication(data, config, split):
 # * Same as below, but without mask calculation
 def robust_scaling(train_data, validation_data, test_data, config):
     if config["data"] == "ARotor":
-        new_train_data = mixed_query_normalization_helper_arotor(train_data, config, "train")
-        new_validation_data = mixed_query_normalization_helper_arotor(validation_data, config, "validation")
-        new_test_data = mixed_query_normalization_helper_arotor(test_data, config, "test")
+        new_train_data = mixed_query_normalization_helper_arotor(
+            train_data, config, "train"
+        )
+        new_validation_data = mixed_query_normalization_helper_arotor(
+            validation_data, config, "validation"
+        )
+        new_test_data = mixed_query_normalization_helper_arotor(
+            test_data, config, "test"
+        )
     elif config["data"] == "ARotor_replication":
-        new_train_data = mixed_query_normalization_helper_arotor_replication(train_data, config, "train")
-        new_validation_data = mixed_query_normalization_helper_arotor_replication(validation_data, config, "validation")
-        new_test_data = mixed_query_normalization_helper_arotor_replication(test_data, config, "test")
+        new_train_data = mixed_query_normalization_helper_arotor_replication(
+            train_data, config, "train"
+        )
+        new_validation_data = mixed_query_normalization_helper_arotor_replication(
+            validation_data, config, "validation"
+        )
+        new_test_data = mixed_query_normalization_helper_arotor_replication(
+            test_data, config, "test"
+        )
     else:
         raise Exception("Not yet implemented for this dataset!")
 
@@ -169,7 +206,9 @@ def mixed_query_normalization(train_data, validation_data, test_data, config):
         # Scaling and masks are only computed from healthy samples, so other classes are useless here
         data_head = data_head[data_head["class"] == 0]
         # Tail needs all classes for scaling
-        data_tail = data_grouped.tail(int((len(train_data) / (len(classes) * len(rpms))) - head_len))
+        data_tail = data_grouped.tail(
+            int((len(train_data) / (len(classes) * len(rpms))) - head_len)
+        )
 
         # SCALING #
         ##
@@ -182,7 +221,9 @@ def mixed_query_normalization(train_data, validation_data, test_data, config):
             # Scale for the healthy state of each rpm
             p25 = g[sensors].quantile(0.25)
             p75 = g[sensors].quantile(0.75)
-            scale[n[1]] = (p75 - p25).astype("float32") * config["mixed_query_normalization_scale"]
+            scale[n[1]] = (p75 - p25).astype("float32") * config[
+                "mixed_query_normalization_scale"
+            ]
 
         # Scaling helper
         def scale_group(group_data):
@@ -194,7 +235,9 @@ def mixed_query_normalization(train_data, validation_data, test_data, config):
         data_head = data_head_grouped.apply(scale_group)
 
         # Scale tail
-        data_tail = data_tail.groupby(["class", "rpm"], group_keys=False).apply(scale_group)
+        data_tail = data_tail.groupby(["class", "rpm"], group_keys=False).apply(
+            scale_group
+        )
 
         # (1) MASK & (2) DISTRIBUTION STAT CALCULATION #
         ##
@@ -207,7 +250,10 @@ def mixed_query_normalization(train_data, validation_data, test_data, config):
             start_indices = np.arange(num_windows) * stride
             end_indices = start_indices + window_size
 
-            windows = [dataframe.iloc[start:end] for start, end in zip(start_indices, end_indices)]
+            windows = [
+                dataframe.iloc[start:end]
+                for start, end in zip(start_indices, end_indices)
+            ]
 
             return windows
 
@@ -217,7 +263,9 @@ def mixed_query_normalization(train_data, validation_data, test_data, config):
             )  # FIXME for synced FFT
 
             for sensor in sensors:
-                sensor_windows = torch.tensor(np.array([window[sensor].to_numpy() for window in windows]))
+                sensor_windows = torch.tensor(
+                    np.array([window[sensor].to_numpy() for window in windows])
+                )
 
                 fft_windows = torch.abs(torch.fft.rfft(sensor_windows, norm="forward"))
                 # First log, then mean should be the correct order
@@ -242,7 +290,9 @@ def mixed_query_normalization(train_data, validation_data, test_data, config):
         return data_tail
 
     new_train_data = mixed_query_normalization_helper(train_data, "train")
-    new_validation_data = mixed_query_normalization_helper(validation_data, "validation")
+    new_validation_data = mixed_query_normalization_helper(
+        validation_data, "validation"
+    )
     new_test_data = mixed_query_normalization_helper(test_data, "test")
 
     config["masks"] = masks
@@ -278,8 +328,12 @@ def preprocess_full(train_data, validation_data, test_data, config):
             train_data, validation_data, test_data, config
         )
     if "lowpass_filtering" in config["preprocessing_full"]:
-        train_data, validation_data, test_data = lowpass_filtering(train_data, validation_data, test_data, config)
+        train_data, validation_data, test_data = lowpass_filtering(
+            train_data, validation_data, test_data, config
+        )
     if "robust_scaling" in config["preprocessing_full"]:
-        train_data, validation_data, test_data = robust_scaling(train_data, validation_data, test_data, config)
+        train_data, validation_data, test_data = robust_scaling(
+            train_data, validation_data, test_data, config
+        )
 
     return train_data, validation_data, test_data
