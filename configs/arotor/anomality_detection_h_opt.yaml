@@ -1,7 +1,7 @@
 #? Creation
 name: anomality_detection_h_opt
 log: false
-save: false # TODO
+save: false
 eval_freq: 7 # * Decrease for hyper opt and final testing
 eval_episodes: 50 # * Increase for hyper opt and final testing
 # test_episodes: 150
@@ -76,7 +76,7 @@ sch_gamma: 0.9685069357986219
 momentum: 0.9854767111829658
 # Regularization
 weight_decay: 0.00004845181
-label_smoothing: 0.4
+label_smoothing: 0.0
 cl_dropout: 0.0
 fc_dropout: 0.0
 

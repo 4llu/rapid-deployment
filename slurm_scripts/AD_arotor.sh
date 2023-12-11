@@ -6,4 +6,4 @@
 module restore torch
 source activate env/
 
-srun python src/anomality_detection_training.py --config arotor/anomality_detection --repetitions 10 --job_id $SLURM_JOB_ID
+srun python src/anomality_detection_training.py --config arotor/anomality_detection --repetitions 25 --job_id $SLURM_JOB_ID

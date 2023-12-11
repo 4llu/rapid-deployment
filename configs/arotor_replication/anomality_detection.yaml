@@ -89,10 +89,10 @@ preprocessing_class_batch: []
 # preprocessing_batch: [hilbert_envelope]
 # preprocessing_batch: [individual_centering, add_white_noise]
 # preprocessing_batch: [individual_centering, gain_changer, add_white_noise]
-preprocessing_batch: [gain_changer]
-# preprocessing_batch: [gain_changer, add_white_noise]
-gain_std: 0.1
-white_noise_std: 0.0
+# preprocessing_batch: [gain_changer]
+preprocessing_batch: [gain_changer, add_white_noise]
+gain_std: 0.3
+white_noise_std: 0.2
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 # log_FFT: true
 log_FFT: false
@@ -118,13 +118,13 @@ epoch_len: 1
 max_epochs: 85
 patience: 30
 optimizer: AdamW
-lr: 0.0006646103034739049
+lr: 0.00010013530637094721
 # lr: 0.01
 lr_scheduler: ExponentialLR
-sch_gamma: 0.9925402243965936
-momentum: 0.9464435211576275
+sch_gamma: 0.9740610852382078
+momentum: 0.9212922743876644
 # Regularization
-weight_decay: 0.0003506469221063148
+weight_decay: 0.00019221941026406066
 label_smoothing: 0.1
 cl_dropout: 0.0
 fc_dropout: 0.0

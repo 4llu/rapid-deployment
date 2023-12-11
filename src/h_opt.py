@@ -72,9 +72,9 @@ def main():
         config["white_noise_std"] = trial.suggest_float(
             "white_noise_std", 0.0, 0.4, step=0.1
         )
-        config["label_smoothing"] = trial.suggest_float(
-            "label_smoothing", 0.0, 0.6, step=0.05
-        )
+        # config["label_smoothing"] = trial.suggest_float(
+        #     "label_smoothing", 0.0, 0.6, step=0.05
+        # )
         # config["cl_dropout"] = trial.suggest_float("cl_dropout", 0.0, 0.6, step=0.1)
         # config["fc_dropout"] = trial.suggest_float("fc_dropout", 0.0, 0.6, step=0.1)
         # config["log_FFT"] = trial.suggest_categorical("log_FFT", [True, False])

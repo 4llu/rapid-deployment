@@ -297,7 +297,7 @@ def run_training(
         checkpointer = ModelCheckpoint(
             dirname=f"./model_weights/{base_dir_name}/{config.get('i', 0)}_{datetime.now().strftime('%m-%d_%H-%M-%S')}",
             create_dir=True,
-            n_saved=5,  # TODO Could use this for ensembles
+            n_saved=1,  # TODO Could use this for ensembles
             # filename_prefix="best",
             score_name="val_accuracy",
             global_step_transform=global_step_from_engine(trainer),

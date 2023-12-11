@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --gres=gpu:1
-#SBATCH --time=00:5:00
-#SBATCH --mem=8G
+#SBATCH --time=00:55:00
+#SBATCH --mem=24G
 
 module restore torch
 source activate env/
 
-srun python src/anomality_detection_training.py --config arotor_replication/anomality_detection --repetitions 10 --job_id $SLURM_JOB_ID
+srun python src/anomality_detection_training.py --config arotor_replication/anomality_detection --repetitions 25 --job_id $SLURM_JOB_ID

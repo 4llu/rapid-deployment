@@ -39,7 +39,7 @@ def main():
         print(f"REPETITION {i + 1}")
         print("############################")
         print()
-        _, _, _ = run_training(
+        _, _, _, _ = run_training(
             train_loader,
             validation_loader,
             test_loader,

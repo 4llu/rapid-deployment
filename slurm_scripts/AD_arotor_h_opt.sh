@@ -6,4 +6,4 @@
 module restore torch
 source activate env/
 
-srun python src/h_opt.py --config arotor/anomality_detection_h_opt --n_trials 100 --n_repetitions 5
+srun python src/h_opt.py --config arotor/anomality_detection_h_opt --n_trials 20 --n_repetitions 3

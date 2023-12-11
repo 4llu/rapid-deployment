@@ -46,10 +46,10 @@ robust_scaling_high: 0.75
 preprocessing_sample: []
 preprocessing_class_batch: []
 # preprocessing_batch: []
-# preprocessing_batch: [gain_changer]
-preprocessing_batch: [add_white_noise]
-gain_std: 0.0
-white_noise_std: 0.1
+preprocessing_batch: [gain_changer]
+# preprocessing_batch: [add_white_noise]
+gain_std: 0.1
+white_noise_std: 0.0
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 log_FFT: false
 pad_FFT: -1
@@ -75,12 +75,13 @@ max_epochs: 100 # FIXME?
 patience: 50
 optimizer: AdamW
 # FIXME BELOW
-lr: 0.000876500725734695
+lr: 0.06659544191797616
 lr_scheduler: ExponentialLR
-sch_gamma: 0.9560071265251199
-momentum: 0.9021392511162514
+sch_gamma: 0.9729462057199779
+momentum: 0.9056536723498001
 # Regularization
-weight_decay: 1.019088895473807e-05
+weight_decay: 3.3321109944089465e-05
+label_smoothing: 0.0
 cl_dropout: 0.0
 fc_dropout: 0.0
 
