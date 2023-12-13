@@ -11,6 +11,7 @@ from data.arotor import fewshot_data_selection
 from data.arotor_replication import data_selection_baseline, data_selection_faults
 from main import setup_device
 from models.backbones.inception_time import InceptionTime
+from models.prototypical import EmbeddingLpNormalizer
 from utils.config import setup_config
 
 
@@ -181,6 +182,8 @@ def main():
     model = InceptionTime(config)
     model = model.to(device)
 
+    embedding_normalizer = EmbeddingLpNormalizer(config)
+
     # model = setup_model(config, device)
 
     # * torch.compile doesn't work on windows currently
@@ -209,7 +212,7 @@ def main():
     save_folder.mkdir(parents=True, exist_ok=True)
 
     i = 0
-    for root, asd, files in os.walk(
+    for root, _, files in os.walk(
         os.path.join(abs_path, os.pardir, "model_weights", config["model_weight_dir"])
     ):
         # Make sure the best weights are last (sorted by ascending accuracy)
@@ -247,8 +250,12 @@ def main():
             embeddings = model(samples)
             # Remove useless dimensions
             embeddings = embeddings.squeeze()
+            embeddings = embedding_normalizer(embeddings)
+
             # Multiplier
-            embeddings = embeddings * config["embedding_multiplier"]
+            # ! In normalizer
+            # embeddings = embeddings * config["embedding_multiplier"]
+
             # Save
             df = pd.DataFrame(embeddings.cpu().detach())
             if config["data"] == "ARotor":
@@ -264,7 +271,6 @@ def main():
 
         support_vector_df = pd.concat(support_vector_df)
 
-        # TODO Save
         support_vector_df.to_feather(
             os.path.join(
                 save_folder,
@@ -293,8 +299,9 @@ def main():
                 embeddings = model(samples)
             # Remove useless dimensions
             embeddings = embeddings.squeeze()
+            embeddings = embedding_normalizer(embeddings)
             # Multiplier # * Probably has no effect
-            embeddings = embeddings * config["embedding_multiplier"]
+            # embeddings = embeddings * config["embedding_multiplier"]
             # Save
             df = pd.DataFrame(embeddings.cpu())
             if config["data"] == "ARotor":

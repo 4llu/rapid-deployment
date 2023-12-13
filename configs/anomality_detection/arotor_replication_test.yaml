@@ -35,13 +35,13 @@ window_width: 4328
 
 model: prototypical
 backbone: InceptionTime
-model_weight_dir: anomality_detection_ARotor_acc3
+model_weight_dir: anomality_detection_ARotor_acc3_32
 # model_weight_dir: anomality_detection_ARotor_article
 kaiming_init: True
 embedding_len: 16
 # Lp-norm
 # embedding_normalization_type: lp # * Normalization doesn't affect anything
-# lp_norm: 2
+lp_norm: 2
 
 embedding_multiplier: 100 # * This might matter because of numerical accuracy
 
