@@ -24,9 +24,12 @@ separate_query_and_support: false
 #? Data
 
 data: ARotor_replication
-train_sensors: [torque1]
-validation_sensors: [torque1]
-test_sensors: [torque1]
+train_sensors: [acc3]
+validation_sensors: [acc3]
+test_sensors: [acc3]
+# train_sensors: [torque1]
+# validation_sensors: [torque1]
+# test_sensors: [torque1]
 # train_sensors: [en3speed]
 # validation_sensors: [en3speed]
 # test_sensors: [en4speed]
@@ -105,7 +108,7 @@ model: prototypical
 backbone: InceptionTime
 # backbone: WDCNN
 kaiming_init: True
-embedding_len: 16
+embedding_len: 32
 # Lp-norm
 embedding_normalization_type: lp
 lp_norm: 2
@@ -131,4 +134,4 @@ fc_dropout: 0.0
 
 # ? Other
 
-use_amp: false  
+use_amp: false

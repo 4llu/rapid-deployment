@@ -19,18 +19,17 @@ separate_query_and_support: false
 #? Data
 
 data: ARotor
-train_sensors: [torque1]
-validation_sensors: [torque1]
-test_sensors: [torque1]
-# train_sensors: [acc3]
-# validation_sensors: [acc3]
-# test_sensors: [acc3]
+# train_sensors: [torque1]
+# validation_sensors: [torque1]
+# test_sensors: [torque1]
+train_sensors: [acc3]
+validation_sensors: [acc3]
+test_sensors: [acc3]
 
 # config_override_0
 train_rpm: [250, 750, 1250]
 validation_rpm: [500]
 test_rpm: [500]
-
 
 train_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 validation_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -61,7 +60,7 @@ model: prototypical
 backbone: InceptionTime
 # backbone: WDCNN
 kaiming_init: true
-embedding_len: 16
+embedding_len: 32
 # Lp-norm
 embedding_normalization_type: lp
 lp_norm: 2
@@ -86,4 +85,4 @@ fc_dropout: 0.0
 
 # ? Other
 
-use_amp: false  
+use_amp: false

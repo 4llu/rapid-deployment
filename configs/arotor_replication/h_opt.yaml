@@ -21,12 +21,12 @@ separate_query_and_support: false
 #? Data
 
 data: ARotor_replication
-train_sensors: [torque1]
-validation_sensors: [torque1]
-test_sensors: [torque1]
-# train_sensors: [acc3]
-# validation_sensors: [acc3]
-# test_sensors: [acc3]
+# train_sensors: [torque1]
+# validation_sensors: [torque1]
+# test_sensors: [torque1]
+train_sensors: [acc3]
+validation_sensors: [acc3]
+test_sensors: [acc3]
 # train_sensors: [en3speed]
 # validation_sensors: [en3speed]
 # test_sensors: [en4speed]
@@ -108,7 +108,7 @@ backbone: InceptionTime
 # backbone: InceptionTime
 kaiming_init: True
 # embedding_len: 64
-embedding_len: 16
+embedding_len: 32
 # Lp-norm
 embedding_normalization_type: lp
 lp_norm: 2
@@ -127,10 +127,10 @@ sch_gamma: 0.99533
 momentum: 0.97624
 # Regularization
 weight_decay: 0.00019960
-label_smoothing: 0.1
+label_smoothing: 0.0
 cl_dropout: 0.0
 fc_dropout: 0.0
 
 # ? Other
 
-use_amp: false  
+use_amp: false

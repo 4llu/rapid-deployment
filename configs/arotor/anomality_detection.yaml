@@ -19,13 +19,13 @@ separate_query_and_support: false
 #? Data
 
 data: ARotor
-train_sensors: [torque1]
-validation_sensors: [torque1]
-test_sensors: [torque1]
+train_sensors: [acc3]
+validation_sensors: [acc3]
+test_sensors: [acc3]
 
-train_rpm: [250, 500, 750, 1250, 1500]
-validation_rpm: [500, 1500]
-test_rpm: [500, 1500]
+train_rpm: [250, 750, 1000, 1500]
+validation_rpm: [500, 1250]
+test_rpm: [500, 1250]
 
 train_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 validation_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -43,7 +43,7 @@ preprocessing_sample: []
 preprocessing_class_batch: []
 # preprocessing_batch: []
 preprocessing_batch: [gain_changer, add_white_noise]
-gain_std: 0.2
+gain_std: 0.1
 white_noise_std: 0.2
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 log_FFT: false
@@ -56,7 +56,7 @@ model: prototypical
 backbone: InceptionTime
 # backbone: WDCNN
 kaiming_init: true
-embedding_len: 16
+embedding_len: 32
 # Lp-norm
 embedding_normalization_type: lp
 lp_norm: 2
@@ -70,16 +70,16 @@ max_epochs: 85 # FIXME?
 patience: 30
 optimizer: AdamW
 # FIXME BELOW
-lr: 0.0026877256754964493
+lr: 0.003572835245861401
 lr_scheduler: ExponentialLR
-sch_gamma: 0.9930641495748094
-momentum: 0.9507914364266907
+sch_gamma: 0.9890982542048917
+momentum: 0.9004087458270527
 # Regularization
-weight_decay: 0.00027602654261471126
-label_smoothing: 0.2
+weight_decay: 0.00010696357318899101
+label_smoothing: 0.0
 cl_dropout: 0.0
 fc_dropout: 0.0
 
 # ? Other
 
-use_amp: false  
+use_amp: false

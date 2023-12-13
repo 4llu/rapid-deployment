@@ -116,10 +116,10 @@ sch_gamma: 0.9605089115116099
 momentum: 0.964805755036885
 # Regularization
 weight_decay: 0.00042515968772432376
-label_smoothing: 0.4
+label_smoothing: 0.0
 cl_dropout: 0.0
 fc_dropout: 0.0
 
 # ? Other
 
-use_amp: false  
+use_amp: false
