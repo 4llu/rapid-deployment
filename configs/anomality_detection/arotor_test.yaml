@@ -5,10 +5,9 @@ name: anomality_detection_arotor
 
 data: ARotor
 
-
 # ! Only single sensor support
-support_sensors: [acc3]
-query_sensors: [acc3]
+support_sensors: [torque1]
+query_sensors: [torque1]
 
 support_rpm: [500, 750, 1250, 1500]
 query_rpm: [500, 750, 1250, 1500]
@@ -22,9 +21,9 @@ window_width: 4328
 
 model: prototypical
 backbone: InceptionTime
-model_weight_dir: anomality_detection_ARotor
+model_weight_dir: anomality_detection_ARotor_article
 kaiming_init: True
-embedding_len: 64
+embedding_len: 16
 # Lp-norm
 # embedding_normalization_type: lp # * Normalization doesn't affect anything
 # lp_norm: 2

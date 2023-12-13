@@ -21,11 +21,18 @@ def get_AD_arotor_data(config, data_folder, device):
     # Select support data (baseline measurements only)
     ##
     support_data = fewshot_data_selection(
-        data, config["support_sensors"], config["support_rpm"], config["support_classes"]
+        data,
+        config["support_sensors"],
+        config["support_rpm"],
+        config["support_classes"],
     )
 
     support_data = (
-        support_data.groupby(by=["rpm", "class"], observed=True)[config["support_sensors"][0]].apply(list).to_dict()
+        support_data.groupby(by=["rpm", "class"], observed=True)[
+            config["support_sensors"][0]
+        ]
+        .apply(list)
+        .to_dict()
     )
     # Convert to tensors
     for k, v in support_data.items():
@@ -34,10 +41,16 @@ def get_AD_arotor_data(config, data_folder, device):
 
     # Select query data
     ##
-    query_data = fewshot_data_selection(data, config["query_sensors"], config["query_rpm"], config["query_classes"])
+    query_data = fewshot_data_selection(
+        data, config["query_sensors"], config["query_rpm"], config["query_classes"]
+    )
 
     query_data = (
-        query_data.groupby(by=["rpm", "class"], observed=True)[config["query_sensors"][0]].apply(list).to_dict()
+        query_data.groupby(by=["rpm", "class"], observed=True)[
+            config["query_sensors"][0]
+        ]
+        .apply(list)
+        .to_dict()
     )
     # Convert to tensors
     for k, v in query_data.items():
@@ -63,7 +76,9 @@ def get_AD_arotor_replication_data(config, data_folder, device):
 
     # Group
     support_data = (
-        support_data.groupby(by=["severity", "rpm", "torque"], observed=True)[config["support_sensors"][0]]
+        support_data.groupby(by=["severity", "rpm", "torque"], observed=True)[
+            config["support_sensors"][0]
+        ]
         .apply(list)
         .to_dict()
     )
@@ -96,9 +111,9 @@ def get_AD_arotor_replication_data(config, data_folder, device):
 
     # Group
     query_data = (
-        query_data.groupby(by=["fault", "severity", "rpm", "torque", "installation"], observed=True)[
-            config["support_sensors"][0]
-        ]
+        query_data.groupby(
+            by=["fault", "severity", "rpm", "torque", "installation"], observed=True
+        )[config["support_sensors"][0]]
         .apply(list)
         .to_dict()
     )
@@ -113,7 +128,9 @@ def setup_AD_data(config, data_folder, device):
     if config["data"] == "ARotor":
         support_data, query_data = get_AD_arotor_data(config, data_folder, device)
     elif config["data"] == "ARotor_replication":
-        support_data, query_data = get_AD_arotor_replication_data(config, data_folder, device)
+        support_data, query_data = get_AD_arotor_replication_data(
+            config, data_folder, device
+        )
     else:
         raise Exception("No such data configuration as`", config["data"], "`!")
 
@@ -121,13 +138,16 @@ def setup_AD_data(config, data_folder, device):
 
 
 def main():
-
     # INITIALIZATION
     ################
 
     # Init arguments
     parser = ArgumentParser()
-    parser.add_argument(f"--config", default="anomality_detection/arotor_replication_test", type=type("a"))
+    parser.add_argument(
+        f"--config",
+        default="anomality_detection/arotor_replication_test",
+        type=type("a"),
+    )
 
     # Parse args
     args = parser.parse_args()
@@ -189,7 +209,9 @@ def main():
     save_folder.mkdir(parents=True, exist_ok=True)
 
     i = 0
-    for root, _, files in os.walk(os.path.join(abs_path, os.pardir, "model_weights", config["model_weight_dir"])):
+    for root, asd, files in os.walk(
+        os.path.join(abs_path, os.pardir, "model_weights", config["model_weight_dir"])
+    ):
         # Make sure the best weights are last (sorted by ascending accuracy)
         files.sort()
 
@@ -205,7 +227,9 @@ def main():
 
         new_model_weights = {}
         for k in model_weights.keys():
-            new_model_weights[k.replace("_orig_mod.", "").replace("backbone.", "")] = model_weights[k]
+            new_model_weights[
+                k.replace("_orig_mod.", "").replace("backbone.", "")
+            ] = model_weights[k]
         model.load_state_dict(new_model_weights)
         model.eval()
 
@@ -216,7 +240,9 @@ def main():
         # TODO (Maybe) No overlap option currently
         for k, v in support_data.items():
             # Window
-            samples = v[: -(len(v) % config["window_width"])].view(-1, 1, config["window_width"])
+            samples = v[: -(len(v) % config["window_width"])].view(
+                -1, 1, config["window_width"]
+            )
             # Embed
             embeddings = model(samples)
             # Remove useless dimensions
