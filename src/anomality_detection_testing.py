@@ -218,7 +218,6 @@ def main():
         # Make sure the best weights are last (sorted by ascending accuracy)
         files.sort()
 
-        # TODO History ensemble support
         if len(files) < 1 or not "model_" in files[-1]:
             continue
 
@@ -328,7 +327,6 @@ def main():
             query_vector_df["fault"] = query_vector_df["fault"].astype("str")
             query_vector_df["severity"] = query_vector_df["severity"].astype("str")
 
-        # TODO Save
         query_vector_df.to_feather(
             os.path.join(
                 save_folder,
