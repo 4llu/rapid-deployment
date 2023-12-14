@@ -19,13 +19,16 @@ separate_query_and_support: false
 #? Data
 
 data: ARotor
-train_sensors: [acc3]
-validation_sensors: [acc3]
-test_sensors: [acc3]
+train_sensors: [torque1]
+validation_sensors: [torque1]
+test_sensors: [torque1]
+# train_sensors: [acc3]
+# validation_sensors: [acc3]
+# test_sensors: [acc3]
 
-train_rpm: [250, 500, 750, 1250, 1500]
-validation_rpm: [500, 1500]
-test_rpm: [500, 1500]
+train_rpm: [250, 750, 1500]
+validation_rpm: [500, 1250]
+test_rpm: [500, 1250]
 
 train_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 validation_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]

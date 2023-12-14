@@ -67,25 +67,25 @@ def get_AD_arotor_data(config, data_folder, device):
 def get_AD_arotor_replication_data(config, data_folder, device):
     # Support data (baseline measurements only)
 
-    support_data = data_selection_baseline(
-        data_folder,
-        config["support_sensors"],
-        config["support_baseline_GPs"],
-        config["support_rpms"],
-        config["support_torques"],
-    )
+    # support_data = data_selection_baseline(
+    #     data_folder,
+    #     config["support_sensors"],
+    #     config["support_baseline_GPs"],
+    #     config["support_rpms"],
+    #     config["support_torques"],
+    # )
 
-    # Group
-    support_data = (
-        support_data.groupby(by=["severity", "rpm", "torque"], observed=True)[
-            config["support_sensors"][0]
-        ]
-        .apply(list)
-        .to_dict()
-    )
-    # Convert to tensors
-    for k, v in support_data.items():
-        support_data[k] = torch.tensor(v, device=device)
+    # # Group
+    # support_data = (
+    #     support_data.groupby(by=["severity", "rpm", "torque"], observed=True)[
+    #         config["support_sensors"][0]
+    #     ]
+    #     .apply(list)
+    #     .to_dict()
+    # )
+    # # Convert to tensors
+    # for k, v in support_data.items():
+    #     support_data[k] = torch.tensor(v, device=device)
 
     # Query data (faults and remaining baselines)
 
@@ -122,20 +122,23 @@ def get_AD_arotor_replication_data(config, data_folder, device):
     for k, v in query_data.items():
         query_data[k] = torch.tensor(v, device=device, dtype=torch.float32)
 
-    return support_data, query_data
+    return query_data
+    # return support_data, query_data
 
 
 def setup_AD_data(config, data_folder, device):
     if config["data"] == "ARotor":
         support_data, query_data = get_AD_arotor_data(config, data_folder, device)
     elif config["data"] == "ARotor_replication":
-        support_data, query_data = get_AD_arotor_replication_data(
-            config, data_folder, device
-        )
+        query_data = get_AD_arotor_replication_data(config, data_folder, device)
+        # support_data, query_data = get_AD_arotor_replication_data(
+        #     config, data_folder, device
+        # )
     else:
         raise Exception("No such data configuration as`", config["data"], "`!")
 
-    return support_data, query_data
+    return query_data
+    # return support_data, query_data
 
 
 def main():
@@ -167,7 +170,8 @@ def main():
     abs_path = os.path.dirname(__file__)
     data_folder = os.path.join(abs_path, os.pardir, "data")
 
-    support_data, query_data = setup_AD_data(config, data_folder, device)
+    query_data = setup_AD_data(config, data_folder, device)
+    # support_data, query_data = setup_AD_data(config, data_folder, device)
 
     # TODO Preprocessing (at least `full`)
 
@@ -235,47 +239,47 @@ def main():
         model.load_state_dict(new_model_weights)
         model.eval()
 
-        # Process support
-        print("Embedding supports")
-        support_vector_df = []
+        # # Process support
+        # print("Embedding supports")
+        # support_vector_df = []
 
-        # TODO (Maybe) No overlap option currently
-        for k, v in support_data.items():
-            # Window
-            samples = v[: -(len(v) % config["window_width"])].view(
-                -1, 1, config["window_width"]
-            )
-            # Embed
-            embeddings = model(samples)
-            # Remove useless dimensions
-            embeddings = embeddings.squeeze()
-            embeddings = embedding_normalizer(embeddings)
+        # # TODO (Maybe) No overlap option currently
+        # for k, v in support_data.items():
+        #     # Window
+        #     samples = v[: -(len(v) % config["window_width"])].view(
+        #         -1, 1, config["window_width"]
+        #     )
+        #     # Embed
+        #     embeddings = model(samples)
+        #     # Remove useless dimensions
+        #     embeddings = embeddings.squeeze()
+        #     embeddings = embedding_normalizer(embeddings)
 
-            # Multiplier
-            # ! In normalizer
-            # embeddings = embeddings * config["embedding_multiplier"]
+        #     # Multiplier
+        #     # ! In normalizer
+        #     # embeddings = embeddings * config["embedding_multiplier"]
 
-            # Save
-            df = pd.DataFrame(embeddings.cpu().detach())
-            if config["data"] == "ARotor":
-                df["rpm"] = k[0]
-                df["class"] = k[1]
-            elif config["data"] == "ARotor_replication":
-                df["GP"] = k[0]
-                df["rpm"] = k[1]
-                df["torque"] = k[2]
-            else:
-                raise Exception("WAT?")
-            support_vector_df.append(df)
+        #     # Save
+        #     df = pd.DataFrame(embeddings.cpu().detach())
+        #     if config["data"] == "ARotor":
+        #         df["rpm"] = k[0]
+        #         df["class"] = k[1]
+        #     elif config["data"] == "ARotor_replication":
+        #         df["GP"] = k[0]
+        #         df["rpm"] = k[1]
+        #         df["torque"] = k[2]
+        #     else:
+        #         raise Exception("WAT?")
+        #     support_vector_df.append(df)
 
-        support_vector_df = pd.concat(support_vector_df)
+        # support_vector_df = pd.concat(support_vector_df)
 
-        support_vector_df.to_feather(
-            os.path.join(
-                save_folder,
-                f"support_{i}.feather",
-            )
-        )
+        # support_vector_df.to_feather(
+        #     os.path.join(
+        #         save_folder,
+        #         f"support_{i}.feather",
+        #     )
+        # )
 
         # Process queries
         print("Embedding queries")
