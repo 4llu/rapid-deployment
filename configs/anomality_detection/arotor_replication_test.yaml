@@ -6,27 +6,20 @@ name: anomality_detection_arotor_replication
 data: ARotor_replication
 
 # ! Only single sensor support
-support_sensors: [acc3]
-query_sensors: [acc3]
-# support_sensors: [torque1]
-# query_sensors: [torque1]
+# query_sensors: [acc3]
+# query_sensors: [torque2]
+query_sensors: [torque1]
 
-support_rpms: [500, 750, 1250, 1500]
 query_rpms: [500, 750, 1250, 1500]
 
-support_torques: [1, 6, 11]
 query_torques: [1, 6, 11]
 
-support_installations: [1, 2]
 query_installations: [1, 2]
 
-support_baseline_GPs: [1, 2, 3, 4]
-query_baseline_GPs: [5, 6, 7, 8, 9]
+query_baseline_GPs: [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-support_severities: [mild, severe]
 query_severities: [mild, severe]
 
-support_faults: [baseline]
 query_faults: [baseline, pitting, wear, micropitting, tff]
 
 window_width: 4328
@@ -35,12 +28,13 @@ window_width: 4328
 
 model: prototypical
 backbone: InceptionTime
-model_weight_dir: anomality_detection_ARotor_acc3_32
-# model_weight_dir: anomality_detection_ARotor_article
+# model_weight_dir: anomality_detection_ARotor_acc3_32
+# model_weight_dir: anomality_detection_ARotor_32
+model_weight_dir: anomality_detection_ARotor_article
 kaiming_init: True
 embedding_len: 16
 # Lp-norm
-# embedding_normalization_type: lp # * Normalization doesn't affect anything
+embedding_normalization_type: lp # * Matters a little bit
 lp_norm: 2
 
 embedding_multiplier: 100 # * This might matter because of numerical accuracy

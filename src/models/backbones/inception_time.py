@@ -359,8 +359,8 @@ class InceptionTime(nn.Module):
         #     nn.ReLU(),
         # )
         self.stem_1 = nn.Sequential(
-            nn.Conv1d(1, 32, kernel_size=20, stride=1, padding=0, bias=False),
-            nn.BatchNorm1d(32, momentum=1, affine=True),
+            nn.Conv1d(1, 16, kernel_size=20, stride=1, padding=0, bias=False),
+            nn.BatchNorm1d(16, momentum=1, affine=True),
             nn.ReLU(),
             # nn.MaxPool1d(10, stride=2, padding=0),
         )
@@ -370,10 +370,10 @@ class InceptionTime(nn.Module):
 
         # self.reduction_1 = SimpleGridReductionModule(8, 8)
 
-        self.module_3_1 = ModdedInceptionModule(32, 8, use_bottleneck=True)
-        self.module_4_1 = ModdedInceptionModule(32, 8)
-        self.module_5_1 = ModdedInceptionModule(32, 8, activation=False)
-        self.shortcut_1 = Explicit_skip_connection(32, 32)
+        self.module_3_1 = ModdedInceptionModule(16, 4, use_bottleneck=True)
+        self.module_4_1 = ModdedInceptionModule(16, 4)
+        self.module_5_1 = ModdedInceptionModule(16, 4, activation=False)
+        self.shortcut_1 = Explicit_skip_connection(16, 16)
         # self.module_3_1 = ModdedInceptionModule(8, 16, use_bottleneck=False)
         # self.module_4_1 = ModdedInceptionModule(64, 16)
         # self.module_5_1 = ModdedInceptionModule(64, 16, activation=False)
@@ -381,10 +381,10 @@ class InceptionTime(nn.Module):
 
         # self.reduction_2 = SimpleGridReductionModule(16, 16)  # XXX
 
-        self.module_6_1 = ModdedInceptionModule(32, 8)
-        self.module_7_1 = ModdedInceptionModule(32, 8)
-        self.module_8_1 = ModdedInceptionModule(32, 8, activation=False)
-        self.shortcut_2 = Explicit_skip_connection(32, 32, sigmoid=False)
+        self.module_6_1 = ModdedInceptionModule(16, 4)
+        self.module_7_1 = ModdedInceptionModule(16, 4)
+        self.module_8_1 = ModdedInceptionModule(16, 4, activation=False)
+        self.shortcut_2 = Explicit_skip_connection(16, 16, sigmoid=False)
         # self.module_6_1 = ModdedInceptionModule(64, 16)
         # self.module_7_1 = ModdedInceptionModule(64, 16)
         # self.module_8_1 = ModdedInceptionModule(64, 16, activation=False)

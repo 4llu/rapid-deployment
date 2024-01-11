@@ -71,8 +71,8 @@ embedding_multiplier: 100
 #? Training
 
 epoch_len: 1
-max_epochs: 100 # FIXME?
-patience: 50
+max_epochs: 85 # FIXME?
+patience: 30
 optimizer: AdamW
 # FIXME BELOW
 lr: 0.06659544191797616
@@ -87,4 +87,4 @@ fc_dropout: 0.0
 
 # ? Other
 
-use_amp: false  
+use_amp: false

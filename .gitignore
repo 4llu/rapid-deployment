@@ -18,6 +18,7 @@ reports/RAW/logs_tb/*
 reports/RAW/optuna_studies/*
 reports/RAW/result_generation/*
 reports/RAW/NoML/*
+reports/processed/images/*
 reports/**/*.pkl
 torch_downloads/*
 slurm-*.out

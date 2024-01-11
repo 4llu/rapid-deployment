@@ -22,6 +22,9 @@ class EmbeddingLpNormalizer(nn.Module):
             norm = x.abs().pow(self.config["lp_norm"]).sum(dim=-1, keepdim=True) ** (
                 1.0 / self.config["lp_norm"]
             )
+            norm[
+                norm < 0.000001
+            ] = 1  # * This is to not produce NaNs if length of vector is 0
             return x / norm
 
         self.normalizer = lp_norm

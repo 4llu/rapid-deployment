@@ -21,24 +21,24 @@ def get_AD_arotor_data(config, data_folder, device):
 
     # Select support data (baseline measurements only)
     ##
-    support_data = fewshot_data_selection(
-        data,
-        config["support_sensors"],
-        config["support_rpm"],
-        config["support_classes"],
-    )
+    # support_data = fewshot_data_selection(
+    #     data,
+    #     config["support_sensors"],
+    #     config["support_rpm"],
+    #     config["support_classes"],
+    # )
 
-    support_data = (
-        support_data.groupby(by=["rpm", "class"], observed=True)[
-            config["support_sensors"][0]
-        ]
-        .apply(list)
-        .to_dict()
-    )
-    # Convert to tensors
-    for k, v in support_data.items():
-        # * Only use the first half of baseline data
-        support_data[k] = torch.tensor(v, device=device)[: len(v) // 2]
+    # support_data = (
+    #     support_data.groupby(by=["rpm", "class"], observed=True)[
+    #         config["support_sensors"][0]
+    #     ]
+    #     .apply(list)
+    #     .to_dict()
+    # )
+    # # Convert to tensors
+    # for k, v in support_data.items():
+    #     # * Only use the first half of baseline data
+    #     support_data[k] = torch.tensor(v, device=device)[: len(v) // 2]
 
     # Select query data
     ##
@@ -61,7 +61,8 @@ def get_AD_arotor_data(config, data_folder, device):
             new_tensor = new_tensor[len(v) // 2 :]
         query_data[k] = new_tensor
 
-    return support_data, query_data
+    return query_data
+    # return support_data, query_data
 
 
 def get_AD_arotor_replication_data(config, data_folder, device):
@@ -128,7 +129,8 @@ def get_AD_arotor_replication_data(config, data_folder, device):
 
 def setup_AD_data(config, data_folder, device):
     if config["data"] == "ARotor":
-        support_data, query_data = get_AD_arotor_data(config, data_folder, device)
+        query_data = get_AD_arotor_data(config, data_folder, device)
+        # support_data, query_data = get_AD_arotor_data(config, data_folder, device)
     elif config["data"] == "ARotor_replication":
         query_data = get_AD_arotor_replication_data(config, data_folder, device)
         # support_data, query_data = get_AD_arotor_replication_data(
@@ -321,11 +323,6 @@ def main():
             query_vector_df.append(df)
 
         query_vector_df = pd.concat(query_vector_df)
-
-        # print(support_vector_df.shape)
-        # print(support_vector_df.head(3))
-        # print(query_vector_df.shape)
-        # print(query_vector_df.head(3))
 
         if config["data"] == "ARotor_replication":
             query_vector_df["fault"] = query_vector_df["fault"].astype("str")

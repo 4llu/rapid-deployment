@@ -108,7 +108,7 @@ backbone: InceptionTime
 # backbone: InceptionTime
 kaiming_init: True
 # embedding_len: 64
-embedding_len: 32
+embedding_len: 16
 # Lp-norm
 embedding_normalization_type: lp
 lp_norm: 2
