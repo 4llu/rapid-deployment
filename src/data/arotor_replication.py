@@ -9,7 +9,6 @@ import torch
 from torch.utils.data import DataLoader, Dataset, Sampler
 
 from data.arotor import fewshot_collate
-from preprocessing.batch import preprocess_batch
 from preprocessing.class_batch import preprocess_class_batch
 from preprocessing.full import preprocess_full
 from preprocessing.sample import preprocess_sample
@@ -67,11 +66,12 @@ class FewShotMixedDataset(Dataset):
     the options available in the split. For non-mixed situation, possibly slightly slower than the non-mixed solution?
     """
 
-    def __init__(self, df, config, device):
+    def __init__(self, df, split, config, device):
         assert not (
             config["mix_rpms"] and config["mix_sensors"]
         ), "(TODO) Setting both mix_rpms and mix_sensors as true is currently badly defined!"
 
+        self.split = split
         self.config = config
         self.device = device  # * Here just in case, not currently used for anything
 
@@ -480,7 +480,9 @@ class FewShotMixedDataset(Dataset):
             support_query_set.append(sample)
 
         # Preprocess as individual samples
-        support_query_set = preprocess_sample(support_query_set, self.config)
+        support_query_set = preprocess_sample(
+            support_query_set, self.split, self.config
+        )
 
         # Combine
         support_query_set = torch.stack(support_query_set, dim=0)
@@ -490,7 +492,7 @@ class FewShotMixedDataset(Dataset):
         # Transformations
         if len(self.config["preprocessing_class_batch"]) > 0:
             support_query_set = preprocess_class_batch(
-                support_query_set, self.config, idx, query_sampling
+                support_query_set, self.split, self.config, idx, query_sampling
             )
 
         # Swap support and query sets to mix samples between batches
@@ -713,9 +715,11 @@ def get_arotor_replication_data(config, device):
     # Dataset creation
     ##################
 
-    train_dataset = FewShotMixedDataset(train_data, config, device)
-    validation_dataset = FewShotMixedDataset(validation_data, config, device)
-    test_dataset = FewShotMixedDataset(test_data, config, device)
+    train_dataset = FewShotMixedDataset(train_data, "train", config, device)
+    validation_dataset = FewShotMixedDataset(
+        validation_data, "validation", config, device
+    )
+    test_dataset = FewShotMixedDataset(test_data, "test", config, device)
 
     # Dataloaders
     #############
@@ -757,7 +761,9 @@ def get_arotor_replication_data(config, device):
     train_loader = DataLoader(
         train_dataset,
         batch_sampler=train_sampler,
-        collate_fn=partial(fewshot_collate, config=config, device=device),
+        collate_fn=partial(
+            fewshot_collate, split="train", config=config, device=device
+        ),
         pin_memory=True,
         # num_workers=0,
         # prefetch_factor=4,
@@ -765,7 +771,9 @@ def get_arotor_replication_data(config, device):
     validation_loader = DataLoader(
         validation_dataset,
         batch_sampler=validation_sampler,
-        collate_fn=partial(fewshot_collate, config=config, device=device),
+        collate_fn=partial(
+            fewshot_collate, split="validation", config=config, device=device
+        ),
         pin_memory=True,
         # num_workers=0,
         # prefetch_factor=4,
@@ -773,7 +781,7 @@ def get_arotor_replication_data(config, device):
     test_loader = DataLoader(
         test_dataset,
         batch_sampler=test_sampler,
-        collate_fn=partial(fewshot_collate, config=config, device=device),
+        collate_fn=partial(fewshot_collate, split="test", config=config, device=device),
         pin_memory=True,
         # num_workers=0,
         # prefetch_factor=4,

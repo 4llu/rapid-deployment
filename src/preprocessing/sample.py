@@ -37,7 +37,9 @@ def FFT(sample_list, config):
     return new_sample_list
 
 
-def preprocess_sample(sample_list, config):
+def preprocess_sample(sample_list, split, config):
+    # ? Split not in use for any of the preprocessing implemented now, but check if it is
+    # ? necessary for any new additions
     """
     Preprocess a sample during runtime. Note that this means two things:
 
@@ -55,7 +57,9 @@ def preprocess_sample(sample_list, config):
         raise Exception("NOT IN USE CURRENTLY!")
         # sample_list = sync_FFT(sample_list, config)
     if "FFT" in config["preprocessing_sample"]:
-        raise Exception("SLOW! ARE YOU SURE YOU WANT TO USE THIS? IN THAT CASE COMMENT THIS `raise`")
+        raise Exception(
+            "SLOW! ARE YOU SURE YOU WANT TO USE THIS? IN THAT CASE COMMENT THIS `raise`"
+        )
         # sample_list = FFT(sample_list, config)
 
     return sample_list

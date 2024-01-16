@@ -24,12 +24,12 @@ separate_query_and_support: false
 #? Data
 
 data: ARotor_replication
-train_sensors: [acc3]
-validation_sensors: [acc3]
-test_sensors: [acc3]
-# train_sensors: [torque1]
-# validation_sensors: [torque1]
-# test_sensors: [torque1]
+# train_sensors: [acc3]
+# validation_sensors: [acc3]
+# test_sensors: [acc3]
+train_sensors: [torque1]
+validation_sensors: [torque1]
+test_sensors: [torque1]
 # train_sensors: [en3speed]
 # validation_sensors: [en3speed]
 # test_sensors: [en4speed]
@@ -72,10 +72,10 @@ window_overlap: 0.99
 
 #? Preprocessing
 
-# preprocessing_full: []
+preprocessing_full: []
 # preprocessing_full: [lowpass_filtering]
 # preprocessing_full: [lowpass_filtering, robust_scaling]
-preprocessing_full: [robust_scaling]
+# preprocessing_full: [robust_scaling]
 # lp_filter_cutoff: 200 #! lowpass doesn't use this currently!
 robust_scaling_low: 0.25
 robust_scaling_high: 0.75
@@ -108,7 +108,7 @@ model: prototypical
 backbone: InceptionTime
 # backbone: WDCNN
 kaiming_init: True
-embedding_len: 32
+embedding_len: 16
 # Lp-norm
 embedding_normalization_type: lp
 lp_norm: 2

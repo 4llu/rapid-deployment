@@ -1,0 +1,93 @@
+#? Creation
+name: rapid_classification_arotor_replication
+
+#? Fewshot setup
+
+test_episodes: 1000
+
+k_shot: 1
+n_way: 5
+n_query: 36
+mix_severities: false # * Baseline measurements use GPs
+mix_rpms: false
+mix_torques: false
+mix_installations: false # * Baseline measurements use GPs
+mix_sensors: false
+separate_query_and_support: false
+
+#? Data
+
+data: ARotor_replication
+
+# ! Only single sensor support
+# train_sensors: [acc3]
+# validation_sensors: [acc3]
+# test_sensors: [acc3]
+# test_sensors: [torque2]
+train_sensors: [torque1]
+validation_sensors: [torque1]
+test_sensors: [torque1]
+
+train_rpm: [500]
+validation_rpm: [500]
+# test_rpm: [500]
+test_rpm: [500, 750, 1250, 1500]
+
+train_torques: [1]
+validation_torques: [1]
+# test_torques: [1]
+test_torques: [1, 6, 11]
+
+train_installations: [1]
+validation_installations: [1]
+# test_installations: [1]
+test_installations: [1, 2]
+
+train_baseline_GPs: [1]
+validation_baseline_GPs: [1]
+# test_baseline_GPs: [1]
+test_baseline_GPs: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+train_severities: [mild]
+validation_severities: [mild]
+test_severities: [mild, severe]
+
+train_faults: [baseline, pitting, wear, micropitting, tff]
+validation_faults: [baseline, pitting, wear, micropitting, tff]
+test_faults: [baseline, pitting, wear, micropitting, tff]
+
+window_width: 4328
+window_overlap: 0.9
+
+#? Preprocessing
+
+preprocessing_full: []
+robust_scaling_low: 0.25
+robust_scaling_high: 0.75
+preprocessing_sample: []
+preprocessing_class_batch: []
+# preprocessing_batch: []
+# preprocessing_batch: [individual_centering]
+preprocessing_batch: []
+# gain_std: 0.3
+# white_noise_std: 0.4
+# include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
+# log_FFT: false
+# pad_FFT: -1
+sample_cut: -1 # Done in batch preprocessing
+
+#? Model
+
+model: prototypical
+backbone: InceptionTime
+ensemble_size: 5
+# model_weight_dir: anomality_detection_ARotor_acc3
+# model_weight_dir: anomality_detection_ARotor_article
+model_weight_dir: anomality_detection_ARotor_replication_article
+kaiming_init: True
+embedding_len: 16
+# Lp-norm
+embedding_normalization_type: lp
+lp_norm: 2
+
+embedding_multiplier: 100

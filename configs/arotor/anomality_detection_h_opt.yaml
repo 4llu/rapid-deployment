@@ -39,14 +39,14 @@ window_overlap: 0.99
 
 #? Preprocessing
 
-# preprocessing_full: []
-preprocessing_full: [robust_scaling]
+preprocessing_full: []
+# preprocessing_full: [robust_scaling]
 robust_scaling_low: 0.25
 robust_scaling_high: 0.75
 preprocessing_sample: []
 preprocessing_class_batch: []
 # preprocessing_batch: [gain_changer, add_white_noise]
-preprocessing_batch: [gain_changer]
+preprocessing_batch: [gain_changer, add_white_noise]
 gain_std: 0.0
 white_noise_std: 0.1
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
@@ -60,7 +60,7 @@ model: prototypical
 backbone: InceptionTime
 # backbone: WDCNN
 kaiming_init: true
-embedding_len: 32
+embedding_len: 16
 # Lp-norm
 embedding_normalization_type: lp
 lp_norm: 2
