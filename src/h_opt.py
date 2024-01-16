@@ -68,10 +68,10 @@ def main():
             "weight_decay", 0.00001, 0.001, log=True
         )
         config["sch_gamma"] = trial.suggest_float("sch_gamma", 0.95, 0.99998, log=True)
-        config["gain_std"] = trial.suggest_float("gain_std", 0.0, 0.4, step=0.1)
-        config["white_noise_std"] = trial.suggest_float(
-            "white_noise_std", 0.0, 0.4, step=0.1
-        )
+        # config["gain_std"] = trial.suggest_float("gain_std", 0.0, 0.4, step=0.1)
+        # config["white_noise_std"] = trial.suggest_float(
+        #     "white_noise_std", 0.0, 0.4, step=0.1
+        # )
         # config["label_smoothing"] = trial.suggest_float(
         #     "label_smoothing", 0.0, 0.6, step=0.05
         # )

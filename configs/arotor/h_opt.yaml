@@ -19,12 +19,12 @@ separate_query_and_support: false
 #? Data
 
 data: ARotor
-train_sensors: [torque1]
-validation_sensors: [torque1]
-test_sensors: [torque1]
-# train_sensors: [acc3]
-# validation_sensors: [acc3]
-# test_sensors: [acc3]
+# train_sensors: [torque1]
+# validation_sensors: [torque1]
+# test_sensors: [torque1]
+train_sensors: [acc3]
+validation_sensors: [acc3]
+test_sensors: [acc3]
 
 # config_override_0
 train_rpm: [250, 750, 1250]
@@ -47,8 +47,6 @@ robust_scaling_high: 0.75
 preprocessing_sample: []
 preprocessing_class_batch: []
 preprocessing_batch: [gain_changer, add_white_noise]
-gain_std: 0.1
-white_noise_std: 0.02
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 log_FFT: false
 pad_FFT: -1
@@ -73,12 +71,31 @@ epoch_len: 1
 max_epochs: 100 # FIXME?
 patience: 50
 optimizer: AdamW
-lr: 0.00627755041240667
+
+# # Torque1
+# lr: 0.0010516114088954859
+# lr_scheduler: ExponentialLR
+# sch_gamma: 0.9516205212854265
+# momentum: 0.9608964925174016
+# # Augmentation
+# gain_std: 0.3
+# white_noise_std: 0.1
+# # Regularization
+# weight_decay: 1.2554141358856704e-05
+# label_smoothing: 0.0
+# cl_dropout: 0.0
+# fc_dropout: 0.0
+
+# Acc3
+lr: 0.0010516114088954859
 lr_scheduler: ExponentialLR
-sch_gamma: 0.9685069357986219
-momentum: 0.9854767111829658
+sch_gamma: 0.9516205212854265
+momentum: 0.9608964925174016
+# Augmentation
+gain_std: 0.3
+white_noise_std: 0.3
 # Regularization
-weight_decay: 0.00004845181
+weight_decay: 1.2554141358856704e-05
 label_smoothing: 0.0
 cl_dropout: 0.0
 fc_dropout: 0.0

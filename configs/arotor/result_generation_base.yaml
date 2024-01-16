@@ -9,7 +9,6 @@ test_episodes: 50
 #? Fewshot setup
 
 k_shot: 1
-# n_way: 4
 n_way: 10
 n_query: 36
 mix_rpms: false
@@ -45,11 +44,7 @@ robust_scaling_low: 0.25
 robust_scaling_high: 0.75
 preprocessing_sample: []
 preprocessing_class_batch: []
-# preprocessing_batch: []
-preprocessing_batch: [gain_changer]
-# preprocessing_batch: [add_white_noise]
-gain_std: 0.1
-white_noise_std: 0.0
+preprocessing_batch: [add_white_noise, gain_changer]
 include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
 log_FFT: false
 pad_FFT: -1
@@ -59,7 +54,6 @@ sample_cut: -1 # Done in batch preprocessing
 
 model: prototypical
 backbone: InceptionTime
-# backbone: WDCNN
 kaiming_init: true
 embedding_len: 16
 # Lp-norm
@@ -71,19 +65,37 @@ embedding_multiplier: 100
 #? Training
 
 epoch_len: 1
-max_epochs: 85 # FIXME?
+max_epochs: 85
 patience: 30
 optimizer: AdamW
-# FIXME BELOW
+
+# Torque 1 values
 lr: 0.06659544191797616
 lr_scheduler: ExponentialLR
 sch_gamma: 0.9729462057199779
 momentum: 0.9056536723498001
+# Augmentation
+gain_std: 0.3
+white_noise_std: 0.1
 # Regularization
 weight_decay: 3.3321109944089465e-05
 label_smoothing: 0.0
 cl_dropout: 0.0
 fc_dropout: 0.0
+
+# Acc3 values
+# lr: 0.06659544191797616
+# lr_scheduler: ExponentialLR
+# sch_gamma: 0.9729462057199779
+# momentum: 0.9056536723498001
+# # Augmentation
+# gain_std: 0.3
+# white_noise_std: 0.3
+# # Regularization
+# weight_decay: 3.3321109944089465e-05
+# label_smoothing: 0.0
+# cl_dropout: 0.0
+# fc_dropout: 0.0
 
 # ? Other
 

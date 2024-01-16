@@ -100,29 +100,31 @@ def FFT_w_phase(support_query_set, config, device):
 
 
 def additive_white_noise(support_query_set, config, device):
-    support_query_set += torch.normal(
-        torch.zeros(
-            support_query_set.shape,
-            device=device
-            if support_query_set.get_device() >= 0
-            else torch.device("cpu"),
-        ),
-        config["white_noise_std"],
-    )
+    if config["white_noise_std"] > 0.0:
+        support_query_set += torch.normal(
+            torch.zeros(
+                support_query_set.shape,
+                device=device
+                if support_query_set.get_device() >= 0
+                else torch.device("cpu"),
+            ),
+            config["white_noise_std"],
+        )
 
     return support_query_set
 
 
 def mult_white_noise(support_query_set, config, device):
-    support_query_set *= torch.normal(
-        torch.ones(
-            support_query_set.shape,
-            device=device
-            if support_query_set.get_device() >= 0
-            else torch.device("cpu"),
-        ),
-        config["white_noise_std"],
-    )
+    if config["white_noise_std"] > 0.0:
+        support_query_set *= torch.normal(
+            torch.ones(
+                support_query_set.shape,
+                device=device
+                if support_query_set.get_device() >= 0
+                else torch.device("cpu"),
+            ),
+            config["white_noise_std"],
+        )
 
     return support_query_set
 
@@ -210,15 +212,16 @@ def combined_freq_masking(support_query_set, config, device):
 
 
 def gain_changer(support_query_set, config, device):
-    support_query_set *= torch.normal(
-        mean=torch.ones(
-            1,
-            device=device
-            if support_query_set.get_device() >= 0
-            else torch.device("cpu"),
-        ),
-        std=config["gain_std"],
-    )
+    if config["gain_std"] > 0.0:
+        support_query_set *= torch.normal(
+            mean=torch.ones(
+                1,
+                device=device
+                if support_query_set.get_device() >= 0
+                else torch.device("cpu"),
+            ),
+            std=config["gain_std"],
+        )
 
     return support_query_set
 
