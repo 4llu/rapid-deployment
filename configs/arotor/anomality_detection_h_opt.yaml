@@ -19,12 +19,12 @@ separate_query_and_support: false
 #? Data
 
 data: ARotor
-# train_sensors: [torque1]
-# validation_sensors: [torque1]
-# test_sensors: [torque1]
-train_sensors: [acc3]
-validation_sensors: [acc3]
-test_sensors: [acc3]
+train_sensors: [torque1]
+validation_sensors: [torque1]
+test_sensors: [torque1]
+# train_sensors: [acc3]
+# validation_sensors: [acc3]
+# test_sensors: [acc3]
 
 train_rpm: [250, 750, 1500]
 validation_rpm: [500, 1250]
@@ -69,33 +69,33 @@ max_epochs: 85
 patience: 30
 optimizer: AdamW
 
-# # Torque1
-# lr: 0.0010516114088954859
-# lr_scheduler: ExponentialLR
-# sch_gamma: 0.9516205212854265
-# momentum: 0.9608964925174016
-# # Augmentation
-# gain_std: 0.3
-# white_noise_std: 0.1
-# # Regularization
-# weight_decay: 1.2554141358856704e-05
-# label_smoothing: 0.0
-# cl_dropout: 0.0
-# fc_dropout: 0.0
-
-# Acc3
+# Torque1
 lr: 0.0010516114088954859
 lr_scheduler: ExponentialLR
 sch_gamma: 0.9516205212854265
 momentum: 0.9608964925174016
 # Augmentation
 gain_std: 0.3
-white_noise_std: 0.3
+white_noise_std: 0.1
 # Regularization
 weight_decay: 1.2554141358856704e-05
 label_smoothing: 0.0
 cl_dropout: 0.0
 fc_dropout: 0.0
+
+# # Acc3
+# lr: 0.0010516114088954859
+# lr_scheduler: ExponentialLR
+# sch_gamma: 0.9516205212854265
+# momentum: 0.9608964925174016
+# # Augmentation
+# gain_std: 0.3
+# white_noise_std: 0.3
+# # Regularization
+# weight_decay: 1.2554141358856704e-05
+# label_smoothing: 0.0
+# cl_dropout: 0.0
+# fc_dropout: 0.0
 
 # ? Other
 
