@@ -7,6 +7,7 @@ data: ARotor
 
 # ! Only single sensor support
 query_sensors: [torque1]
+# query_sensors: [acc3]
 
 query_rpm: [250, 500, 750, 1000, 1250, 1500]
 
@@ -18,7 +19,7 @@ window_width: 4328
 
 model: prototypical
 backbone: InceptionTime
-model_weight_dir: anomality_detection_ARotor_article
+model_weight_dir: AD_ARotor_torque1_article
 kaiming_init: True
 embedding_len: 16
 # Lp-norm

@@ -117,7 +117,7 @@ def get_AD_arotor_replication_data(config, data_folder, device):
     query_data = (
         query_data.groupby(
             by=["fault", "severity", "rpm", "torque", "installation"], observed=True
-        )[config["support_sensors"][0]]
+        )[config["query_sensors"][0]]
         .apply(list)
         .to_dict()
     )
