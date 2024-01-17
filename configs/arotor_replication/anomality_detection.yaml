@@ -88,29 +88,29 @@ patience: 30
 optimizer: AdamW
 
 # Torque1
-lr: 0.0010516114088954859
+lr: 0.0029606507479284397
 lr_scheduler: ExponentialLR
-sch_gamma: 0.9516205212854265
-momentum: 0.9608964925174016
+sch_gamma: 0.9872170702317133
+momentum: 0.9494068910681177
 # Augmentation
 gain_std: 0.3
 white_noise_std: 0.1
 # Regularization
-weight_decay: 1.2554141358856704e-05
+weight_decay: 0.0006743328821256085
 label_smoothing: 0.0
 cl_dropout: 0.0
 fc_dropout: 0.0
 
 # Acc3
-# lr: 0.0010516114088954859
+# lr: 0.001749078152174788
 # lr_scheduler: ExponentialLR
-# sch_gamma: 0.9516205212854265
-# momentum: 0.9608964925174016
+# sch_gamma: 0.9788022791345944
+# momentum: 0.9708834660921335
 # # Augmentation
 # gain_std: 0.3
 # white_noise_std: 0.3
 # # Regularization
-# weight_decay: 1.2554141358856704e-05
+# weight_decay: 0.0001597854862933151
 # label_smoothing: 0.0
 # cl_dropout: 0.0
 # fc_dropout: 0.0

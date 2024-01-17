@@ -55,11 +55,13 @@ def get_AD_arotor_data(config, data_folder, device):
     )
     # Convert to tensors
     for k, v in query_data.items():
-        new_tensor = torch.tensor(v, device=device)
-        # Use second half of baseline measurements
-        if k[1] == 0:
-            new_tensor = new_tensor[len(v) // 2 :]
-        query_data[k] = new_tensor
+        query_data[k] = torch.tensor(v, device=device)
+
+        # new_tensor = torch.tensor(v, device=device)
+        # # Use second half of baseline measurements
+        # if k[1] == 0:
+        #     new_tensor = new_tensor[len(v) // 2 :]
+        # query_data[k] = new_tensor
 
     return query_data
     # return support_data, query_data

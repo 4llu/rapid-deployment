@@ -6,8 +6,6 @@ __pycache__
 
 # Repo specific
 env/
-configs/arotor_replication/result_generation/*
-configs/arotor/result_generation/*
 data/RAW/*
 data/processed/*
 model_weights/*
