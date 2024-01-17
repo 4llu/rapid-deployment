@@ -1,0 +1,3 @@
+train_rpm: [500, 1000, 1500]
+validation_rpm: [250]
+test_rpm: [750]
