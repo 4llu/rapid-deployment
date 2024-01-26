@@ -1,0 +1,62 @@
+#? Creation
+name: rapid_classification_mixed
+
+#? Fewshot setup
+
+test_episodes: 200
+
+k_shot: 1
+n_way: 10
+n_query: 36
+mix_rpms: false
+mix_sensors: false
+separate_query_and_support: false
+
+#? Data
+
+data: ARotor
+
+# ! Only single sensor support
+# train_sensors: [torque1]
+# validation_sensors: [torque1]
+# test_sensors: [torque1]
+train_sensors: [acc3]
+validation_sensors: [acc3]
+test_sensors: [acc3]
+
+train_rpm: [500]
+validation_rpm: [500]
+# test_rpm: [500]
+test_rpm: [250, 500, 750, 1000, 1250, 1500]
+
+train_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+validation_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+test_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+window_width: 4328
+window_overlap: 0.9
+
+#? Preprocessing
+
+preprocessing_full: []
+robust_scaling_low: 0.25
+robust_scaling_high: 0.75
+preprocessing_sample: []
+preprocessing_class_batch: []
+preprocessing_batch: []
+sample_cut: -1 # Done in batch preprocessing
+
+#? Model
+
+model: prototypical
+backbone: InceptionTime
+ensemble_size: 5
+model_weight_dir: AD_ARotor_torque1_article
+# model_weight_dir: AD_ARotor_acc3_article
+kaiming_init: True
+embedding_len: 16
+# Lp-norm
+embedding_normalization_type: lp
+lp_norm: 2
+
+embedding_multiplier: 100

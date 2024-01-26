@@ -1,8 +1,11 @@
 import os
 from argparse import ArgumentParser
 
+import joblib
+import numpy as np
 import torch
 import tqdm
+from sklearn.metrics import confusion_matrix
 
 from data.data import setup_data
 from main import setup_device
@@ -63,11 +66,11 @@ def run_testing(
 
         all_ensemble_weights[-1].append(new_model_weights)
 
-    #! TODO RUNNING
     # TEST
     ######
 
     all_accuracies = []
+    all_cfs = []
 
     # Go through all ensembles
     ensemble_num = 1
@@ -121,22 +124,33 @@ def run_testing(
         ensemble_predictions = torch.sum(ensemble_predictions, dim=1)
         _, ensemble_predictions = torch.max(ensemble_predictions, dim=-1)
 
+        # Save accuracies
         accuracies = (ensemble_predictions == ensemble_targets).sum(dim=-1) / (
             config["n_way"] * config["n_query"]
         )
         all_accuracies.append(accuracies)
-        # print(accuracies)
-        # print(accuracies.mean())
-        # quit()
+        # Save cfs
+        cfs = []
+        for ep in range(ensemble_predictions.shape[0]):
+            cf = confusion_matrix(
+                ensemble_predictions[ep].cpu().detach().numpy(),
+                ensemble_targets[ep].cpu().detach().numpy(),
+            )
+            cfs.append(cf)
+
+        cfs = np.stack(cfs, axis=0)
+        all_cfs.append(cfs)
 
         ensemble_num += 1
 
     all_accuracies = torch.cat(all_accuracies)
+    all_accuracies = all_accuracies.cpu().numpy()
     print(all_accuracies)
     print(all_accuracies.mean())
-    quit()
 
-    return all_accuracies
+    all_cfs = np.concatenate(all_cfs)
+
+    return all_accuracies, all_cfs
 
 
 if __name__ == "__main__":
@@ -155,4 +169,19 @@ if __name__ == "__main__":
     config = setup_config(args.config)
 
     # Run setup
-    run_testing(config)
+    all_accuracies, all_cfs = run_testing(config)
+
+    joblib.dump(
+        {
+            "accuracies": all_accuracies,
+            "cfs": all_cfs,
+        },
+        os.path.join(
+            os.path.dirname(__file__),
+            os.pardir,
+            "reports",
+            "RAW",
+            "rapid_classification_results",
+            f"{config['name']}_{config['data']}_{config['test_sensors'][0]}.pkl",
+        ),
+    )

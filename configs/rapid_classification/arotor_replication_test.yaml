@@ -1,5 +1,5 @@
 #? Creation
-name: rapid_classification_arotor_replication
+name: rapid_classification
 
 #? Fewshot setup
 
@@ -20,13 +20,12 @@ separate_query_and_support: false
 data: ARotor_replication
 
 # ! Only single sensor support
-# train_sensors: [acc3]
-# validation_sensors: [acc3]
-# test_sensors: [acc3]
-# test_sensors: [torque2]
 train_sensors: [torque1]
 validation_sensors: [torque1]
 test_sensors: [torque1]
+# train_sensors: [acc3]
+# validation_sensors: [acc3]
+# test_sensors: [acc3]
 
 train_rpm: [500]
 validation_rpm: [500]
@@ -81,9 +80,8 @@ sample_cut: -1 # Done in batch preprocessing
 model: prototypical
 backbone: InceptionTime
 ensemble_size: 5
-# model_weight_dir: anomality_detection_ARotor_acc3
-# model_weight_dir: anomality_detection_ARotor_article
-model_weight_dir: anomality_detection_ARotor_replication_article
+# model_weight_dir: AD_ARotor_replication_torque1_article
+model_weight_dir: AD_ARotor_replication_acc3_article
 kaiming_init: True
 embedding_len: 16
 # Lp-norm

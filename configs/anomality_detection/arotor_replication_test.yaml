@@ -6,8 +6,8 @@ name: anomality_detection_arotor_replication
 data: ARotor_replication
 
 # ! Only single sensor support
-# query_sensors: [acc3]
 query_sensors: [torque1]
+# query_sensors: [acc3]
 
 query_rpms: [500, 750, 1250, 1500]
 
@@ -27,7 +27,8 @@ window_width: 4328
 
 model: prototypical
 backbone: InceptionTime
-model_weight_dir: AD_ARotor_replication_torque1_article
+# model_weight_dir: AD_ARotor_replication_torque1_article
+model_weight_dir: AD_ARotor_replication_acc3_article
 kaiming_init: True
 embedding_len: 16
 # Lp-norm
