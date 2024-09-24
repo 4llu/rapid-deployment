@@ -103,9 +103,7 @@ def run_training(
     evaluator_test = setup_evaluator(config, model, device, "test")  # Testing
 
     # Enable the use of multiple episodes for the final metrics of evaluation and testing
-    runWiseUsage = MetricUsage(
-        Events.STARTED, Events.COMPLETED, Events.ITERATION_COMPLETED
-    )
+    runWiseUsage = MetricUsage(Events.STARTED, Events.COMPLETED, Events.ITERATION_COMPLETED)
 
     # Setup metric tracking for validation and testing
     for ev, label in [(evaluator, "val"), (evaluator_test, "test")]:
@@ -134,9 +132,7 @@ def run_training(
         for name, metric in metrics.items():
             metric.attach(ev, name, usage=runWiseUsage)
     # * Confusion matrices only for test evaluator
-    Confusion_matrices().attach(
-        evaluator_test, "test_confusion_matrices", usage=runWiseUsage
-    )
+    Confusion_matrices().attach(evaluator_test, "test_confusion_matrices", usage=runWiseUsage)
 
     # Global metrics
     best_accuracy = 0
@@ -284,9 +280,7 @@ def run_training(
     def _():
         # Print global results
         print()
-        print(
-            "Best validation accuracy: {} @ epoch {}".format(best_accuracy, best_epoch)
-        )
+        print("Best validation accuracy: {} @ epoch {}".format(best_accuracy, best_epoch))
         print()
         print("Respective test accuracy: {}".format(best_test_accuracy))
         print()
@@ -310,9 +304,7 @@ def run_training(
     # TODO Checkpoint system
     # TODO Optuna pruning (This hasn't been working)
     # Start training
-    trainer.run(
-        train_loader, max_epochs=config["max_epochs"], epoch_length=config["epoch_len"]
-    )
+    trainer.run(train_loader, max_epochs=config["max_epochs"], epoch_length=config["epoch_len"])
 
     # Used by optuna (best_accuracy) and result generation (best_test_accuracy, best_test_cf)
     return best_accuracy, best_test_accuracy, best_test_cf, best_weights
