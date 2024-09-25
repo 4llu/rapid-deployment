@@ -26,13 +26,16 @@ class ConvLayer(nn.Module):
         )
         self.bn = nn.BatchNorm1d(out_channels)
         self.pool = nn.MaxPool1d(2, stride=2)
-        self.dropout = nn.Dropout1d(p=dropout)
+        self.dropout = None
+        if dropout > 0.0:
+            self.dropout = nn.Dropout1d(p=dropout)
 
     def forward(self, x):
         out = self.conv(x)
         out = self.bn(out)
         out = F.relu(out)
-        out = self.dropout(out)
+        if self.dropout is not None:
+            out = self.dropout(out)
         out = self.pool(out)
 
         return out
@@ -51,39 +54,15 @@ class WDCNN(nn.Module):
         self.config = config
 
         # Convolutional layers
-        # self.cn_layer1 = ConvLayer(
-        #     1,
-        #     16,
-        #     kernel_size=3,
-        #     stride=1,
-        #     padding=0,
-        #     dropout=self.config["cl_dropout"],
-        # )
-        self.cn_layer1 = ConvLayer(
-            1,
-            16,
-            kernel_size=3,
-            # kernel_size=12,
-            # kernel_size=41,
-            # kernel_size=64,
-            stride=1,
-            # stride=4,
-            # stride=16,
-            padding=0,
-            # padding=24,
-            dropout=self.config["cl_dropout"],
-        )
-        self.cn_layer2 = ConvLayer(16, 32, dropout=self.config["cl_dropout"])
-        self.cn_layer3 = ConvLayer(32, 64, dropout=self.config["cl_dropout"])
-        self.cn_layer4 = ConvLayer(64, 64, dropout=self.config["cl_dropout"])
-        # self.cn_layer5 = ConvLayer(64, 64, padding=0, dropout=self.config["fc_dropout"])  # * Note the fc dropout here!
+        self.cn_layer1 = ConvLayer(1, 16, kernel_size=64, stride=16, padding=24)
+        self.cn_layer2 = ConvLayer(16, 32)
+        self.cn_layer3 = ConvLayer(32, 64)
+        self.cn_layer4 = ConvLayer(64, 64)
+        self.cn_layer5 = ConvLayer(64, 64, padding=0)
 
         # Classifier
         self.fc1 = nn.Linear(
-            # 1024,
-            # 960,
-            384,
-            # 192,
+            448,
             self.config["embedding_len"],
         )
 
@@ -125,9 +104,9 @@ class WDCNN(nn.Module):
         if verbose:
             print(out.shape)
 
-        # out = self.cn_layer5(out)
-        # if verbose:
-        #     print(out.shape)
+        out = self.cn_layer5(out)
+        if verbose:
+            print(out.shape)
 
         # Flatten channels
         out = out.view(out.shape[0], -1)

@@ -16,16 +16,14 @@ from preprocessing.sample import preprocess_sample
 
 def data_selection_baseline(data_folder, sensors, GPs, rpms, torques):
     dataset = ds.dataset(
-        os.path.join(data_folder, "processed", "arotor_replication_baseline_ds"),
+        os.path.join(data_folder, "AGFD", "AGFD_baseline_ds"),
         format="feather",
         partitioning="hive",
     )
     selected_data = dataset.to_table(
         columns=sensors + ["severity", "rpm", "torque"],
         filter=(
-            ds.field("rpm").isin(rpms)
-            & ds.field("torque").isin(torques)
-            & ds.field("severity").isin(GPs)
+            ds.field("rpm").isin(rpms) & ds.field("torque").isin(torques) & ds.field("severity").isin(GPs)
         ),
     ).to_pandas()
 
@@ -36,11 +34,9 @@ def data_selection_baseline(data_folder, sensors, GPs, rpms, torques):
     return selected_data
 
 
-def data_selection_faults(
-    data_folder, sensors, faults, severities, rpms, torques, installations
-):
+def data_selection_faults(data_folder, sensors, faults, severities, rpms, torques, installations):
     dataset = ds.dataset(
-        os.path.join(data_folder, "processed", "arotor_replication_faults_ds"),
+        os.path.join(data_folder, "AGFD", "AGFD_faults_ds"),
         format="feather",
         partitioning="hive",
     )
@@ -115,16 +111,11 @@ class FewShotMixedDataset(Dataset):
 
         # Convert overlap from % to number of time series samples
         # Done here to not calculate separately every time something is sampled
-        self.window_stride = math.floor(
-            (1 - self.config["window_overlap"]) * self.max_window_width
-        )
+        self.window_stride = math.floor((1 - self.config["window_overlap"]) * self.max_window_width)
 
         # * Format data for easier sampling
         # Get the sensor columns
-        sensors = list(
-            set(df.columns)
-            - set(["fault", "severity", "rpm", "torque", "installation"])
-        )
+        sensors = list(set(df.columns) - set(["fault", "severity", "rpm", "torque", "installation"]))
         # Convert to long format to include sensor in groupby
         df_long = pd.melt(
             df,
@@ -133,9 +124,7 @@ class FewShotMixedDataset(Dataset):
             var_name="sensor",
         )
         # Group
-        self.data = df_long.groupby(
-            ["fault", "severity", "rpm", "torque", "installation", "sensor"]
-        )
+        self.data = df_long.groupby(["fault", "severity", "rpm", "torque", "installation", "sensor"])
         # Save the shortest measurement length here because it's the easiest place
         # Divided by two to separate support and query parts
         min_measurement_length = math.floor(min(self.data.size()) / 2)
@@ -164,9 +153,7 @@ class FewShotMixedDataset(Dataset):
             assert (
                 installation_repeats % 1 == 0
             ), "n_query needs to be divisible by the number of unique rpms in the split!"
-            self.installation_sampling_pattern = np.repeat(
-                unique_installations, installation_repeats
-            )
+            self.installation_sampling_pattern = np.repeat(unique_installations, installation_repeats)
 
         # Determine rpm sampling pattern for the query samples
         if self.config["mix_rpms"]:
@@ -196,9 +183,7 @@ class FewShotMixedDataset(Dataset):
             assert (
                 severity_repeats % 1 == 0
             ), "n_query needs to be divisible by the number of severities in the split!"
-            self.severity_sampling_pattern = np.repeat(
-                unique_severities, severity_repeats
-            )
+            self.severity_sampling_pattern = np.repeat(unique_severities, severity_repeats)
 
             # # Baseline
             # GP_repeats = self.config["n_query"] / len(unique_GPs)
@@ -222,9 +207,7 @@ class FewShotMixedDataset(Dataset):
 
             # Baseline
             GP_repeats = self.config["n_query"] / len(unique_GPs)
-            assert (
-                GP_repeats % 1 == 0
-            ), "n_query needs to be divisible by the number of GPs in the split!"
+            assert GP_repeats % 1 == 0, "n_query needs to be divisible by the number of GPs in the split!"
             self.GP_sampling_pattern = np.repeat(unique_GPs, GP_repeats)
 
     def __len__(self):
@@ -289,10 +272,7 @@ class FewShotMixedDataset(Dataset):
             # # FIXME TODO HERE XXX ^^^
 
             sample = self.data[idx][
-                self.support_offset
-                + sample_i : self.support_offset
-                + sample_i
-                + window_width
+                self.support_offset + sample_i : self.support_offset + sample_i + window_width
             ]
             support_query_set.append(sample)
 
@@ -363,9 +343,7 @@ class FewShotMixedDataset(Dataset):
         # YYY
         if self.config["mix_severities"]:
             current_severity_pattern = (
-                self.GP_sampling_pattern
-                if idx[0] == "baseline"
-                else self.severity_sampling_pattern
+                self.GP_sampling_pattern if idx[0] == "baseline" else self.severity_sampling_pattern
             )
         else:
             current_severity_pattern = np.repeat(idx[1], self.config["n_query"])
@@ -386,10 +364,7 @@ class FewShotMixedDataset(Dataset):
             # )
             if idx[0] == "baseline":
                 current_installation_pattern = np.repeat(0, self.config["n_query"])
-            elif (
-                1 in self.installation_sampling_pattern
-                and 2 in self.installation_sampling_pattern
-            ):
+            elif 1 in self.installation_sampling_pattern and 2 in self.installation_sampling_pattern:
                 if idx[4] == 1:
                     current_installation_pattern = np.repeat(2, self.config["n_query"])
                 else:
@@ -471,18 +446,11 @@ class FewShotMixedDataset(Dataset):
                     sample_installation,
                     sample_sensor,
                 )
-            ][
-                self.query_offset
-                + sample_i : self.query_offset
-                + sample_i
-                + window_width
-            ]
+            ][self.query_offset + sample_i : self.query_offset + sample_i + window_width]
             support_query_set.append(sample)
 
         # Preprocess as individual samples
-        support_query_set = preprocess_sample(
-            support_query_set, self.split, self.config
-        )
+        support_query_set = preprocess_sample(support_query_set, self.split, self.config)
 
         # Combine
         support_query_set = torch.stack(support_query_set, dim=0)
@@ -506,9 +474,7 @@ class FewShotMixedDataset(Dataset):
 
 
 class FewshotBatchSampler(Sampler):
-    def __init__(
-        self, config, faults, severities, GPs, rpms, torques, installations, sensors
-    ):
+    def __init__(self, config, faults, severities, GPs, rpms, torques, installations, sensors):
         assert config["n_way"] <= len(
             faults
         ), "n_way must be less than the total number of classes available!"
@@ -525,15 +491,11 @@ class FewshotBatchSampler(Sampler):
         # Generate `seq_len` at a time for efficiency
         self.seq_len = 200
         self.i = 0
-        self.severity_seq = torch.randint(
-            high=len(self.severities), size=(self.seq_len,)
-        )
+        self.severity_seq = torch.randint(high=len(self.severities), size=(self.seq_len,))
         self.GP_seq = torch.randint(high=len(self.GPs), size=(self.seq_len,))
         self.rpm_seq = torch.randint(high=len(self.rpms), size=(self.seq_len,))
         self.torque_seq = torch.randint(high=len(self.torques), size=(self.seq_len,))
-        self.installation_seq = torch.randint(
-            high=len(self.installations), size=(self.seq_len,)
-        )
+        self.installation_seq = torch.randint(high=len(self.installations), size=(self.seq_len,))
         self.sensor_seq = torch.randint(high=len(self.sensors), size=(self.seq_len,))
 
         # Meant to be accessed from outside the class to find out what the last batch contained
@@ -550,35 +512,27 @@ class FewshotBatchSampler(Sampler):
 
         # Go through class permutation
         for j in range(math.floor(len(self.faults) / self.config["n_way"])):
-            fault_batch = fault_perm[
-                j * self.config["n_way"] : (j + 1) * self.config["n_way"]
-            ]
+            fault_batch = fault_perm[j * self.config["n_way"] : (j + 1) * self.config["n_way"]]
 
             batch = list(
                 zip(
                     fault_batch,
                     [
-                        self.GPs[self.GP_seq[self.i]]
-                        if f == "baseline"
-                        else self.severities[self.severity_seq[self.i]]
+                        (
+                            self.GPs[self.GP_seq[self.i]]
+                            if f == "baseline"
+                            else self.severities[self.severity_seq[self.i]]
+                        )
                         for f in fault_batch
                     ],  # Baseline has GPs for severity instead of mild/severe
                     [self.rpms[self.rpm_seq[self.i]] for _ in range(len(fault_batch))],
-                    [
-                        self.torques[self.torque_seq[self.i]]
-                        for _ in range(len(fault_batch))
-                    ],
+                    [self.torques[self.torque_seq[self.i]] for _ in range(len(fault_batch))],
                     # [self.installations[self.installation_seq[self.i]] for _ in range(len(fault_batch))],
                     [
-                        0
-                        if f == "baseline"
-                        else self.installations[self.installation_seq[self.i]]
+                        0 if f == "baseline" else self.installations[self.installation_seq[self.i]]
                         for f in fault_batch
                     ],
-                    [
-                        self.sensors[self.sensor_seq[self.i]]
-                        for _ in range(len(fault_batch))
-                    ],
+                    [self.sensors[self.sensor_seq[self.i]] for _ in range(len(fault_batch))],
                 )
             )
 
@@ -591,19 +545,11 @@ class FewshotBatchSampler(Sampler):
             self.i += 1
             if self.i == self.seq_len:
                 self.i = 0
-                self.severity_seq = torch.randint(
-                    high=len(self.severities), size=(self.seq_len,)
-                )
+                self.severity_seq = torch.randint(high=len(self.severities), size=(self.seq_len,))
                 self.rpm_seq = torch.randint(high=len(self.rpms), size=(self.seq_len,))
-                self.torque_seq = torch.randint(
-                    high=len(self.torques), size=(self.seq_len,)
-                )
-                self.installation_seq = torch.randint(
-                    high=len(self.installations), size=(self.seq_len,)
-                )
-                self.sensor_seq = torch.randint(
-                    high=len(self.sensors), size=(self.seq_len,)
-                )
+                self.torque_seq = torch.randint(high=len(self.torques), size=(self.seq_len,))
+                self.installation_seq = torch.randint(high=len(self.installations), size=(self.seq_len,))
+                self.sensor_seq = torch.randint(high=len(self.sensors), size=(self.seq_len,))
 
 
 def get_arotor_replication_data(config, device):
@@ -629,7 +575,7 @@ def get_arotor_replication_data(config, device):
     print("Reading data")
 
     abs_path = os.path.dirname(__file__)
-    data_folder = os.path.join(abs_path, os.pardir, os.pardir, "data")
+    data_folder = os.path.abspath(os.path.join(abs_path, os.pardir, os.pardir, os.pardir, "data"))
 
     # Data selection
     ################
@@ -708,17 +654,13 @@ def get_arotor_replication_data(config, device):
     # Data preprocessing for full measurements
     ##########################################
 
-    train_data, validation_data, test_data = preprocess_full(
-        train_data, validation_data, test_data, config
-    )
+    train_data, validation_data, test_data = preprocess_full(train_data, validation_data, test_data, config)
 
     # Dataset creation
     ##################
 
     train_dataset = FewShotMixedDataset(train_data, "train", config, device)
-    validation_dataset = FewShotMixedDataset(
-        validation_data, "validation", config, device
-    )
+    validation_dataset = FewShotMixedDataset(validation_data, "validation", config, device)
     test_dataset = FewShotMixedDataset(test_data, "test", config, device)
 
     # Dataloaders
@@ -761,9 +703,7 @@ def get_arotor_replication_data(config, device):
     train_loader = DataLoader(
         train_dataset,
         batch_sampler=train_sampler,
-        collate_fn=partial(
-            fewshot_collate, split="train", config=config, device=device
-        ),
+        collate_fn=partial(fewshot_collate, split="train", config=config, device=device),
         pin_memory=True,
         # num_workers=0,
         # prefetch_factor=4,
@@ -771,9 +711,7 @@ def get_arotor_replication_data(config, device):
     validation_loader = DataLoader(
         validation_dataset,
         batch_sampler=validation_sampler,
-        collate_fn=partial(
-            fewshot_collate, split="validation", config=config, device=device
-        ),
+        collate_fn=partial(fewshot_collate, split="validation", config=config, device=device),
         pin_memory=True,
         # num_workers=0,
         # prefetch_factor=4,

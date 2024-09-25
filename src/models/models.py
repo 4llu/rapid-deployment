@@ -33,10 +33,18 @@ def setup_model(config, device):
         from models.backbones.inception_time import InceptionTime
 
         backbone = InceptionTime(config)
+    elif config["backbone"] == "InceptionTimeV2":
+        from models.backbones.inception_time import InceptionTimeV2
+
+        backbone = InceptionTimeV2(config)
     elif config["backbone"] == "RelationDefault":
         from models.backbones.relation_default import RelationDefault
 
         backbone = RelationDefault(config)
+    elif config["backbone"] == "LSTM":
+        from models.backbones.lstm import LSTM
+
+        backbone = LSTM(config)
     else:
         raise Exception(f"No such backbone name as: {config['backbone']}!")
 

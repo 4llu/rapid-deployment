@@ -5,9 +5,7 @@ import torch.nn.functional as F
 
 
 class ConvLayer(nn.Module):
-    def __init__(
-        self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False
-    ):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False):
         super(ConvLayer, self).__init__()
         self.conv = nn.Conv1d(
             in_channels,
@@ -35,9 +33,7 @@ class WDCNN_old(nn.Module):
 
         self.config = config
 
-        self.cn_layer1 = ConvLayer(
-            1, 16, kernel_size=64, stride=16, padding=24, bias=bias
-        )
+        self.cn_layer1 = ConvLayer(1, 16, kernel_size=64, stride=16, padding=24, bias=bias)
         self.cn_layer2 = ConvLayer(16, 32, bias=bias)
         self.cn_layer3 = ConvLayer(32, 64, bias=bias)
         self.cn_layer4 = ConvLayer(64, 64, bias=bias)

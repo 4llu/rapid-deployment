@@ -4,6 +4,9 @@ __pycache__
 .ipynb_checkpoints
 .vscode/
 
+# Other artifacts
+*.zip
+
 # Repo specific
 env/
 data/RAW/*

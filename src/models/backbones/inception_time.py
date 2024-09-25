@@ -47,9 +47,7 @@ class InceptionModule(nn.Module):
             bias=False,
         )
 
-        self.maxpool = nn.MaxPool1d(
-            3, stride=1, padding=1
-        )  # Padding depends on stride size
+        self.maxpool = nn.MaxPool1d(3, stride=1, padding=1)  # Padding depends on stride size
         self.conv_maxpool = nn.Conv1d(
             in_channels,
             out_channels,
@@ -104,9 +102,7 @@ class ModdedInceptionModule(nn.Module):
             assert (
                 in_channels == reduced_channels * 4
             ), "Input and output channels must match for SEN connection!"
-            self.fc_sen_1 = nn.Linear(
-                in_channels, in_channels // 4
-            )  # * Using reduction factor 4
+            self.fc_sen_1 = nn.Linear(in_channels, in_channels // 4)  # * Using reduction factor 4
             self.fc_sen_2 = nn.Linear(in_channels // 4, in_channels)
 
         self.conv_skip = None
@@ -247,9 +243,7 @@ class GridReductionModule(nn.Module):
             bias=False,
         )
 
-        self.maxpool = nn.MaxPool1d(
-            2, stride=2, padding=0
-        )  # Padding depends on stride size
+        self.maxpool = nn.MaxPool1d(2, stride=2, padding=0)  # Padding depends on stride size
 
         self.bn = nn.BatchNorm1d(reduced_channels * 2 + in_channels)
 
@@ -602,9 +596,7 @@ class InceptionTime_old(nn.Module):
         # self.module_3 = InceptionModule(32 * 4, 64)
 
         # Global average pooling
-        self.globalAvgPool = nn.AvgPool1d(
-            kernel_size=722
-        )  # FIXME Kernel size (Depends on input length)
+        self.globalAvgPool = nn.AvgPool1d(kernel_size=722)  # FIXME Kernel size (Depends on input length)
 
         # Classifier
         # self.fc1 = nn.Linear(
@@ -654,5 +646,120 @@ class InceptionTime_old(nn.Module):
         # out = self.fc1(out)
         # if verbose:
         #     print(out.shape)
+
+        return out
+
+
+class InceptionTimeV2(nn.Module):
+    def __init__(self, config):
+        super(InceptionTimeV2, self).__init__()
+
+        self.config = config
+
+        # Layers
+        self.stem_1 = nn.Sequential(
+            nn.Conv1d(1, 16, kernel_size=20, stride=1, padding=0, bias=False),
+            nn.MaxPool1d(2, stride=2, padding=0),
+            nn.BatchNorm1d(16),
+            # nn.ReLU(),
+            # XXX
+            nn.Conv1d(16, 32, kernel_size=20, stride=1, padding=0, bias=False),
+            nn.MaxPool1d(2, stride=2, padding=0),
+            nn.BatchNorm1d(32),
+            # nn.ReLU(),
+        )
+
+        self.module_3_1 = ModdedInceptionModule(32, 8)
+        self.module_4_1 = ModdedInceptionModule(32, 8, activation=False)
+        self.shortcut_1 = Explicit_skip_connection(32, 32)  # XXX
+        self.reduction_1 = SimpleGridReductionModule(32, 32)
+
+        self.module_5_1 = ModdedInceptionModule(64, 16, activation=True)
+        self.module_6_1 = ModdedInceptionModule(64, 16, activation=False)
+        self.shortcut_2 = Explicit_skip_connection(64, 64)  # XXX
+        self.reduction_2 = SimpleGridReductionModule(64, 64)
+
+        self.module_7_1 = ModdedInceptionModule(128, 32)
+        self.module_8_1 = ModdedInceptionModule(128, 32, activation=False)
+        self.shortcut_3 = Explicit_skip_connection(128, 128)  # XXX
+
+        self.fc = nn.Linear(
+            128,
+            self.config["embedding_len"],
+        )
+
+    def forward(self, x):
+        verbose = False
+
+        if verbose:
+            print("Input:", x.shape)
+
+        out = x
+
+        out = self.stem_1(out)
+        if verbose:
+            print("Stem 1:", out.shape)
+
+        x_earlier = out.clone()  # XXX
+
+        out = self.module_3_1(out)
+        if verbose:
+            print("Module 3.1:", out.shape)
+
+        out = self.module_4_1(out)
+        if verbose:
+            print("Module 4.1:", out.shape)
+
+        out = self.shortcut_1(out, x_earlier)  # XXX
+        if verbose:
+            print("Shortcut 1:", out.shape)
+
+        out = self.reduction_1(out)
+        if verbose:
+            print("Reduction 2:", out.shape)
+
+        x_earlier = out.clone()  # XXX
+
+        out = self.module_5_1(out)
+        if verbose:
+            print("Module 5.1:", out.shape)
+
+        out = self.module_6_1(out)
+        if verbose:
+            print("Module 6.1:", out.shape)
+
+        out = self.shortcut_2(out, x_earlier)  # XXX
+        if verbose:
+            print("Shortcut 2:", out.shape)
+
+        out = self.reduction_2(out)
+        if verbose:
+            print("Reduction 2:", out.shape)
+
+        x_earlier = out.clone()  # XXX
+
+        out = self.module_7_1(out)
+        if verbose:
+            print("Module 7.1:", out.shape)
+
+        out = self.module_8_1(out)
+        if verbose:
+            print("Module 8.1:", out.shape)
+
+        out = self.shortcut_3(out, x_earlier)  # XXX
+        if verbose:
+            print("Shortcut 3:", out.shape)
+
+        out = F.avg_pool1d(out, kernel_size=out.shape[-1])
+        if verbose:
+            print("GAP:", out.shape)
+
+        out = out.swapaxes(1, 2)
+        out = self.fc(out)
+        if verbose:
+            print("FC", out.shape)
+
+        if verbose:
+            quit()
 
         return out

@@ -18,9 +18,7 @@ from preprocessing.sample import preprocess_sample
 
 def fewshot_data_selection(data, sensors, rpm, classes):
     selected_data = data.loc[:, sensors + ["rpm", "class"]]
-    selected_data = selected_data[
-        (selected_data["rpm"].isin(rpm)) & (selected_data["class"].isin(classes))
-    ]
+    selected_data = selected_data[(selected_data["rpm"].isin(rpm)) & (selected_data["class"].isin(classes))]
 
     return selected_data
 
@@ -62,13 +60,9 @@ class FewShotMixedDataset(Dataset):
             ]
         )
         if "sync_FFT_rotations" in self.config:
-            min_window_len = (
-                self.rotation_len_map[max_rpm] * self.config["sync_FFT_rotations"]
-            )
+            min_window_len = self.rotation_len_map[max_rpm] * self.config["sync_FFT_rotations"]
             #! Completely new value added to config!
-            self.config["max_fft_len"] = len(
-                torch.fft.rfft(torch.arange(min_window_len))
-            )
+            self.config["max_fft_len"] = len(torch.fft.rfft(torch.arange(min_window_len)))
 
         # Max window width to calculate stride and max index that can be sampled
         # ! Remember to not use `self.config["window_width"]` after this point
@@ -85,23 +79,17 @@ class FewShotMixedDataset(Dataset):
                     *self.config["test_rpm"],
                 ]
             )
-            self.max_window_width = (
-                self.rotation_len_map[min_rpm] * self.config["sync_FFT_rotations"]
-            )
+            self.max_window_width = self.rotation_len_map[min_rpm] * self.config["sync_FFT_rotations"]
 
         # Convert overlap from % to number of time series samples
         # Done here to not calculate separately every time something is sampled
-        self.window_stride = math.floor(
-            (1 - self.config["window_overlap"]) * self.max_window_width
-        )
+        self.window_stride = math.floor((1 - self.config["window_overlap"]) * self.max_window_width)
 
         # * Format data for easier sampling
         # Get the sensor columns
         sensors = list(set(df.columns) - set(["rpm", "class"]))
         # Convert to long format to include sensor in groupby
-        df_long = pd.melt(
-            df, id_vars=["rpm", "class"], value_vars=sensors, var_name="sensor"
-        )
+        df_long = pd.melt(df, id_vars=["rpm", "class"], value_vars=sensors, var_name="sensor")
         # Group
         self.data = df_long.groupby(["class", "rpm", "sensor"])
         # Save the shortest measurement length here because it's the easiest place
@@ -170,9 +158,7 @@ class FewShotMixedDataset(Dataset):
             or "sync_FFT" in self.config["preprocessing_batch"]
         ):
             # TODO Currently all support samples are from the same RPM
-            window_width = (
-                self.rotation_len_map[idx[1]] * self.config["sync_FFT_rotations"]
-            )
+            window_width = self.rotation_len_map[idx[1]] * self.config["sync_FFT_rotations"]
 
         # Select random measurement windows for the support and query set
         # * 1. +1 because `.permutation` is non-inclusive of upper bound
@@ -193,10 +179,7 @@ class FewShotMixedDataset(Dataset):
             # j = i * self.window_stride # ? Done above
 
             sample = self.data[idx][
-                self.support_offset
-                + sample_i : self.support_offset
-                + sample_i
-                + window_width
+                self.support_offset + sample_i : self.support_offset + sample_i + window_width
             ]
             support_query_set.append(sample)
 
@@ -232,23 +215,15 @@ class FewShotMixedDataset(Dataset):
                 "sync_FFT" in self.config["preprocessing_sample"]
                 or "sync_FFT" in self.config["preprocessing_batch"]
             ):
-                window_width = (
-                    self.rotation_len_map[sample_rpm]
-                    * self.config["sync_FFT_rotations"]
-                )
+                window_width = self.rotation_len_map[sample_rpm] * self.config["sync_FFT_rotations"]
 
             sample = self.data[(idx[0], sample_rpm, sample_sensor)][
-                self.query_offset
-                + sample_i : self.query_offset
-                + sample_i
-                + window_width
+                self.query_offset + sample_i : self.query_offset + sample_i + window_width
             ]
             support_query_set.append(sample)
 
         # Preprocess as individual samples
-        support_query_set = preprocess_sample(
-            support_query_set, self.split, self.config
-        )
+        support_query_set = preprocess_sample(support_query_set, self.split, self.config)
 
         # Combine
         support_query_set = torch.stack(support_query_set, dim=0)
@@ -305,18 +280,13 @@ class FewshotBatchSampler(Sampler):
 
         # Go through class permutation
         for j in range(math.floor(len(self.classes) / self.config["n_way"])):
-            class_batch = class_perm[
-                j * self.config["n_way"] : (j + 1) * self.config["n_way"]
-            ]
+            class_batch = class_perm[j * self.config["n_way"] : (j + 1) * self.config["n_way"]]
 
             batch = list(
                 zip(
                     class_batch,
                     [self.rpms[self.rpm_seq[self.i]] for _ in range(len(class_batch))],
-                    [
-                        self.sensors[self.sensor_seq[self.i]]
-                        for _ in range(len(class_batch))
-                    ],
+                    [self.sensors[self.sensor_seq[self.i]] for _ in range(len(class_batch))],
                 )
             )
 
@@ -328,9 +298,7 @@ class FewshotBatchSampler(Sampler):
             if self.i == self.seq_len:
                 self.i = 0
                 self.rpm_seq = torch.randint(high=len(self.rpms), size=(self.seq_len,))
-                self.sensor_seq = torch.randint(
-                    high=len(self.sensors), size=(self.seq_len,)
-                )
+                self.sensor_seq = torch.randint(high=len(self.sensors), size=(self.seq_len,))
 
 
 def fewshot_collate(batch, split="train", config=None, device=None):
@@ -398,12 +366,12 @@ def get_arotor_data(config, device):
     print("Reading data")
 
     abs_path = os.path.dirname(__file__)
-    data_folder = os.path.join(abs_path, os.pardir, os.pardir, "data")
+    data_folder = os.path.abspath(os.path.join(abs_path, os.pardir, os.pardir, os.pardir, "data"))
 
     # XXX HUOM! V2 version in use
     # data = pd.read_feather(os.path.join(data_folder, "processed", "arotor_V2.feather"))
     # data = pd.read_feather(os.path.join(data_folder, "processed", "arotor_enc_angle_02_res_PCHIP_V2.feather"))
-    data = pd.read_feather(os.path.join(data_folder, "processed", "arotor.feather"))
+    data = pd.read_feather(os.path.join(data_folder, "ASD", "ASD.feather"))
 
     # Data selection
     ################
@@ -426,17 +394,13 @@ def get_arotor_data(config, device):
     # Data preprocessing for full measurements
     ##########################################
 
-    train_data, validation_data, test_data = preprocess_full(
-        train_data, validation_data, test_data, config
-    )
+    train_data, validation_data, test_data = preprocess_full(train_data, validation_data, test_data, config)
 
     # Dataset creation
     ##################
 
     train_dataset = FewShotMixedDataset(train_data, "train", config, device)
-    validation_dataset = FewShotMixedDataset(
-        validation_data, "validation", config, device
-    )
+    validation_dataset = FewShotMixedDataset(validation_data, "validation", config, device)
     test_dataset = FewShotMixedDataset(test_data, "test", config, device)
 
     # Dataloaders
@@ -467,18 +431,14 @@ def get_arotor_data(config, device):
     train_loader = DataLoader(
         train_dataset,
         batch_sampler=train_sampler,
-        collate_fn=partial(
-            fewshot_collate, split="train", config=config, device=device
-        ),
+        collate_fn=partial(fewshot_collate, split="train", config=config, device=device),
         pin_memory=False,
         num_workers=0,
     )
     validation_loader = DataLoader(
         validation_dataset,
         batch_sampler=validation_sampler,
-        collate_fn=partial(
-            fewshot_collate, split="validation", config=config, device=device
-        ),
+        collate_fn=partial(fewshot_collate, split="validation", config=config, device=device),
         pin_memory=False,
         num_workers=0,
     )
