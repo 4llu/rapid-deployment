@@ -1,0 +1,102 @@
+#? Creation
+name: anomality_detection
+log: false
+save: true
+eval_freq: 7 # * Decrease for hyper opt and final testing
+eval_episodes: 50 # * Increase for hyper opt and final testing
+test_episodes: 50
+
+#? Fewshot setup
+
+k_shot: 1
+# n_way: 4
+n_way: 10
+n_query: 30
+mix_rpms: false
+mix_sensors: false
+separate_query_and_support: false
+
+#? Data
+
+data: ARotor
+train_sensors: [torque1]
+validation_sensors: [torque1]
+test_sensors: [torque1]
+# train_sensors: [acc3]
+# validation_sensors: [acc3]
+# test_sensors: [acc3]
+
+train_rpm: [250, 750, 1000, 1500]
+validation_rpm: [500, 1250]
+test_rpm: [500, 1250]
+
+train_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+validation_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+test_classes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+window_width: 4328
+window_overlap: 0.99
+
+#? Preprocessing
+
+preprocessing_full: []
+robust_scaling_low: 0.25
+robust_scaling_high: 0.75
+preprocessing_sample: []
+preprocessing_class_batch: []
+preprocessing_batch: [gain_changer, add_white_noise]
+include_FFT_DC: false # Should the DC component of the FFC be included? Only relevant if FFT is used in some form
+log_FFT: false
+pad_FFT: -1
+sample_cut: -1 # Done in batch preprocessing
+
+#? Model
+
+model: prototypical
+backbone: WDCNN
+kaiming_init: true
+embedding_len: 16
+# Lp-norm
+embedding_normalization_type: lp
+lp_norm: 2
+
+embedding_multiplier: 100
+
+#? Training
+
+epoch_len: 1
+max_epochs: 85
+patience: 30
+optimizer: AdamW
+
+# Torque1
+lr: 0.013590219037809641
+lr_scheduler: ExponentialLR
+sch_gamma: 0.9506934818270034
+momentum: 0.9121105775047108
+# Augmentation
+gain_std: 0.3
+white_noise_std: 0.1
+# Regularization
+weight_decay: 0.00046702257039937686
+label_smoothing: 0.0
+cl_dropout: 0.0
+fc_dropout: 0.0
+
+# # Acc3
+# lr:0.01121622310786879
+# lr_scheduler: ExponentialLR
+# sch_gamma: 0.9556310720169129
+# momentum: 0.9613293705183978
+# # Augmentation
+# gain_std: 0.3
+# white_noise_std: 0.3
+# # Regularization
+# weight_decay: 2.9191961392162883e-05
+# label_smoothing: 0.0
+# cl_dropout: 0.0
+# fc_dropout: 0.0
+
+# ? Other
+
+use_amp: false
